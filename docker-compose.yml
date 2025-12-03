@@ -1,0 +1,203 @@
+# ============================================================================
+# Weather AI Agent Service - Docker Compose
+# ============================================================================
+# This file orchestrates all services required for the Weather AI Agent.
+#
+# LEVEL 0 (Current): MCP Servers
+#   - Weather MCP Server (port 8080)
+#   - Hurricane Tracker MCP (port 8081)
+#
+# FUTURE LEVELS (Incremental):
+#   - Level 1: Basic agent (no new services)
+#   - Level 2: RAG agent (no new services)
+#   - Level 3: Redis (memory/cache), PostgreSQL (checkpointer)
+#   - Level 4: Multi-agent system (no new services)
+#   - Level 5: Qdrant (vector DB), FastAPI (REST API), Monitoring
+#   - Level 6: Self-evolving (no new services)
+#
+# Run with: docker-compose up -d
+# Stop with: docker-compose down
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # Weather MCP Server (Port 8080)
+  # ==========================================================================
+  weather-mcp:
+    build:
+      context: ../mcp-weather-server
+      dockerfile: Dockerfile
+    container_name: weather-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - MCP_TRANSPORT=http
+      - MCP_HTTP_PORT=8080
+      - LOG_LEVEL=${WEATHER_LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+    volumes:
+      # Optional: Mount logs directory
+      - weather-logs:/app/logs
+
+  # ==========================================================================
+  # Hurricane Tracker MCP (Port 8081)
+  # ==========================================================================
+  hurricane-mcp:
+    build:
+      context: ../hurricane-tracker-mcp
+      dockerfile: Dockerfile
+      target: production
+    container_name: hurricane-tracker-mcp
+    restart: unless-stopped
+    ports:
+      - "8081:8080"  # Map host 8081 to container 8080
+      # - "9090:9090"  # Metrics port (Optional - Uncomment for Prometheus/Grafana monitoring)
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - MCP_TRANSPORT=http
+      - HTTP_PORT=8080
+      - HTTP_HOST=0.0.0.0
+      - LOG_LEVEL=${HURRICANE_LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - PRETTY_LOGS=false
+      # Cache configuration
+      - CACHE_MAX_SIZE=${CACHE_MAX_SIZE:-1000}
+      - CACHE_CURRENT_HURRICANES_TTL=${CACHE_CURRENT_HURRICANES_TTL:-300000}
+      - CACHE_FORECAST_TTL=${CACHE_FORECAST_TTL:-900000}
+      - CACHE_ALERT_TTL=${CACHE_ALERT_TTL:-120000}
+      - CACHE_TRACK_TTL=${CACHE_TRACK_TTL:-600000}
+      - CACHE_HISTORICAL_TTL=${CACHE_HISTORICAL_TTL:-86400000}
+      # Timeouts
+      - REQUEST_TIMEOUT_MS=${REQUEST_TIMEOUT_MS:-30000}
+      - CONNECTION_TIMEOUT_MS=${CONNECTION_TIMEOUT_MS:-10000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      # Security
+      - AUTH_ENABLED=${AUTH_ENABLED:-false}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_PER_CLIENT=${RATE_LIMIT_PER_CLIENT:-100}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+    volumes:
+      # Optional: Mount logs directory
+      - hurricane-logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  mcp-network:
+    driver: bridge
+    name: weather-ai-mcp-network
+
+# ============================================================================
+# Volumes (Current: Level 0)
+# ============================================================================
+volumes:
+  weather-logs:
+    name: weather-mcp-logs
+  hurricane-logs:
+    name: hurricane-mcp-logs
+  # Future volumes (added progressively):
+  # redis-data:           # Level 3a - Redis persistence
+  # postgres-data:        # Level 3b - PostgreSQL checkpointer
+  # qdrant-data:          # Level 5a - Qdrant vector storage
+
+# ============================================================================
+# Future Services (Commented - Added Progressively by Level)
+# ============================================================================
+#
+# # ==========================================================================
+# # Redis (Level 3a - Memory/Cache)
+# # ==========================================================================
+# redis:
+#   image: redis:7-alpine
+#   container_name: weather-ai-redis
+#   ports:
+#     - "6379:6379"
+#   volumes:
+#     - redis-data:/data
+#   networks:
+#     - mcp-network
+#
+# # ==========================================================================
+# # PostgreSQL (Level 3b - Checkpointer)
+# # ==========================================================================
+# postgres:
+#   image: postgres:16-alpine
+#   container_name: weather-ai-postgres
+#   environment:
+#     POSTGRES_DB: weather_ai
+#     POSTGRES_USER: weather_ai
+#     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+#   ports:
+#     - "5432:5432"
+#   volumes:
+#     - postgres-data:/var/lib/postgresql/data
+#   networks:
+#     - mcp-network
+#
+# # ==========================================================================
+# # Qdrant (Level 5a - Vector Database)
+# # ==========================================================================
+# qdrant:
+#   image: qdrant/qdrant:latest
+#   container_name: weather-ai-qdrant
+#   ports:
+#     - "6333:6333"  # HTTP API
+#     - "6334:6334"  # gRPC API
+#   volumes:
+#     - qdrant-data:/qdrant/storage
+#   networks:
+#     - mcp-network
+#
+# # ==========================================================================
+# # Weather AI Agent FastAPI (Level 5b - REST API)
+# # ==========================================================================
+# weather-ai-api:
+#   build:
+#     context: .
+#     dockerfile: Dockerfile
+#   container_name: weather-ai-api
+#   ports:
+#     - "8000:8000"
+#   environment:
+#     - OPENAI_API_KEY=${OPENAI_API_KEY}
+#     - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+#     - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
+#     - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
+#     - REDIS_URL=redis://redis:6379
+#     - POSTGRES_URL=postgresql://weather_ai:${POSTGRES_PASSWORD:-changeme}@postgres:5432/weather_ai
+#     - QDRANT_URL=http://qdrant:6333
+#   depends_on:
+#     - weather-mcp
+#     - hurricane-mcp
+#     - redis
+#     - postgres
+#     - qdrant
+#   networks:
+#     - mcp-network
