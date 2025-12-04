@@ -1,6 +1,6 @@
 [project]
 name = "weather-ai-agent-service"
-version = "0.1.0"
+version = "0.2.1"
 description = "Production-grade AI agent for weather queries with LangChain, LangGraph, and dual MCP servers"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
@@ -118,5 +118,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=src --cov-report=term-missing"
+addopts = "-v"
+# Coverage options temporarily disabled for testing
+# addopts = "-v --cov=backend --cov-report=term-missing --cov-report=html"
 asyncio_mode = "auto"

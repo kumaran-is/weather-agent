@@ -258,3 +258,14 @@ logs/
 # ================================================================
 .python-version
 
+# ================================================================
+# LangGraph / LangSmith Development
+# ================================================================
+# LangGraph CLI development server state (pickle files)
+.langgraph/
+.langgraph_api/
+*.pckl
+
+# LangSmith local cache
+.langsmith/
+

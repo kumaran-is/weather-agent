@@ -1,0 +1,18 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "weather_agent": {
+      "path": "./backend/src/agents/weather_agent.py:create_weather_agent",
+      "description": "ReAct agent with 3 MCP weather tools (current, forecast, context)"
+    },
+    "weather_hitl_workflow": {
+      "path": "./backend/src/workflows/weather_graph.py:get_weather_hitl_workflow",
+      "description": "HITL workflow with hurricane approval for Category 3+ storms"
+    }
+  },
+  "env": ".env",
+  "http": {
+    "port": 2024,
+    "host": "127.0.0.1"
+  }
+}

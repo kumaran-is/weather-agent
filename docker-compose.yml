@@ -3,16 +3,16 @@
 # ============================================================================
 # This file orchestrates all services required for the Weather AI Agent.
 #
-# LEVEL 0 (Current): MCP Servers
+# LEVEL 1 (Current): MCP Servers + Backend Agent Service
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
+#   - Weather AI Agent API (port 8000)
 #
 # FUTURE LEVELS (Incremental):
-#   - Level 1: Basic agent (no new services)
 #   - Level 2: RAG agent (no new services)
 #   - Level 3: Redis (memory/cache), PostgreSQL (checkpointer)
 #   - Level 4: Multi-agent system (no new services)
-#   - Level 5: Qdrant (vector DB), FastAPI (REST API), Monitoring
+#   - Level 5: Qdrant (vector DB), Monitoring
 #   - Level 6: Self-evolving (no new services)
 #
 # Run with: docker-compose up -d
@@ -105,6 +105,58 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+
+  # ==========================================================================
+  # Weather AI Agent API (Port 8000) - Level 1
+  # ==========================================================================
+  weather-ai-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: weather-ai-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM API Keys (from host .env)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      # Optional: Anthropic for future levels
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # MCP Server URLs (Docker network internal DNS)
+      - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
+      - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
+      - MCP_WEATHER_SERVER_ENABLED=true
+      - MCP_HURRICANE_SERVER_ENABLED=true
+      # Application settings
+      - ENVIRONMENT=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # LangSmith tracing
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-level-1}
+    depends_on:
+      weather-mcp:
+        condition: service_started
+      hurricane-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mcp-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
 # ============================================================================
 # Networks

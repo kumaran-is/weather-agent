@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync verify clean test lint format type-check security run-verify run-agent all-checks quickstart dev update lock version
+.PHONY: help install install-dev sync verify clean test lint format type-check security run-verify run-agent all-checks quickstart dev update lock version docker-up docker-down docker-restart docker-logs docker-ps docker-health docker-clean
 
 # Default Python version
 PYTHON_VERSION := 3.13
@@ -130,3 +130,55 @@ lock:  ## Generate/update uv.lock file
 	@echo "$(BLUE)Generating uv.lock...$(NC)"
 	uv lock
 	@echo "$(GREEN)✓ uv.lock generated$(NC)"
+
+# ============================================================================
+# Docker Compose Commands (3 Services: weather-mcp, hurricane-mcp, weather-ai-api)
+# ============================================================================
+
+docker-up:  ## Start all Docker containers (weather-mcp:8080, hurricane-mcp:8081, weather-ai-api:8000)
+	@echo "$(BLUE)Starting all Docker containers...$(NC)"
+	@echo "$(YELLOW)Services: weather-mcp (8080), hurricane-mcp (8081), weather-ai-api (8000)$(NC)"
+	docker-compose up -d
+	@echo "$(GREEN)✓ All containers started$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Check status: make docker-ps$(NC)"
+	@echo "$(YELLOW)View logs:    make docker-logs$(NC)"
+
+docker-down:  ## Stop and remove all Docker containers
+	@echo "$(BLUE)Stopping all Docker containers...$(NC)"
+	docker-compose down
+	@echo "$(GREEN)✓ All containers stopped and removed$(NC)"
+
+docker-restart:  ## Restart all Docker containers
+	@echo "$(BLUE)Restarting all Docker containers...$(NC)"
+	docker-compose restart
+	@echo "$(GREEN)✓ All containers restarted$(NC)"
+
+docker-logs:  ## Follow logs from all Docker containers (Ctrl+C to exit)
+	@echo "$(BLUE)Following logs from all containers (Ctrl+C to exit)...$(NC)"
+	docker-compose logs -f
+
+docker-ps:  ## Show status of all Docker containers
+	@echo "$(BLUE)Docker container status:$(NC)"
+	@docker-compose ps
+
+docker-health:  ## Check health status of all Docker containers
+	@echo "$(BLUE)Checking health status of all containers...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Weather MCP Server (8080):$(NC)"
+	@docker inspect --format='{{.State.Health.Status}}' weather-mcp-server 2>/dev/null || echo "$(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Hurricane Tracker MCP (8081):$(NC)"
+	@docker inspect --format='{{.State.Health.Status}}' hurricane-tracker-mcp 2>/dev/null || echo "$(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Weather AI API (8000):$(NC)"
+	@docker inspect --format='{{.State.Health.Status}}' weather-ai-api 2>/dev/null || echo "$(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(GREEN)✓ Health check complete$(NC)"
+
+docker-clean:  ## Stop containers and remove volumes (WARNING: deletes all data)
+	@echo "$(RED)WARNING: This will remove all Docker volumes and delete all data$(NC)"
+	@echo "$(YELLOW)Press Ctrl+C within 5 seconds to cancel...$(NC)"
+	@sleep 5
+	docker-compose down -v
+	@echo "$(GREEN)✓ All containers and volumes removed$(NC)"

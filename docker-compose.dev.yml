@@ -1,0 +1,147 @@
+# ============================================================================
+# Weather AI Agent Service - Docker Compose (DEVELOPMENT)
+# ============================================================================
+# This file is for LOCAL DEVELOPMENT with hot reload enabled.
+#
+# Key Differences from docker-compose.yml:
+#   1. Uses 'development' target instead of 'production'
+#   2. Mounts source code as volumes (changes reflect immediately)
+#   3. Enables --reload flag for uvicorn
+#   4. Includes dev dependencies (pytest, mypy, ruff)
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up -d
+#   docker-compose -f docker-compose.dev.yml down
+#
+# Benefits:
+#   ✅ Code changes reflect immediately (no rebuild)
+#   ✅ Faster development iteration
+#   ✅ Dev tools available (pytest, mypy, ruff)
+#   ✅ LangSmith tracing enabled by default
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # Weather MCP Server (Port 8080)
+  # ==========================================================================
+  weather-mcp:
+    build:
+      context: ../mcp-weather-server
+      dockerfile: Dockerfile
+    container_name: weather-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - MCP_TRANSPORT=http
+      - MCP_HTTP_PORT=8080
+      - LOG_LEVEL=debug
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+    volumes:
+      - weather-logs:/app/logs
+
+  # ==========================================================================
+  # Hurricane Tracker MCP (Port 8081)
+  # ==========================================================================
+  hurricane-mcp:
+    build:
+      context: ../hurricane-tracker-mcp
+      dockerfile: Dockerfile
+      target: production
+    container_name: hurricane-tracker-mcp
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - NODE_ENV=development
+      - MCP_TRANSPORT=http
+      - HTTP_PORT=8080
+      - HTTP_HOST=0.0.0.0
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=json
+      - PRETTY_LOGS=false
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+    volumes:
+      - hurricane-logs:/app/logs
+
+  # ==========================================================================
+  # Weather AI Agent API (Port 8000) - DEVELOPMENT MODE
+  # ==========================================================================
+  weather-ai-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development  # ← Uses development stage (includes --reload)
+    container_name: weather-ai-api-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM API Keys (from host .env)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # MCP Server URLs (Docker network internal DNS)
+      - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
+      - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
+      - MCP_WEATHER_SERVER_ENABLED=true
+      - MCP_HURRICANE_SERVER_ENABLED=true
+      # Application settings
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug
+      # LangSmith tracing (enabled by default for dev)
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+      - LANGCHAIN_PROJECT=weather-ai-agent-dev
+    depends_on:
+      weather-mcp:
+        condition: service_started
+      hurricane-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mcp-network
+    volumes:
+      # Mount source code for hot reload (read-only for safety)
+      - ./backend:/app/backend:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./uv.lock:/app/uv.lock:ro
+      # Optional: Mount .env for easy updates
+      - ./.env:/app/.env:ro
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  mcp-network:
+    driver: bridge
+    name: weather-ai-mcp-network-dev
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  weather-logs:
+    name: weather-mcp-logs-dev
+  hurricane-logs:
+    name: hurricane-mcp-logs-dev

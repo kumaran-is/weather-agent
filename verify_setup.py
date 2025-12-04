@@ -1,16 +1,17 @@
 """
-Level 0 Setup Verification Script
-Ensures all components are properly configured before Level 1.
+Level 1 Setup Verification Script
+Ensures all components are properly configured for Level 1 (ReAct Agent + HITL).
 
 Tests:
 1. Python 3.13+ installed
 2. Environment variables set (Docker + HTTP transport)
 3. OpenAI API connection
 4. Anthropic API connection (optional)
-5. MCP Docker containers running (Weather + Hurricane)
+5. All Docker containers running (Weather MCP + Hurricane MCP + Weather AI API)
 6. MCP health endpoints accessible
 7. LangSmith tracing enabled
 8. Docker installed and running
+9. LangGraph CLI installed (for LangSmith Studio)
 """
 
 import os
@@ -67,9 +68,12 @@ def check_env_vars():
     }
 
     optional_vars = {
-        "ANTHROPIC_API_KEY": "Optional - for Claude models",
+        "ANTHROPIC_API_KEY": "Optional - for Claude models in future levels",
         "MCP_WEATHER_SERVER_ENABLED": "Optional - defaults to true",
-        "MCP_HURRICANE_SERVER_ENABLED": "Optional - defaults to true"
+        "MCP_HURRICANE_SERVER_ENABLED": "Optional - defaults to true",
+        "LOG_LEVEL": "Optional - defaults to 'info' (options: debug, info, warning, error)",
+        "LANGCHAIN_ENDPOINT": "Optional - defaults to 'https://api.smith.langchain.com'",
+        "LANGCHAIN_PROJECT": "Optional - defaults to 'weather-ai-agent-service'"
     }
 
     all_present = True
@@ -154,12 +158,13 @@ def check_anthropic_connection():
 
 def check_mcp_servers():
     """Check MCP Docker containers and health endpoints"""
-    print(f"\n🔎 Checking MCP Docker containers...")
+    print(f"\n🔎 Checking Docker containers...")
 
     import subprocess
 
     weather_url = os.getenv("MCP_WEATHER_SERVER_URL", "http://localhost:8080")
     hurricane_url = os.getenv("MCP_HURRICANE_SERVER_URL", "http://localhost:8081")
+    api_url = "http://localhost:8000"
 
     all_good = True
 
@@ -204,6 +209,21 @@ def check_mcp_servers():
                 print(f"{YELLOW}⚠️  Hurricane Tracker MCP container not found{RESET}")
                 print(f"   Run: docker-compose up -d")
                 all_good = False
+
+            # Check Weather AI API container (Level 1+)
+            if "weather-ai-api" in containers:
+                status = [line for line in containers.split('\n') if 'weather-ai-api' in line]
+                if status and 'Up' in status[0]:
+                    print(f"{GREEN}✅ Weather AI API container running{RESET}")
+                    print(f"   Container: weather-ai-api")
+                    print(f"   URL: {api_url}")
+                else:
+                    print(f"{YELLOW}⚠️  Weather AI API container exists but not running{RESET}")
+                    all_good = False
+            else:
+                print(f"{YELLOW}⚠️  Weather AI API container not found (needed for Level 1+){RESET}")
+                print(f"   Run: docker-compose up -d")
+                all_good = False
         else:
             print(f"{YELLOW}⚠️  Could not check Docker containers{RESET}")
             print(f"   Make sure Docker is running")
@@ -242,6 +262,17 @@ def check_mcp_servers():
             print(f"{YELLOW}⚠️  Hurricane Tracker MCP health endpoint not accessible{RESET}")
             print(f"   Make sure containers are running: docker-compose ps")
 
+        # Weather AI API health check (Level 1+)
+        try:
+            response = requests.get(f"{api_url}/health", timeout=2)
+            if response.status_code == 200:
+                print(f"{GREEN}✅ Weather AI API health check passed{RESET}")
+            else:
+                print(f"{YELLOW}⚠️  Weather AI API returned status {response.status_code}{RESET}")
+        except requests.exceptions.RequestException:
+            print(f"{YELLOW}⚠️  Weather AI API health endpoint not accessible (needed for Level 1+){RESET}")
+            print(f"   Make sure containers are running: docker-compose ps")
+
     except ImportError:
         print(f"{YELLOW}⚠️  requests library not installed, skipping health checks{RESET}")
 
@@ -253,20 +284,20 @@ def check_langsmith():
 
     tracing = os.getenv("LANGCHAIN_TRACING_V2")
     api_key = os.getenv("LANGCHAIN_API_KEY")
-    project = os.getenv("LANGCHAIN_PROJECT")
+    project = os.getenv("LANGCHAIN_PROJECT", "weather-ai-agent-service")  # Default value
+    endpoint = os.getenv("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
 
-    if tracing == "true" and api_key and project:
+    if tracing == "true" and api_key:
         print(f"{GREEN}✅ LangSmith tracing enabled{RESET}")
         print(f"   Project: {project}")
+        print(f"   Endpoint: {endpoint}")
         return True
     else:
         print(f"{RED}❌ LangSmith tracing not properly configured{RESET}")
         if tracing != "true":
             print(f"   LANGCHAIN_TRACING_V2={tracing} (should be 'true')")
         if not api_key:
-            print(f"   LANGCHAIN_API_KEY is missing")
-        if not project:
-            print(f"   LANGCHAIN_PROJECT is missing")
+            print(f"   LANGCHAIN_API_KEY is missing (required)")
         print(f"{YELLOW}   Get API key at: https://smith.langchain.com/{RESET}")
         return False
 
@@ -337,9 +368,40 @@ def check_project_structure():
 
     return all_present
 
+def check_langgraph_cli():
+    """Verify LangGraph CLI is installed (for LangSmith Studio)"""
+    print(f"\n🔎 Checking LangGraph CLI installation...")
+
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["langgraph", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            print(f"{GREEN}✅ LangGraph CLI is installed{RESET}")
+            print(f"   {version}")
+            return True
+        else:
+            print(f"{YELLOW}⚠️  LangGraph CLI found but version check failed{RESET}")
+            print(f"{YELLOW}   Reinstall: uv pip install 'langgraph-cli[inmem]'{RESET}")
+            return False
+    except FileNotFoundError:
+        print(f"{YELLOW}⚠️  LangGraph CLI not found (needed for LangSmith Studio){RESET}")
+        print(f"{YELLOW}   Install: uv pip install 'langgraph-cli[inmem]'{RESET}")
+        return False
+    except Exception as e:
+        print(f"{YELLOW}⚠️  LangGraph CLI check failed:{RESET} {str(e)[:100]}")
+        return False
+
 def main():
     """Run all verification checks"""
-    print_header("🔍 Level 0 Setup Verification")
+    print_header("🔍 Level 1 Setup Verification (ReAct Agent + HITL)")
 
     checks = [
         ("Python 3.13+", check_python_version),
@@ -347,9 +409,10 @@ def main():
         ("Project Structure", check_project_structure),
         ("OpenAI API", check_openai_connection),
         ("Anthropic API (Optional)", check_anthropic_connection),
-        ("MCP Docker Containers", check_mcp_servers),
+        ("All Docker Containers", check_mcp_servers),
         ("LangSmith", check_langsmith),
         ("Docker", check_docker),
+        ("LangGraph CLI (Optional)", check_langgraph_cli),
     ]
 
     results = []
@@ -367,22 +430,24 @@ def main():
     total = len(results)
 
     if all(results):
-        print(f"{GREEN}🎉 ALL {total} CHECKS PASSED! You're ready for Level 1!{RESET}")
-        print(f"\n{GREEN}Next step:{RESET} Proceed to Level 1 implementation")
-        print(f"  git checkout -b level-1-react-agent-hitl")
-        print(f"\n{BLUE}Reminder:{RESET} If you haven't already:")
-        print(f"  1. Copy .env.template to .env")
-        print(f"  2. Add your API keys to .env")
-        print(f"  3. Start Docker Desktop (when needed for Level 1+)")
+        print(f"{GREEN}🎉 ALL {total} CHECKS PASSED! Level 1 environment ready!{RESET}")
+        print(f"\n{GREEN}✅ Level 1 Complete:{RESET} ReAct Agent + HITL + MCP Integration")
+        print(f"\n{BLUE}Next steps:{RESET}")
+        print(f"  • Test agent: langgraph dev (opens LangSmith Studio)")
+        print(f"  • Test API: curl http://localhost:8000/health")
+        print(f"  • View traces: https://smith.langchain.com/")
+        print(f"  • Start Level 2: Plan CoT + RAG implementation")
         return 0
     else:
         print(f"\n{YELLOW}⚠️  {passed}/{total} CHECKS PASSED ({total - passed} failed){RESET}")
-        print(f"\n{RED}Please fix errors above before proceeding to Level 1.{RESET}")
+        print(f"\n{RED}Please fix errors above before proceeding.{RESET}")
         print(f"\n{BLUE}Common fixes:{RESET}")
         print(f"  • Copy .env.template to .env and add your API keys")
         print(f"  • Get OpenAI API key: https://platform.openai.com/api-keys")
         print(f"  • Get LangSmith API key: https://smith.langchain.com/")
+        print(f"  • Start Docker containers: docker-compose up -d")
         print(f"  • Install Docker Desktop: https://www.docker.com/products/docker-desktop/")
+        print(f"  • Install LangGraph CLI: uv pip install 'langgraph-cli[inmem]'")
         return 1
 
 if __name__ == "__main__":
