@@ -16,6 +16,8 @@
 
 **Current Stage**: Level 0 (Setup Complete) — Production environment
 
+**Current Stage**: ✅ **Level 1 Complete (v0.2.1)** — Production-ready weather agent with Docker containerization, complete MCP integration (all 3 tools: `get_current_weather`, `get_forecast`, `retrieve_weather_context`), ReAct pattern reasoning, Human-in-the-Loop (HITL) approval for safety-critical alerts, LangSmith Studio integration for visual real-time debugging, LangSmith Studio for real-time debugging, HITL workflow for hurricane alerts, and comprehensive testing suite
+
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
 
 ---
@@ -48,7 +50,9 @@
 | [**Python**](https://www.python.org/) | `3.13.5` | Modern Python runtime with performance improvements |
 | [**LangChain**](https://github.com/langchain-ai/langchain) | `1.1.0` | **AI framework** for building LLM applications |
 | [**LangGraph**](https://github.com/langchain-ai/langgraph) | `1.0.4` | **Agent runtime** with StateGraph, checkpointing, HITL |
+| [**LangGraph CLI**](https://docs.langchain.com/langgraph/cli) | `0.4.7` | **Development server** for LangSmith Studio (local agent debugging) |
 | [**LangSmith**](https://smith.langchain.com/) | `0.4.49` | **Observability & tracing** for debugging LLM apps |
+| [**LangSmith Studio**](https://docs.langchain.com/langgraph/studio) | Web | **Visual debugger** for real-time agent execution (prompts, tools, states) |
 | [**FastAPI**](https://fastapi.tiangolo.com/) | `0.123.0` | High-performance async web framework |
 | [**Pydantic**](https://docs.pydantic.dev/) | `2.12.5` | **Runtime validation** & type-safe data models |
 | [**OpenAI GPT-4**](https://platform.openai.com/) | `2.8.1` | Primary LLM provider (GPT-4o, GPT-4o-mini) |
@@ -119,7 +123,11 @@ This project uses **2 MCP servers** (Docker + HTTP Streamable transport) for wea
 | **Weather MCP Server** | 8080 | HTTP | [kumaran-is/mcp-weather-server](https://github.com/kumaran-is/mcp-weather-server/tree/develop) |
 | **Hurricane Tracker MCP** | 8081 | HTTP | [kumaran-is/hurricane-tracker-mcp](https://github.com/kumaran-is/hurricane-tracker-mcp) |
 
-**📖 [MCP Servers Setup Guide](docs/setup/mcp-servers-setup.md)** - Step-by-step instructions to clone, build, and run both servers as Docker containers.
+**[MCP Servers Setup Guide](docs/setup/mcp-servers-setup.md)** - Step-by-step instructions to clone, build, and run both servers as Docker containers.
+
+**Development Tools:**
+- **[LangSmith Studio Setup Guide](docs/setup/langsmith-studio-setup.md)** - Official LangChain visual debugger for testing agents locally with real-time visualization of prompts, tool calls, and execution flow. Perfect for debugging all 3 MCP weather tools.
+- **[Docker Usage Guide](docs/setup/docker-usage-guide.md)** - Complete guide for managing Docker containers with production and development modes, hot reload setup, and troubleshooting.
 
 ### Setup (15 minutes)
 
@@ -202,7 +210,7 @@ uv sync
 
 **4. Run verification**
 
-Run 8 automated checks:
+Run **8** automated checks:
 ```bash
 uv run python verify_setup.py
 ```
@@ -225,6 +233,8 @@ uv pip list | grep -E "langchain|langgraph|fastapi"
 
 ### Common Makefile Commands
 
+**Development & Testing**
+
 | Command | Description |
 |---------|-------------|
 | `make help` | Show all available commands |
@@ -241,18 +251,102 @@ uv pip list | grep -E "langchain|langgraph|fastapi"
 | `make update` | Update all dependencies to latest compatible versions |
 | `make lock` | Generate/update uv.lock file |
 
+
+**Docker Commands (3 Services: weather-mcp:8080, hurricane-mcp:8081, weather-ai-api:8000)**
+
+| Command | Description |
+|---------|-------------|
+| `make docker-up` | Start all Docker containers in detached mode |
+| `make docker-down` | Stop and remove all Docker containers |
+| `make docker-restart` | Restart all Docker containers |
+| `make docker-ps` | Show status of all Docker containers |
+| `make docker-logs` | Follow logs from all containers (Ctrl+C to exit) |
+| `make docker-health` | Check health status of all 3 services |
+| `make docker-clean` | Stop containers and remove volumes (⚠️ deletes all data) |
+
+**Typical Docker Workflow:**
+```bash
+# Start all services
+make docker-up
+
+# Check status
+make docker-ps
+make docker-health
+
+# Debug issues
+make docker-logs
+
+# Stop all services
+make docker-down
+```
+
 ### Project Structure
 ```
-weather-agent/
-├── docs/
-│   ├── setup/                   # MCP, Docker, Dependency setups
-├── src/                         # Source code (Level 1+)
-├── tests/                       # Tests (Level 1+)
+weather-ai-agent-service/
+├── backend/                     # Backend application (Level 1+)
+│   ├── config/                  # Settings and configuration
+│   │   └── settings.py          # Centralized app settings
+│   └── src/                     # Source code
+│       ├── agents/              # LangChain agents
+│       │   ├── state.py         # Agent state TypedDict
+│       │   ├── prompts.py       # System prompts
+│       │   └── weather_agent.py # ReAct agent (create_agent)
+│       ├── api/                 # FastAPI service
+│       │   ├── main.py          # FastAPI app + endpoints
+│       │   └── schemas.py       # Pydantic request/response models
+│       ├── hitl/                # Human-in-the-Loop
+│       │   └── approval_node.py # HITL approval nodes
+│       ├── mcp/                 # MCP client integration
+│       │   └── weather_client.py # Async HTTP MCP client
+│       ├── tools/               # LangChain tools
+│       │   └── weather_tools.py # 3 MCP tool wrappers (@tool)
+│       └── workflows/           # LangGraph workflows
+│           └── weather_graph.py # HITL StateGraph workflow
+├── docs/                        # Documentation
+│   ├── setup/                   # Setup guides
+│   │   ├── mcp-servers-setup.md        # MCP servers deployment
+│   │   ├── langsmith-studio-setup.md   # Studio integration (434 lines)
+│   │   └── docker-usage-guide.md       # Docker orchestration (production + development modes)
+│   ├── plan/                    # Level implementation plans
+│   │   ├── level-0-plan.md      # ✅ Level 0: Setup
+│   │   └── level-1-plan.md      # ✅ Level 1: ReAct + HITL
+│   ├── claude-guide/            # Claude Code guides
+│   ├── cline-reference-docs/    # Implementation patterns
+│   └── skill/                   # Skills documentation
+├── tests/                       # Test suite (Level 1+)
+│   ├── conftest.py              # Pytest fixtures
+│   ├── test_mcp_client.py       # MCP client tests
+│   ├── test_weather_tool.py     # Tool tests
+│   ├── test_react_agent.py      # Agent tests
+│   ├── test_hurricane_hitl.py   # HITL tests
+│   ├── test_workflow.py         # Workflow tests
+│   ├── test_api.py              # API endpoint tests
+│   └── test_integration.py      # Integration tests
+├── memory-bank/                 # Persistent context (both AI assistants)
+│   ├── projectbrief.md          # Core mission and objectives
+│   ├── productContext.md        # User problems and solutions
+│   ├── systemPatterns.md        # Architecture patterns
+│   ├── techContext.md           # Tech stack and requirements
+│   ├── activeContext.md         # Current work focus
+│   └── progress.md              # Completed work, remaining tasks
+├── Dockerfile                   # Multi-stage production build
+├── docker-compose.yml           # Service orchestration (MCP servers)
+├── langgraph.json               # LangSmith Studio configuration
 ├── pyproject.toml               # Project config (source of truth)
 ├── uv.lock                      # uv lockfile (reproducible builds)
-├── CHANGELOG.md                 # Version history
+├── Makefile                     # Development commands (17 tasks)
+├── verify_setup.py              # Level 0 verification (8 checks)
+├── test_docker_deployment.py    # Docker deployment tests
+├── CHANGELOG.md                 # Version history (v0.2.1)
+├── CLAUDE.md                    # AI assistant instructions
 └── README.md                    # This file
 ```
+
+**Key Highlights**:
+- **backend/src/**: Complete Level 1 implementation (agents, API, MCP, HITL, workflows)
+- **docs/setup/**: Comprehensive setup guides (MCP servers, Studio, Docker)
+- **tests/**: 8 test modules with 32 test cases (75% pass rate)
+- **langgraph.json**: Studio configuration for visual debugging
 
 **Note:** We use both `pyproject.toml` (defines what dependencies you want) and `uv.lock` (locks exact versions) to ensure reproducible builds across all environments.
 
@@ -260,7 +354,7 @@ weather-agent/
 
 ### Progressive Learning Path
 - **Level 0** (v0.1.0): Setup ✅
-- **Level 1** (v0.2.0): ReAct + HITL
+- **Level 1** (v0.2.0-v0.2.1): ReAct + HITL + LangSmith Studio ✅
 - **Level 2** (v0.3.0): CoT + RAG
 - **Level 3a-c** (v0.4.0-0.6.0): Memory (2-layer → 7-layer)
 - **Level 4a-c** (v0.7.0-0.9.0): Multi-Agent (3 → 15 agents)
