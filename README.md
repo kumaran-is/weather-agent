@@ -164,7 +164,7 @@ Edit `.env` with your editor of choice and add:
 - `LOG_LEVEL=info` (default: info, options: debug, info, warning, error)
 - `LANGCHAIN_TRACING_V2=true` (enable LangSmith tracing, default: true)
 - `LANGCHAIN_ENDPOINT=https://api.smith.langchain.com` (LangSmith API endpoint)
-- `LANGCHAIN_PROJECT=weather-agent` (LangSmith project name for traces)
+- `LANGCHAIN_PROJECT=weather-ai-agent-service` (LangSmith project name for traces)
 - 
 **3. Install all dependencies**
 
@@ -179,11 +179,11 @@ make sync
 
 **4. Run verification**
 
-Run 8 automated checks:
+Run **9** automated checks:
 ```bash
 make verify
 ```
-Expected output: `ALL 8 CHECKS PASSED!`
+Expected output: `ALL 9 CHECKS PASSED!`
 
 **5. (Optional) Activate virtual environment manually**
 
