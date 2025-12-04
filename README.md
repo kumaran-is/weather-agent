@@ -148,14 +148,24 @@ Edit `.env` with your editor of choice and add:
 **API Keys:**
 - `OPENAI_API_KEY` (Get from https://platform.openai.com/api-keys)
 - `LANGCHAIN_API_KEY` (Get from https://smith.langchain.com/)
-- `ANTHROPIC_API_KEY` (optional)
 
-**MCP Server URLs** (after running setup guide):
+**MCP Server URLs** (after running [setup guide](docs/setup/mcp-servers-setup.md)):
+
+*For local development (default)*:
 - `MCP_WEATHER_SERVER_URL=http://localhost:8080`
 - `MCP_WEATHER_SERVER_ENABLED=true`
 - `MCP_HURRICANE_SERVER_URL=http://localhost:8081`
 - `MCP_HURRICANE_SERVER_ENABLED=true`
 
+*For Docker deployment*: URLs are auto-configured via Docker Compose (no .env changes needed)
+
+**Optional Configuration:**
+- `ANTHROPIC_API_KEY` (for future levels using Claude models)
+- `LOG_LEVEL=info` (default: info, options: debug, info, warning, error)
+- `LANGCHAIN_TRACING_V2=true` (enable LangSmith tracing, default: true)
+- `LANGCHAIN_ENDPOINT=https://api.smith.langchain.com` (LangSmith API endpoint)
+- `LANGCHAIN_PROJECT=weather-agent` (LangSmith project name for traces)
+- 
 **3. Install all dependencies**
 
 This creates `.venv/` and installs 121 packages (including dev tools):
