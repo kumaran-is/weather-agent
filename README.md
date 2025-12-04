@@ -291,8 +291,9 @@ make docker-down
 ```
 
 ### Project Structure
+
 ```
-weather-ai-agent-service/
+weather-agent/
 ├── backend/                     # Backend application (Level 1+)
 │   ├── config/                  # Settings and configuration
 │   │   └── settings.py          # Centralized app settings
@@ -317,12 +318,6 @@ weather-ai-agent-service/
 │   │   ├── mcp-servers-setup.md        # MCP servers deployment
 │   │   ├── langsmith-studio-setup.md   # Studio integration (434 lines)
 │   │   └── docker-usage-guide.md       # Docker orchestration (production + development modes)
-│   ├── plan/                    # Level implementation plans
-│   │   ├── level-0-plan.md      # ✅ Level 0: Setup
-│   │   └── level-1-plan.md      # ✅ Level 1: ReAct + HITL
-│   ├── claude-guide/            # Claude Code guides
-│   ├── cline-reference-docs/    # Implementation patterns
-│   └── skill/                   # Skills documentation
 ├── tests/                       # Test suite (Level 1+)
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_mcp_client.py       # MCP client tests
@@ -332,13 +327,6 @@ weather-ai-agent-service/
 │   ├── test_workflow.py         # Workflow tests
 │   ├── test_api.py              # API endpoint tests
 │   └── test_integration.py      # Integration tests
-├── memory-bank/                 # Persistent context (both AI assistants)
-│   ├── projectbrief.md          # Core mission and objectives
-│   ├── productContext.md        # User problems and solutions
-│   ├── systemPatterns.md        # Architecture patterns
-│   ├── techContext.md           # Tech stack and requirements
-│   ├── activeContext.md         # Current work focus
-│   └── progress.md              # Completed work, remaining tasks
 ├── Dockerfile                   # Multi-stage production build
 ├── docker-compose.yml           # Service orchestration (MCP servers)
 ├── langgraph.json               # LangSmith Studio configuration
@@ -346,9 +334,7 @@ weather-ai-agent-service/
 ├── uv.lock                      # uv lockfile (reproducible builds)
 ├── Makefile                     # Development commands (17 tasks)
 ├── verify_setup.py              # Level 0 verification (8 checks)
-├── test_docker_deployment.py    # Docker deployment tests
 ├── CHANGELOG.md                 # Version history (v0.2.1)
-├── CLAUDE.md                    # AI assistant instructions
 └── README.md                    # This file
 ```
 
