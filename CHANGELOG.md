@@ -19,18 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-**RAG Infrastructure (Batch 2)**:
+**RAG Infrastructure**:
 - ✅ Qdrant vector store integration with 603 weather documents
 - ✅ OpenAI embeddings (text-embedding-3-small) for semantic search
 - ✅ CSV to narrative conversion pipeline for knowledge base
 - ✅ Kaggle dataset loaders for hurricane and weather data
 
-**RAG Integration (Batch 3)**:
+**RAG Integration**:
 - ✅ 4 RAG-enhanced tools: `analyze_trends`, `identify_patterns`, `compare_conditions`, `retrieve_weather_knowledge`
 - ✅ Unified agent architecture combining basic and RAG tools (8 total tools)
 - ✅ Semantic retrieval with similarity search
 
-**Chain-of-Thought Reasoning (Batch 4)**:
+**Chain-of-Thought Reasoning**:
 - ✅ 5-step CoT framework: Understand → Plan → Execute → Verify → Respond
 - ✅ 4 few-shot examples for hurricane category, evacuation, storm surge, wind speed queries
 - ✅ Dynamic reasoning traces in agent responses
