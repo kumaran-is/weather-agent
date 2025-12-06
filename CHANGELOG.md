@@ -10,8 +10,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Level 2: CoT + RAG (v0.3.0)
 - Level 3a: 2-Layer Memory (v0.4.0)
+- Complete Level 2 Testing & Evaluation (Ragas, 80% coverage)
+
+---
+
+## [0.3.0] - 2025-12-06 (Level 2: RAG + CoT + Hybrid Search - Implementation Complete)
+
+### Added
+
+**RAG Infrastructure (Batch 2)**:
+- ✅ Qdrant vector store integration with 603 weather documents
+- ✅ OpenAI embeddings (text-embedding-3-small) for semantic search
+- ✅ CSV to narrative conversion pipeline for knowledge base
+- ✅ Kaggle dataset loaders for hurricane and weather data
+
+**RAG Integration (Batch 3)**:
+- ✅ 4 RAG-enhanced tools: `analyze_trends`, `identify_patterns`, `compare_conditions`, `retrieve_weather_knowledge`
+- ✅ Unified agent architecture combining basic and RAG tools (8 total tools)
+- ✅ Semantic retrieval with similarity search
+
+**Chain-of-Thought Reasoning (Batch 4)**:
+- ✅ 5-step CoT framework: Understand → Plan → Execute → Verify → Respond
+- ✅ 4 few-shot examples for hurricane category, evacuation, storm surge, wind speed queries
+- ✅ Dynamic reasoning traces in agent responses
+
+**Hybrid Search (Phase 7)**:
+- ✅ Reciprocal Rank Fusion (RRF) combining semantic (70%) and keyword (30%) retrieval
+- ✅ BM25 keyword search implementation for exact term matching
+- ✅ Maximum Marginal Relevance (MMR) for result diversity
+- ✅ Function-based implementation (LangChain 1.x compatible, no deprecated EnsembleRetriever)
+
+**Structured Output Validation**:
+- ✅ Pydantic v2 models for type-safe responses
+- ✅ Structured output handler with retry logic and fallback mechanisms
+- ✅ 16 comprehensive tests (100% passing) for output validation
+
+**LangSmith Studio Configuration**:
+- ✅ 3 graph configurations: Basic agent, RAG agent, CoT agent
+- ✅ Interactive testing environment for all agent variants
+
+### Testing & Quality
+
+**Current Status**:
+- ✅ Structured output handler: 16/16 tests passing (99% coverage)
+- ⏳ Overall test coverage: 11% (target: 80%)
+- ⏳ Ragas evaluation framework (blocked on Python 3.13/PyArrow compatibility)
+- ⏳ Hybrid search unit tests (created, needs fixes)
+
+**Known Issues**:
+- PyArrow dependency incompatible with Python 3.13 (blocks Ragas installation)
+- Test coverage below target - requires comprehensive test suite for RAG pipeline, hybrid search, and agent components
+
+### Changed
+- Version badge updated from 0.3.1-phase7 to 0.3.0
+- README updated to reflect Level 2 implementation complete status
+- Documentation clarifies testing gap and next steps
+
+### Technical Details
+- **Python**: 3.13.5
+- **LangChain**: 1.0+
+- **LangGraph**: 1.0+
+- **Vector Store**: Qdrant (603 documents)
+- **Embeddings**: OpenAI text-embedding-3-small
+- **Search Method**: Hybrid (70% semantic + 30% BM25 keyword with RRF)
 
 ---
 

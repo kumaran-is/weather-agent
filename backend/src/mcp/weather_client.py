@@ -11,10 +11,9 @@ Level 1 Implementation:
 - NO health monitoring, failover, or structured logging (deferred to L5c)
 """
 
-from typing import Dict, Any
 import httpx
 from datetime import datetime, timezone
-import os
+from backend.config.settings import settings
 import json
 
 
@@ -42,7 +41,7 @@ class WeatherMCPClient:
             base_url: Base URL of the MCP server. If None, uses MCP_WEATHER_SERVER_URL
                      from environment or defaults to http://localhost:8080
         """
-        self.base_url = base_url or os.getenv("MCP_WEATHER_SERVER_URL", "http://localhost:8080")
+        self.base_url = base_url or settings.MCP_WEATHER_SERVER_URL
         self.client: httpx.AsyncClient | None = None
         self._initialized: bool = False
         self._session_id: str | None = None
@@ -63,7 +62,7 @@ class WeatherMCPClient:
             await self.client.aclose()
             self.client = None
 
-    def _parse_sse_response(self, sse_text: str) -> Dict[str, Any]:
+    def _parse_sse_response(self, sse_text: str) -> dict[str, any]:
         """Parse Server-Sent Events (SSE) response from MCP server.
 
         Args:
@@ -83,14 +82,14 @@ class WeatherMCPClient:
                 return json.loads(data_json)
         raise ValueError(f"No data found in SSE response: {sse_text}")
 
-    async def initialize(self) -> Dict[str, Any]:
+    async def initialize(self) -> dict[str, any]:
         """Initialize MCP session with the server.
 
         Establishes a session with the MCP server using the MCP initialization protocol.
         The session cookie is stored in the persistent client for subsequent requests.
 
         Returns:
-            Dict containing the initialization response from the server
+            dict containing the initialization response from the server
 
         Raises:
             httpx.HTTPError: If the HTTP request fails
@@ -135,14 +134,14 @@ class WeatherMCPClient:
         # Parse SSE response
         return self._parse_sse_response(response.text)
 
-    async def get_current_weather(self, location: str) -> Dict[str, Any]:
+    async def get_current_weather(self, location: str) -> dict[str, any]:
         """Get current weather conditions for a location.
 
         Args:
             location: City name or coordinates (e.g., 'Seattle' or '47.6062,-122.3321')
 
         Returns:
-            Dict containing current weather data:
+            dict containing current weather data:
                 - temperature: Current temperature
                 - condition: Weather condition (e.g., 'sunny', 'rainy')
                 - humidity: Humidity percentage
@@ -189,7 +188,7 @@ class WeatherMCPClient:
         # Parse SSE response
         return self._parse_sse_response(response.text)
 
-    async def get_forecast(self, location: str, days: int = 5) -> Dict[str, Any]:
+    async def get_forecast(self, location: str, days: int = 5) -> dict[str, any]:
         """Get weather forecast for a location.
 
         Args:
@@ -197,7 +196,7 @@ class WeatherMCPClient:
             days: Number of days to forecast (1-7, default 5)
 
         Returns:
-            Dict containing forecast data with daily predictions:
+            dict containing forecast data with daily predictions:
                 - forecast_7day: List of daily forecasts
                 - Each forecast includes: day, high, low, condition
 
@@ -248,7 +247,7 @@ class WeatherMCPClient:
         # Parse SSE response
         return self._parse_sse_response(response.text)
 
-    async def retrieve_weather_context(self, query: str) -> Dict[str, Any]:
+    async def retrieve_weather_context(self, query: str) -> dict[str, any]:
         """Retrieve weather context for AI agent queries.
 
         This method extracts weather information from natural language queries
@@ -260,7 +259,7 @@ class WeatherMCPClient:
                   (e.g., "weather in Paris for travel", "Should I bring an umbrella to London?")
 
         Returns:
-            Dict containing weather context extracted from the query
+            dict containing weather context extracted from the query
 
         Raises:
             httpx.HTTPError: If the HTTP request fails

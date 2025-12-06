@@ -1,4 +1,4 @@
-"""FastAPI application for Weather AI Agent - Level 1.
+"""FastAPI application for Weather AI Agent - Level 2.
 
 This module provides the main FastAPI application with REST endpoints for
 weather queries and hurricane alert management with HITL approval.
@@ -8,12 +8,24 @@ Level 1 Implementation:
 - 1 health check endpoint: /health
 - Basic error handling
 - Pydantic request/response validation
+
+Level 2 Enhancements:
+- Unified weather agent with flexible RAG and CoT configuration
+- 3-tier configuration: Runtime overrides > Env vars (.env) > Code defaults
+- Feature flags: ENABLE_RAG (8 tools), ENABLE_COT (5-step reasoning)
+- LLM parameter tuning (temperature 0.5, top_p 0.8 for CoT)
+- RAG integration with 8 tools (3 MCP + 5 RAG including hybrid search)
+- Hybrid Search (70% semantic + 30% BM25 keyword)
+- Chain-of-Thought with few-shot examples
+- Pydantic v2 structured outputs with life-safety validation
+
+Still Deferred:
 - NO authentication (deferred to L5c)
 - NO rate limiting (deferred to L5c)
 - NO metrics tracking (deferred to L5c)
 
 API Endpoints:
-- POST /weather/query - Query weather via ReAct agent
+- POST /weather/query - Flexible weather queries (supports enable_rag/enable_cot query params)
 - POST /weather/hurricane/alert - Create hurricane alert (may require approval)
 - POST /weather/hurricane/approve/{thread_id} - Approve or reject pending alert
 - GET /health - Health check
@@ -24,7 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 from langgraph.types import Command
 
-from backend.src.api.schemas import (
+from backend.src.models import (
     WeatherQuery,
     WeatherResponse,
     HurricaneAlertRequest,
@@ -44,8 +56,8 @@ logger = logging.getLogger(__name__)
 # Create FastAPI app
 app = FastAPI(
     title="Weather AI Agent API",
-    description="Level 1: Basic ReAct Agent with HITL approval for hurricane alerts",
-    version="1.0.0",
+    description="Level 2: ReAct Agent with RAG (Hybrid Search), CoT reasoning, and HITL approval for hurricane alerts",
+    version="0.3.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -69,32 +81,49 @@ workflow = get_weather_hitl_workflow()
     response_model=WeatherResponse,
     status_code=status.HTTP_200_OK,
     summary="Query weather conditions",
-    description="Ask the weather agent about current conditions or forecasts for any location",
+    description="Ask the weather agent about current conditions or forecasts for any location. Optionally override RAG/CoT settings via query parameters.",
     tags=["Weather"]
 )
-async def weather_query_endpoint(query: WeatherQuery):
-    """Query weather via ReAct agent.
+async def weather_query_endpoint(
+    query: WeatherQuery,
+    enable_rag: bool | None = None,
+    enable_cot: bool | None = None,
+):
+    """Query weather agent with flexible configuration.
 
     This endpoint accepts natural language weather questions and returns
-    responses from the ReAct agent using MCP weather tools.
+    responses from the weather agent. Feature flags can be overridden per request.
 
-    Example Request:
+    **Configuration Priority**:
+    1. Query parameters (enable_rag, enable_cot) - Highest priority
+    2. Environment variables (ENABLE_RAG, ENABLE_COT) - Default
+    3. Code defaults (True, True) - Fallback
+
+    Example Request (use .env defaults):
         POST /weather/query
         {
             "query": "What's the weather in London?",
-            "user_id": "user123",
-            "session_id": "session456"
+            "user_id": "user123"
+        }
+
+    Example Request (override RAG):
+        POST /weather/query?enable_rag=false
+        {
+            "query": "What's the weather in London?",
+            "user_id": "user123"
         }
 
     Example Response:
         {
-            "response": "The weather in London is currently 15°C and rainy with 85% humidity...",
+            "response": "The weather in London is currently 15°C and rainy...",
             "user_id": "user123",
             "timestamp": "2025-12-03T16:20:00Z"
         }
 
     Args:
         query: WeatherQuery with user question, user_id, and optional session_id
+        enable_rag: Optional override for ENABLE_RAG env var (None = use env default)
+        enable_cot: Optional override for ENABLE_COT env var (None = use env default)
 
     Returns:
         WeatherResponse with agent's answer and metadata
@@ -102,15 +131,27 @@ async def weather_query_endpoint(query: WeatherQuery):
     Raises:
         HTTPException: 500 if agent query fails
     """
+    from backend.config.settings import settings
+
+    # Determine effective configuration (query param > env var > default)
+    effective_rag = enable_rag if enable_rag is not None else settings.ENABLE_RAG
+    effective_cot = enable_cot if enable_cot is not None else settings.ENABLE_COT
+
     try:
         logger.info(
             f"Weather query received | "
             f"user_id: {query.user_id} | "
-            f"query: {query.query}"
+            f"query: {query.query} | "
+            f"enable_rag: {effective_rag} | "
+            f"enable_cot: {effective_cot}"
         )
 
-        # Query the weather agent
-        result = await query_weather(query.query)
+        # Query the weather agent with configuration
+        result = await query_weather(
+            query.query,
+            enable_rag=effective_rag,
+            enable_cot=effective_cot
+        )
 
         logger.info(
             f"Weather query successful | "
@@ -372,17 +413,19 @@ async def health_check():
 
     return HealthCheckResponse(
         status="healthy",
-        level="1",
+        level="2",  # Updated to Level 2 (Batches 1-4: Unified Agent with RAG + CoT)
         timestamp=datetime.now(timezone.utc).isoformat()
     )
 
 
-# Optional: Add startup and shutdown events for Level 1
+# Optional: Add startup and shutdown events
 @app.on_event("startup")
 async def startup_event():
     """Log startup message."""
     logger.info("Weather AI Agent API starting up...")
-    logger.info("Level 1: Basic ReAct Agent + HITL")
+    logger.info("Level 2: Unified Agent (RAG + CoT) + Hybrid Search + LLM Tuning + Pydantic v2")
+    logger.info("Hybrid Search: 70% semantic + 30% BM25 keyword")
+    logger.info("Tools: 8 total (3 MCP + 5 RAG including hybrid_search_weather_knowledge)")
     logger.info("API documentation available at /docs")
 
 

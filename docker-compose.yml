@@ -3,16 +3,16 @@
 # ============================================================================
 # This file orchestrates all services required for the Weather AI Agent.
 #
-# LEVEL 1 (Current): MCP Servers + Backend Agent Service
+# LEVEL 2 (Current): MCP Servers + Backend Agent Service + Qdrant Vector DB
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
 #   - Weather AI Agent API (port 8000)
+#   - Qdrant Vector Database (port 6333) - NEW in L2
 #
 # FUTURE LEVELS (Incremental):
-#   - Level 2: RAG agent (no new services)
 #   - Level 3: Redis (memory/cache), PostgreSQL (checkpointer)
 #   - Level 4: Multi-agent system (no new services)
-#   - Level 5: Qdrant (vector DB), Monitoring
+#   - Level 5: Production optimization (monitoring, etc.)
 #   - Level 6: Self-evolving (no new services)
 #
 # Run with: docker-compose up -d
@@ -107,7 +107,35 @@ services:
           memory: 128M
 
   # ==========================================================================
-  # Weather AI Agent API (Port 8000) - Level 1
+  # Qdrant Vector Database (Port 6333) - Level 2
+  # ==========================================================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: weather-ai-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API (optional)
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - mcp-network
+    # Note: Health check disabled - Qdrant container doesn't have wget/curl
+    # Qdrant starts reliably and weather-ai-api will retry on connection failure
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================================================
+  # Weather AI Agent API (Port 8000) - Level 2
   # ==========================================================================
   weather-ai-api:
     build:
@@ -129,18 +157,22 @@ services:
       - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
       - MCP_WEATHER_SERVER_ENABLED=true
       - MCP_HURRICANE_SERVER_ENABLED=true
+      # Qdrant Vector Database (Level 2 - RAG)
+      - QDRANT_URL=http://qdrant:6333
       # Application settings
       - ENVIRONMENT=production
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # LangSmith tracing
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-level-1}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-level-2}
     depends_on:
       weather-mcp:
         condition: service_started
       hurricane-mcp:
         condition: service_healthy
+      qdrant:
+        condition: service_started  # Changed from service_healthy (no health check)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -167,17 +199,18 @@ networks:
     name: weather-ai-mcp-network
 
 # ============================================================================
-# Volumes (Current: Level 0)
+# Volumes (Current: Level 2)
 # ============================================================================
 volumes:
   weather-logs:
     name: weather-mcp-logs
   hurricane-logs:
     name: hurricane-mcp-logs
+  qdrant-data:
+    name: weather-ai-qdrant-data  # Level 2 - Qdrant vector storage
   # Future volumes (added progressively):
   # redis-data:           # Level 3a - Redis persistence
   # postgres-data:        # Level 3b - PostgreSQL checkpointer
-  # qdrant-data:          # Level 5a - Qdrant vector storage
 
 # ============================================================================
 # Future Services (Commented - Added Progressively by Level)
@@ -214,18 +247,8 @@ volumes:
 #     - mcp-network
 #
 # # ==========================================================================
-# # Qdrant (Level 5a - Vector Database)
+# # Qdrant (✅ ACTIVE in Level 2 - See active services above)
 # # ==========================================================================
-# qdrant:
-#   image: qdrant/qdrant:latest
-#   container_name: weather-ai-qdrant
-#   ports:
-#     - "6333:6333"  # HTTP API
-#     - "6334:6334"  # gRPC API
-#   volumes:
-#     - qdrant-data:/qdrant/storage
-#   networks:
-#     - mcp-network
 #
 # # ==========================================================================
 # # Weather AI Agent FastAPI (Level 5b - REST API)

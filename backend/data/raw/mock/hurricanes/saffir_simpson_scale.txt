@@ -1,0 +1,90 @@
+Saffir-Simpson Hurricane Wind Scale
+
+The Saffir-Simpson Hurricane Wind Scale is a 1 to 5 rating based on a hurricane's sustained wind speed. This scale estimates potential property damage and is used by the National Hurricane Center to categorize tropical cyclones with sustained winds greater than 74 mph.
+
+Category 1 Hurricane (74-95 mph winds)
+Sustained winds: 74-95 mph
+Very dangerous winds will produce some damage. Well-constructed frame homes could have damage to roof, shingles, vinyl siding, and gutters. Large branches of trees will snap and shallowly rooted trees may be toppled. Extensive damage to power lines and poles likely will result in power outages that could last a few to several days.
+
+Typical damage:
+- Roof damage to well-built homes
+- Tree branches broken, shallow-rooted trees uprooted
+- Power outages lasting several days
+- Minor flooding in coastal areas
+
+Examples: Hurricane Sally (2020), Dolly (2008)
+
+Category 2 Hurricane (96-110 mph winds)
+Sustained winds: 96-110 mph
+Extremely dangerous winds will cause extensive damage. Well-constructed frame homes could sustain major roof and siding damage. Many shallowly rooted trees will be snapped or uprooted and block numerous roads. Near-total power loss is expected with outages that could last from several days to weeks.
+
+Typical damage:
+- Major roof and siding damage to frame homes
+- Many trees snapped or uprooted, blocking roads
+- Power outages lasting weeks
+- Significant coastal flooding and storm surge
+
+Examples: Hurricane Ike (2008), Frances (2004)
+
+Category 3 Hurricane (111-129 mph winds) - MAJOR HURRICANE
+Sustained winds: 111-129 mph
+Devastating damage will occur. Well-built framed homes may incur major damage or removal of roof decking and gable ends. Many trees will be snapped or uprooted, blocking numerous roads. Electricity and water will be unavailable for several days to weeks after the storm passes.
+
+Typical damage:
+- Devastating damage to well-built homes
+- Loss of roof decking and gable ends
+- Many trees down, extensive road blockage
+- Power and water unavailable for weeks
+- Major coastal flooding, significant storm surge
+
+EVACUATION RECOMMENDED for categories 3-5 in coastal areas.
+
+Examples: Hurricane Ivan (2004), Katrina (2005) at landfall, Rita (2005)
+
+Category 4 Hurricane (130-156 mph winds) - MAJOR HURRICANE
+Sustained winds: 130-156 mph
+Catastrophic damage will occur. Well-built framed homes can sustain severe damage with loss of most of the roof structure and/or some exterior walls. Most trees will be snapped or uprooted and power poles downed. Fallen trees and power poles will isolate residential areas. Power outages will last weeks to possibly months. Most of the area will be uninhabitable for weeks or months.
+
+Typical damage:
+- Catastrophic damage with loss of roof structure
+- Some exterior walls may collapse
+- Most trees snapped or uprooted
+- Residential areas isolated for weeks
+- Long-term power outages (weeks to months)
+- Extreme storm surge, life-threatening coastal flooding
+
+MANDATORY EVACUATION REQUIRED for coastal areas and evacuation zones A, B, C.
+
+Examples: Hurricane Harvey (2017), Michael (2018), Ian (2022), Ida (2021)
+
+Category 5 Hurricane (157+ mph winds) - MAJOR HURRICANE
+Sustained winds: 157 mph or higher
+Catastrophic damage will occur. A high percentage of framed homes will be destroyed, with total roof failure and wall collapse. Fallen trees and power poles will isolate residential areas. Power outages will last for weeks to possibly months. Most of the area will be uninhabitable for weeks or months.
+
+Typical damage:
+- Total roof failure and wall collapse in most homes
+- Nearly all trees and power poles down
+- Complete destruction of mobile homes
+- Total isolation of residential areas
+- Catastrophic storm surge, extreme flooding
+- Long-term inhabitability issues (months)
+
+IMMEDIATE EVACUATION MANDATORY for ALL coastal areas and evacuation zones A, B, C, D, E.
+
+Examples: Hurricane Katrina (2005, Category 5 over water), Michael (2018, Category 5 at landfall), Milton (2024, Category 5), Camille (1969), Andrew (1992)
+
+Important Notes:
+- Categories are based on SUSTAINED wind speed only, not gusts
+- Storm surge is NOT factored into category, but is often the deadliest aspect
+- A Category 3 hurricane can have higher storm surge than a Category 5 if conditions align
+- Wind speed must be verified by National Hurricane Center aircraft reconnaissance or surface observations
+- Never underestimate lower category hurricanes - even Category 1 can cause life-threatening flooding
+
+Storm Surge by Category (Typical):
+- Category 1: 4-5 feet above normal
+- Category 2: 6-8 feet above normal
+- Category 3: 9-12 feet above normal
+- Category 4: 13-18 feet above normal
+- Category 5: 19+ feet above normal
+
+Note: Actual storm surge depends on many factors including storm size, forward speed, angle of approach to coast, and shape of coastline. Some Category 3 hurricanes have produced higher storm surge than Category 5 storms.
