@@ -1,0 +1,175 @@
+Heat Index - Understanding "Feels Like" Temperature
+
+The heat index, also known as the "apparent temperature" or "feels like" temperature, combines air temperature and relative humidity to determine how hot it actually feels to the human body.
+
+How Heat Index Works
+
+When humidity is high, sweat does not evaporate as quickly from the skin. Since evaporation of sweat is the body's primary cooling mechanism, high humidity reduces the body's ability to cool itself, making it feel hotter than the actual air temperature.
+
+Formula:
+The National Weather Service uses the Steadman formula to calculate heat index. The formula considers:
+- Air temperature (°F)
+- Relative humidity (%)
+
+Simplified calculation (approximation):
+Heat Index = -42.379 + (2.04901523 × T) + (10.14333127 × RH) - (0.22475541 × T × RH) - (6.83783 × 10⁻³ × T²) - (5.481717 × 10⁻² × RH²) + (1.22874 × 10⁻³ × T² × RH) + (8.5282 × 10⁻⁴ × T × RH²) - (1.99 × 10⁻⁶ × T² × RH²)
+
+Where: T = Temperature (°F), RH = Relative Humidity (%)
+
+Heat Index Table (Quick Reference)
+
+Temperature 80°F:
+- 40% humidity → Heat Index: 80°F
+- 60% humidity → Heat Index: 82°F
+- 80% humidity → Heat Index: 84°F
+- 100% humidity → Heat Index: 87°F
+
+Temperature 90°F:
+- 40% humidity → Heat Index: 91°F
+- 60% humidity → Heat Index: 100°F
+- 80% humidity → Heat Index: 113°F
+- 100% humidity → Heat Index: 132°F
+
+Temperature 100°F:
+- 40% humidity → Heat Index: 109°F
+- 60% humidity → Heat Index: 129°F
+- 80% humidity → Heat Index: 157°F (EXTREMELY DANGEROUS)
+- 100% humidity → Heat Index: 212°F (DEADLY)
+
+Temperature 110°F:
+- 40% humidity → Heat Index: 136°F
+- 60% humidity → Heat Index: 177°F (DEADLY)
+- 80% humidity → Heat Index: 239°F (UNSURVIVABLE)
+
+Heat Index Categories and Health Risks
+
+80-90°F (Caution)
+- Fatigue possible with prolonged exposure and physical activity
+- Stay hydrated
+- Take breaks if working outdoors
+
+90-103°F (Extreme Caution)
+- Heat cramps and heat exhaustion possible
+- Prolonged exposure and/or physical activity can cause heat-related illness
+- Limit outdoor activities
+- Drink water every 15-20 minutes
+
+103-124°F (Danger)
+- Heat cramps and heat exhaustion likely
+- Heat stroke possible with prolonged exposure and/or physical activity
+- Avoid strenuous outdoor activities
+- Stay in air conditioning if possible
+- Check on elderly and vulnerable individuals
+
+125°F+ (Extreme Danger)
+- Heat stroke highly likely with continued exposure
+- Life-threatening emergency
+- STAY INDOORS in air conditioning
+- Avoid ALL outdoor activity
+- Emergency medical attention may be required for heat illness
+
+Important Notes:
+- Heat index is calculated for shady locations
+- Direct sunlight can increase heat index by up to 15°F
+- Children, elderly, and those with chronic conditions are at higher risk
+- Alcohol and certain medications can increase heat sensitivity
+
+When Heat Index Matters Most
+
+Time of Day:
+- Peak heat index: 2-5 PM (warmest part of day)
+- Overnight: Low humidity can provide relief
+- Morning: Often lower heat index due to cooler temperatures
+
+Season:
+- Summer: Most critical (June-September in Northern Hemisphere)
+- Late spring/early fall: Can also have dangerous heat index values
+
+Geography:
+- Humid climates: Higher heat index (Southeast US, Gulf Coast, tropical areas)
+- Dry climates: Lower heat index, but high temperatures still dangerous (Southwest US)
+
+Heat Index vs. Wind Chill
+
+Heat Index (Summer):
+- Combines temperature + humidity
+- Higher humidity = feels hotter
+- Reduces body's cooling ability
+
+Wind Chill (Winter):
+- Combines temperature + wind speed
+- Higher wind = feels colder
+- Increases heat loss from exposed skin
+
+Heat Index Safety Tips
+
+Hydration:
+- Drink water before you feel thirsty
+- Avoid caffeine and alcohol
+- Drink 8-12 ounces of water every 15-20 minutes during activity
+
+Clothing:
+- Wear lightweight, light-colored, loose-fitting clothing
+- Use breathable fabrics (cotton, moisture-wicking materials)
+- Wear wide-brimmed hat for sun protection
+
+Activity Modification:
+- Schedule outdoor activities for early morning or evening
+- Take frequent breaks in shade or air conditioning
+- Reduce intensity and duration of activity
+- Use buddy system - watch for signs of heat illness in others
+
+Environment:
+- Seek air-conditioned spaces during peak heat
+- Never leave children or pets in vehicles
+- Check on elderly neighbors and those without air conditioning
+- Close curtains/blinds to block direct sunlight
+
+Heat-Related Illnesses
+
+Heat Cramps:
+- Symptoms: Muscle pain, spasms
+- Treatment: Rest in cool place, drink water, gentle stretching
+
+Heat Exhaustion:
+- Symptoms: Heavy sweating, weakness, dizziness, nausea, headache
+- Treatment: Move to cool place, drink water, apply cool cloths, seek medical help if symptoms worsen
+
+Heat Stroke (MEDICAL EMERGENCY):
+- Symptoms: High body temperature (103°F+), hot/dry skin, confusion, unconsciousness
+- Treatment: Call 911 immediately, move to cool place, cool body with water/ice
+
+Recognition: If heat index is 103°F+, heat stroke risk is significant. Know the warning signs and act quickly.
+
+Record Heat Index Values
+
+United States Records:
+- Highest heat index recorded: 180-190°F (various locations, Gulf Coast)
+- Most common extreme: 130-150°F (Midwest heatwaves, Southeast summer)
+
+Global Records:
+- Dhahran, Saudi Arabia (2003): Heat index ~175°F
+- Death Valley, USA: Extreme heat but low humidity (lower heat index than expected)
+- Persian Gulf: Regularly exceeds 150°F heat index in summer
+
+Climate Change Impact
+
+Heat index values are increasing due to climate change:
+- More frequent extreme heat events
+- Longer duration heatwaves
+- Higher overnight temperatures (less cooling relief)
+- Increased humidity in some regions
+
+Adaptation strategies:
+- Improved building design (better insulation, air conditioning)
+- Heat action plans in cities
+- Public cooling centers
+- Enhanced heat warning systems
+
+Additional Resources
+
+- National Weather Service Heat Index Calculator: https://www.weather.gov/safety/heat-index
+- CDC Heat and Health Tracker: https://ephtracking.cdc.gov/Applications/heatTracker/
+- NOAA Heat Safety: https://www.weather.gov/safety/heat
+
+Remember: When heat index reaches 103°F or higher, outdoor activity becomes dangerous. Always check the heat index before planning outdoor activities in summer months.

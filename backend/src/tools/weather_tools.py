@@ -18,12 +18,12 @@ MCP Tool Mapping:
 
 from langchain_core.tools import tool
 from backend.src.mcp.weather_client import WeatherMCPClient
-import os
+from backend.config.settings import settings
 
 
 # Initialize MCP client (singleton pattern for Level 1)
 weather_mcp_client = WeatherMCPClient(
-    base_url=os.getenv("MCP_WEATHER_SERVER_URL", "http://localhost:8080")
+    base_url=settings.MCP_WEATHER_SERVER_URL
 )
 
 

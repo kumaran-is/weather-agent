@@ -269,3 +269,12 @@ logs/
 # LangSmith local cache
 .langsmith/
 
+# ================================================================
+# Kaggle Datasets (Level 2+)
+# ================================================================
+# Large CSV files (216 MB total) excluded from Git
+# Users should download from Kaggle directly:
+# - See docs/setup/rag-datasets-guide.md for download instructions
+# - Respects Kaggle's terms of service (users must accept terms)
+# - Keeps repository lightweight
+backend/data/raw/kaggle/*.csv

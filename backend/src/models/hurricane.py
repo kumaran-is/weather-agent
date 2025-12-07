@@ -1,73 +1,25 @@
-"""Pydantic schemas for FastAPI request/response models.
+"""Hurricane Alert and Approval Models
 
-This module defines all request and response models for the Weather AI Agent API.
+This module defines Pydantic models for hurricane alert workflow with HITL approval.
 
 Level 1 Implementation:
-- Basic request/response models
-- Pydantic v2 validation
-- Clear field descriptions for API documentation
-- NO advanced validation (deferred to L2+)
+- HurricaneAlertRequest: Request to create hurricane alert
+- HurricaneAlertResponse: Response with alert status (sent/pending/cancelled)
+- HurricaneApprovalRequest: Human approval decision
+- HurricaneApprovalResponse: Final status after approval
+
+Level 2 Enhancements:
+- Added timestamp to HurricaneAlertResponse for tracking
+
+Future Levels:
+- Level 3+: Add Saffir-Simpson scale validation (category must match wind speed)
+- Level 5+: Add evacuation zone validation and life-safety checks
 """
 
 from pydantic import BaseModel, Field
 from typing import Literal
 from datetime import datetime, timezone
 import uuid
-
-
-class WeatherQuery(BaseModel):
-    """Request model for weather query endpoint.
-
-    Example:
-        {
-            "query": "What's the weather in London?",
-            "user_id": "user123",
-            "session_id": "session456"
-        }
-    """
-
-    query: str = Field(
-        ...,
-        description="Weather question from the user",
-        min_length=1,
-        max_length=500,
-        examples=["What's the weather in London?", "Will it rain tomorrow in Seattle?"]
-    )
-    user_id: str = Field(
-        ...,
-        description="Unique identifier for the user",
-        examples=["user123", "uuid-here"]
-    )
-    session_id: str | None = Field(
-        default=None,
-        description="Optional session identifier for conversation context",
-        examples=["session456", "uuid-here"]
-    )
-
-
-class WeatherResponse(BaseModel):
-    """Response model for weather query endpoint.
-
-    Example:
-        {
-            "response": "The weather in London is 15°C and rainy...",
-            "user_id": "user123",
-            "timestamp": "2025-12-03T16:20:00Z"
-        }
-    """
-
-    response: str = Field(
-        ...,
-        description="Agent's response to the weather query"
-    )
-    user_id: str = Field(
-        ...,
-        description="User identifier from the request"
-    )
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
-        description="ISO 8601 timestamp in UTC"
-    )
 
 
 class HurricaneAlertRequest(BaseModel):
@@ -168,29 +120,4 @@ class HurricaneApprovalResponse(BaseModel):
     thread_id: str = Field(
         ...,
         description="Thread ID of the alert workflow"
-    )
-
-
-class HealthCheckResponse(BaseModel):
-    """Response model for health check endpoint.
-
-    Example:
-        {
-            "status": "healthy",
-            "level": "1",
-            "timestamp": "2025-12-03T16:20:00Z"
-        }
-    """
-
-    status: Literal["healthy", "unhealthy"] = Field(
-        default="healthy",
-        description="Health status of the service"
-    )
-    level: str = Field(
-        default="1",
-        description="Current implementation level"
-    )
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
-        description="ISO 8601 timestamp in UTC"
     )

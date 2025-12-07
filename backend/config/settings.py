@@ -10,11 +10,22 @@ Usage:
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
-from typing import Literal
+from pydantic import Field, field_validator, BeforeValidator
+from typing import Literal, Annotated
 from functools import lru_cache
 import os
 from pathlib import Path
+
+
+def parse_cors_origins(v: str | list[str]) -> list[str]:
+    """Parse CORS_ORIGINS from string or list."""
+    if isinstance(v, str):
+        # Handle empty string
+        if not v or v.strip() == "":
+            return ["*"]
+        # Handle comma-separated string
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
+    return v if isinstance(v, list) else ["*"]
 
 
 # Get project root directory (using resolve() for absolute path - more robust)
@@ -37,7 +48,9 @@ class Settings(BaseSettings):
         env_file=str(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="ignore"  # Ignore extra env vars not defined here
+        extra="ignore",  # Ignore extra env vars not defined here
+        # Disable JSON parsing for list fields - use custom validators instead
+        env_parse_none_str="null"
     )
 
     # ============================================================================
@@ -170,6 +183,38 @@ class Settings(BaseSettings):
     )
 
     # ============================================================================
+    # AGENT FEATURE FLAGS (Level 2+)
+    # ============================================================================
+
+    ENABLE_RAG: bool = Field(
+        default=True,
+        description="Enable RAG retrieval (8 tools: 3 MCP + 5 RAG). Can be overridden at runtime."
+    )
+
+    ENABLE_COT: bool = Field(
+        default=True,
+        description="Enable Chain-of-Thought reasoning (5-step framework). Can be overridden at runtime."
+    )
+
+    # ============================================================================
+    # HYBRID SEARCH CONFIGURATION (Level 2)
+    # ============================================================================
+
+    HYBRID_SEARCH_VECTOR_WEIGHT: float = Field(
+        default=0.7,
+        description="Weight for vector (semantic) search in hybrid search (0.0-1.0). Default: 0.7 (70%)",
+        ge=0.0,
+        le=1.0
+    )
+
+    HYBRID_SEARCH_BM25_WEIGHT: float = Field(
+        default=0.3,
+        description="Weight for BM25 (keyword) search in hybrid search (0.0-1.0). Default: 0.3 (30%)",
+        ge=0.0,
+        le=1.0
+    )
+
+    # ============================================================================
     # DATABASE CONFIGURATION (for future levels)
     # ============================================================================
 
@@ -185,7 +230,12 @@ class Settings(BaseSettings):
 
     QDRANT_URL: str = Field(
         default="http://localhost:6333",
-        description="Qdrant vector database URL (Level 5a+)"
+        description="Qdrant vector database URL (Level 2+)"
+    )
+
+    QDRANT_API_KEY: str | None = Field(
+        default=None,
+        description="Qdrant API key (optional, for Qdrant Cloud in Level 5a+)"
     )
 
     # ============================================================================
@@ -216,9 +266,9 @@ class Settings(BaseSettings):
     # CORS CONFIGURATION
     # ============================================================================
 
-    CORS_ORIGINS: list[str] = Field(
-        default=["*"],
-        description="Allowed CORS origins (restrict in production)"
+    CORS_ORIGINS: str = Field(
+        default="*",
+        description="Allowed CORS origins (comma-separated string, e.g., 'http://localhost:3000,http://localhost:8080')"
     )
 
     CORS_ALLOW_CREDENTIALS: bool = Field(
@@ -284,6 +334,31 @@ class Settings(BaseSettings):
             raise ValueError("MUST change SECRET_KEY in production environment!")
         return v
 
+    @field_validator("MODEL_MAX_TOKENS", mode="before")
+    @classmethod
+    def validate_model_max_tokens(cls, v) -> int | None:
+        """Handle empty string for optional int field."""
+        if v == "" or v is None:
+            return None
+        return int(v) if isinstance(v, str) else v
+
+    @field_validator("HYBRID_SEARCH_BM25_WEIGHT")
+    @classmethod
+    def validate_hybrid_search_weights(cls, v: float, info) -> float:
+        """Ensure hybrid search weights sum to approximately 1.0."""
+        vector_weight = info.data.get("HYBRID_SEARCH_VECTOR_WEIGHT", 0.7)
+        bm25_weight = v
+        total = vector_weight + bm25_weight
+
+        # Allow small floating point errors (within 0.01)
+        if abs(total - 1.0) > 0.01:
+            raise ValueError(
+                f"Hybrid search weights must sum to 1.0. "
+                f"Current: VECTOR_WEIGHT={vector_weight} + BM25_WEIGHT={bm25_weight} = {total}. "
+                f"Please adjust weights so they sum to 1.0 (e.g., 0.7 + 0.3 = 1.0)"
+            )
+        return v
+
     # ============================================================================
     # COMPUTED PROPERTIES
     # ============================================================================
@@ -302,6 +377,11 @@ class Settings(BaseSettings):
     def api_base_url(self) -> str:
         """Get the full API base URL."""
         return f"http://{self.HOST}:{self.PORT}"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS string to list for FastAPI."""
+        return parse_cors_origins(self.CORS_ORIGINS)
 
 
 # ============================================================================

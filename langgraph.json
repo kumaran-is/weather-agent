@@ -2,12 +2,12 @@
   "dependencies": ["."],
   "graphs": {
     "weather_agent": {
-      "path": "./backend/src/agents/weather_agent.py:create_weather_agent",
-      "description": "ReAct agent with 3 MCP weather tools (current, forecast, context)"
+      "path": "./backend/src/agents/weather_agent.py:create_weather_agent_graph",
+      "description": "Production weather agent with RAG + CoT (configure via .env: ENABLE_RAG/ENABLE_COT, override at runtime via configurable)"
     },
     "weather_hitl_workflow": {
       "path": "./backend/src/workflows/weather_graph.py:get_weather_hitl_workflow",
-      "description": "HITL workflow with hurricane approval for Category 3+ storms"
+      "description": "Level 1: HITL workflow with hurricane approval for Category 3+ storms"
     }
   },
   "env": ".env",
