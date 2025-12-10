@@ -46,14 +46,14 @@ cd ..
 git clone https://github.com/kumaran-is/hurricane-tracker-mcp.git
 cd ..
 
-# Return to weather-ai-agent-service
-cd weather-ai-agent-service
+# Return to weather-agent
+cd weather-agent
 ```
 
 **Directory structure**:
 ```
 ~/mydrive/personal/
-├── weather-ai-agent-service/       # This project
+├── weather-agent/       # This project
 │   └── docker-compose.yml          # Orchestrates both MCP servers
 ├── mcp-weather-server/             # Weather MCP (port 8080)
 └── hurricane-tracker-mcp/          # Hurricane MCP (port 8081)
@@ -61,7 +61,7 @@ cd weather-ai-agent-service
 
 ### 2. Start Both Servers
 
-From the `weather-ai-agent-service` directory:
+From the `weather-agent` directory:
 
 ```bash
 docker-compose up -d --build
@@ -112,7 +112,7 @@ docker-compose logs -f
 
 ### 5. Update Project .env
 
-In your `weather-ai-agent-service/.env` file:
+In your `weather-agent/.env` file:
 
 ```bash
 # Weather MCP Server
@@ -207,7 +207,7 @@ docker-compose logs --tail 50
 ### Quick Status Check
 
 ```bash
-# From weather-ai-agent-service directory (if using Option 1)
+# From weather-agent directory (if using Option 1)
 docker-compose ps
 
 # Or check all containers

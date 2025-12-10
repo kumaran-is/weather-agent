@@ -1,5 +1,5 @@
 [project]
-name = "weather-ai-agent-service"
+name = "weather-agent"
 version = "0.6.0"  # Level 3c: Full 7-Layer Memory + Emotional Intelligence (COMPLETE)
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
