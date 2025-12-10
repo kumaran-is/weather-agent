@@ -21,10 +21,21 @@ from backend.src.mcp.weather_client import WeatherMCPClient
 from backend.config.settings import settings
 
 
-# Initialize MCP client (singleton pattern for Level 1)
-weather_mcp_client = WeatherMCPClient(
-    base_url=settings.MCP_WEATHER_SERVER_URL
-)
+# ✅ Factory pattern (v1.x compliant - dependency injection)
+def get_weather_mcp_client() -> WeatherMCPClient:
+    """Factory function to create WeatherMCPClient instance.
+
+    ✅ v1.x: Dependency injection pattern (recommended for tests and production)
+
+    Returns:
+        WeatherMCPClient: Initialized MCP client instance
+    """
+    return WeatherMCPClient(base_url=settings.MCP_WEATHER_SERVER_URL)
+
+
+# ⚠️ Module-level client (backward compatibility)
+# For Level 1 simplicity, but prefer get_weather_mcp_client() in production
+weather_mcp_client = get_weather_mcp_client()
 
 
 @tool

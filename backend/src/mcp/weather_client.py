@@ -47,13 +47,20 @@ class WeatherMCPClient:
         self._session_id: str | None = None
 
     def _get_client(self) -> httpx.AsyncClient:
-        """Get or create the persistent HTTP client.
+        """Get or create the persistent HTTP client with connection pooling.
 
         Returns:
             Persistent httpx.AsyncClient instance with session cookie support
+                and optimized connection pooling
         """
         if self.client is None:
-            self.client = httpx.AsyncClient()
+            self.client = httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0, connect=10.0),
+                limits=httpx.Limits(
+                    max_keepalive_connections=20,
+                    max_connections=100
+                ),
+            )
         return self.client
 
     async def close(self) -> None:
@@ -105,14 +112,14 @@ class WeatherMCPClient:
             headers={
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
-                "MCP-Protocol-Version": "2024-11-05"
+                "MCP-Protocol-Version": "2025-03-26"
             },
             json={
                 "jsonrpc": "2.0",
                 "id": "1",
                 "method": "initialize",
                 "params": {
-                    "protocolVersion": "2024-11-05",
+                    "protocolVersion": "2025-03-26",
                     "capabilities": {},
                     "clientInfo": {
                         "name": "weather-agent",
@@ -166,7 +173,7 @@ class WeatherMCPClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "MCP-Protocol-Version": "2024-11-05"
+            "MCP-Protocol-Version": "2025-03-26"
         }
         if self._session_id:
             headers["mcp-session-id"] = self._session_id
@@ -222,7 +229,7 @@ class WeatherMCPClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "MCP-Protocol-Version": "2024-11-05"
+            "MCP-Protocol-Version": "2025-03-26"
         }
         if self._session_id:
             headers["mcp-session-id"] = self._session_id
@@ -280,7 +287,7 @@ class WeatherMCPClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "MCP-Protocol-Version": "2024-11-05"
+            "MCP-Protocol-Version": "2025-03-26"
         }
         if self._session_id:
             headers["mcp-session-id"] = self._session_id

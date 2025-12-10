@@ -346,8 +346,8 @@ git commit -m "Upgrade langchain to 1.2.0+"
 
 ```bash
 # Clone repo
-git clone https://github.com/YOUR_USERNAME/weather-ai-agent-service
-cd weather-ai-agent-service
+git clone https://github.com/YOUR_USERNAME/weather-agent
+cd weather-agent
 
 # Install dependencies (uses uv.lock for exact versions)
 uv sync
@@ -470,7 +470,7 @@ Cannot resolve!
 **Need Help?**
 - Check project README: [README.md](../../README.md)
 - Review Makefile commands: `make help`
-- Ask in GitHub Discussions: [Discussions](https://github.com/kumaran-is/weather-ai-agent-service/discussions)
+- Ask in GitHub Discussions: [Discussions](https://github.com/kumaran-is/weather-agent/discussions)
 
 ---
 
