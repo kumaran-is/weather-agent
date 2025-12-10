@@ -43,7 +43,7 @@
     - [Project Structure](#project-structure)
     - [Progressive Learning Path](#progressive-learning-path)
   - [API Endpoints Reference](#api-endpoints-reference)
-  - [Testing Level 2](#testing-level-2)
+  - [Testing (Progressive Build Approach)](#testing-progressive-build-approach)
   - [Contributing](#contributing)
   - [License](#license)
   - [Support](#support)
@@ -198,8 +198,8 @@ This project uses **2 MCP servers** (Docker + HTTP Streamable transport) for wea
 
 **1. Clone repository**
 ```bash
-git clone https://github.com/kumaran-is/weather-ai-agent-service.git
-cd weather-ai-agent-service
+git clone https://github.com/kumaran-is/weather-agent.git
+cd weather-agent
 ```
 
 **2. Configure environment**
@@ -308,8 +308,8 @@ make version
 
 **1. Clone repository**
 ```bash
-git clone https://github.com/kumaran-is/weather-ai-agent-service.git
-cd weather-ai-agent-service
+git clone https://github.com/kumaran-is/weather-agent.git
+cd weather-agent
 ```
 
 **2. Configure environment**
@@ -537,7 +537,7 @@ make docker-down-dev
 
 ### Project Structure
 ```
-weather-ai-agent-service/
+weather-agent/
 ├── backend/                     # Backend application (Level 1+2+3+5a Complete)
 │   ├── config/                  # Configuration - SINGLE LOCATION ⚠️ (ALL config files here ONLY)
 │   │   ├── __init__.py          # Package initialization
@@ -612,57 +612,14 @@ weather-ai-agent-service/
 │       ├── evaluation/          # Model evaluation tests
 │       └── integration/         # Integration test suites
 ├── docs/                        # Documentation
-│   ├── blogs/                   # Technical blog posts (Medium.com)
-│   │   ├── level-0/             # ✅ Setup story (9 items, OCEAN 93/100)
-│   │   ├── level-1/             # ✅ ReAct + HITL (7 items, OCEAN 95/100)
-│   │   ├── level-2/             # ✅ RAG + CoT (7 items, OCEAN 99/100)
-│   │   │   ├── level-2-blog.md           # Main post (7,800 words, Grade A)
-│   │   │   ├── level-2-linkedin.md       # 6 LinkedIn variations
-│   │   │   ├── level-2-metrics.md        # Quality scorecard
-│   │   │   ├── IMAGE_GENERATION_GUIDE.md # 6 images specification
-│   │   │   ├── image-prompts.md          # AI prompts (DALL-E 3 + ImageFX)
-│   │   │   ├── img/                      # Generated images
-│   │   │   └── reviews/                  # Review materials
-│   │   └── level-3/             # ✅ Memory + Reasoning + Intelligence (5 complete blogs)
-│   │       ├── blog-1-memory-foundation/      # 2-layer memory (9 items)
-│   │       ├── blog-2-advanced-reasoning/     # ToT/GoT reasoning (9 items)
-│   │       ├── blog-3-knowledge-layers/       # Episodic/semantic memory (9 items)
-│   │       ├── blog-4-emotional-reflective/   # Emotional intelligence (9 items)
-│   │       └── blog-5-personalization-learning/ # Personalization + caching (9 items)
-│   ├── diagrams/                # Architecture diagrams (Mermaid, PlantUML)
-│   │   └── *.svg                # Visual documentation
-│   ├── knowledge/               # Knowledge base documentation (Level 2+3) ✅ NEW
-│   │   ├── level-2-rag-cot-hybrid.md              # Level 2 knowledge doc (853 lines)
-│   │   ├── level-3-memory-reasoning-intelligence.md # Level 3 knowledge doc (850+ lines)
-│   │   ├── multi-worker-l1-cache-isolation.md     # L1 cache multi-worker guide
-│   │   ├── Multi-Layer-Caching-Guide.md           # L1+L2+L3 cache guide (850 lines)
-│   │   ├── Memory-Consolidation-Pipeline-Guide.md # ETL pipeline guide (850 lines)
-│   │   └── Emotional-Memory-System-Guide.md       # Emotional intelligence (1,000 lines)
 │   ├── setup/                   # Setup guides
 │   │   ├── mcp-servers-setup.md        # MCP servers deployment
 │   │   ├── langsmith-studio-setup.md   # Studio integration (434 lines)
 │   │   ├── docker-usage-guide.md       # Docker orchestration (649 lines)
 │   │   └── rag-datasets-guide.md       # RAG datasets guide (211 lines)
-│   ├── plan/                    # Level implementation plans
-│   │   ├── level-0-plan.md      # ✅ Level 0: Setup
-│   │   ├── level-1-plan.md      # ✅ Level 1: ReAct + HITL
-│   │   ├── level-2-plan.md      # ✅ Level 2: CoT + RAG (16 phases, 7 batches)
-│   │   └── level-3-plan.md      # ✅ Level 3: Memory + Reasoning (3a+3b+3c)
 │   ├── test-guide/              # Testing guides
 │   │   ├── LEVEL_2_TEST_GUIDE.md # ✅ RAG + CoT testing (~15 minutes)
 │   │   └── LEVEL_3_TEST_GUIDE.md # ✅ Memory + ToT/GoT testing (~30 minutes)
-│   ├── test-reports/            # Test execution reports ✅ NEW
-│   │   ├── LEVEL_3_TEST_REPORT_2025-12-09.md        # Comprehensive Level 3 tests (15/15 PASS)
-│   │   ├── LEVEL_3_PERFORMANCE_VERIFICATION.md      # Performance metrics validation
-│   │   └── L1_L2_CACHE_SUCCESS_SUMMARY_2025-12-09.md # L1/L2 cache tests (6/6 PASS)
-│   ├── prompt/                  # Prompt templates (LangChain v1.x compliance)
-│   │   ├── langchain-v1-compliance-review.md # Gotchas #1-42 (2,950+ lines)
-│   │   └── planning-prompt.md                # Pre-planning checklist
-│   ├── tools/                   # Tool documentation ✅ NEW
-│   │   └── tool-specifications/ # Tool definitions and schemas
-│   ├── claude-guide/            # Claude Code guides (QUICK_REFERENCE.md, etc.)
-│   ├── cline-reference-docs/    # Implementation patterns (l0-l6)
-│   └── skill/                   # Skills documentation
 ├── tests/                       # Test suite (Level 1+2+3+5a) ✅ UPDATED
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_mcp_client.py       # MCP client tests
@@ -694,9 +651,6 @@ weather-ai-agent-service/
 ├── Makefile                     # Development commands (22 tasks: setup, RAG, Docker)
 ├── verify_setup.py              # Level 0 verification (8 checks)
 ├── CHANGELOG.md                 # Version history (v0.6.0 - Level 3 complete) ✅ UPDATED
-├── CLAUDE.md                    # AI assistant instructions
-├── LESSONS_LEARNED_L5A_CACHE.md # Cache implementation lessons (850 lines, 6 insights)
-├── VERSION_UPDATE_SUMMARY.md    # Version 0.6.0 update summary
 └── README.md                    # This file (v0.6.0) ✅ UPDATED
 ```
 
@@ -710,15 +664,10 @@ weather-ai-agent-service/
   - **tools/**: 7 tools total (3 MCP + 4 RAG-enhanced)
 - **backend/config/**: 3 config classes (Settings, MemoryConfig, CacheConfig) = 80+ env vars
 - **backend/data/**: 603 documents, 632 chunks embedded in Qdrant (3 mock + 600 Kaggle)
-- **docs/knowledge/**: 5 comprehensive guides (Level 2, Level 3, caching, consolidation, emotional)
-- **docs/blogs/**: 3 blog posts complete (L0, L1, L2) with OCEAN scores 93→95→99
 - **docs/setup/**: 4 comprehensive guides (MCP, Studio, Docker, RAG datasets)
-- **docs/plan/**: 4 complete implementation plans (L0, L1, L2, L3)
-- **docs/prompt/**: 2 prompt templates (compliance review with 42 gotchas, planning prompts)
 - **tests/**: 13 test modules covering MCP, RAG, HITL, API, memory, reasoning, cache
 - **langgraph.json**: 2 graphs configured (weather_agent, weather_hitl_workflow)
 - **Makefile**: 22 commands (setup, RAG, Docker, testing)
-- **memory-bank/**: 8 files with 32 patterns documented (6 NEW: C1-C6 cache & memory insights)
 
 **Level 2 Achievements**:
 - ✅ 603-document knowledge base (Qdrant vector store)
@@ -831,10 +780,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/kumaran-is/weather-ai-agent-service/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/weather-ai-agent-service/discussions)
+- **Issues**: [GitHub Issues](https://github.com/kumaran-is/weather-agent/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/weather-agent/discussions)
 - **Documentation**: See `docs/` directory
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 0.3.0 | **Last Updated**: 2025-12-06
+**Version**: 0.6.0 | **Last Updated**: 2025-12-06
