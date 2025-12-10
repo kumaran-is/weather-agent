@@ -3,14 +3,17 @@
 # ============================================================================
 # This file orchestrates all services required for the Weather AI Agent.
 #
-# LEVEL 2 (Current): MCP Servers + Backend Agent Service + Qdrant Vector DB
+# LEVEL 3a (Current): MCP Servers + Backend Agent + Qdrant + Memory System
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
 #   - Weather AI Agent API (port 8000)
-#   - Qdrant Vector Database (port 6333) - NEW in L2
+#   - Qdrant Vector Database (port 6333) - Level 2
+#   - Redis (port 6379) - NEW in L3a (short-term memory)
+#   - Neo4j (ports 7474, 7687) - NEW in L3a (long-term memory via Graphiti)
 #
 # FUTURE LEVELS (Incremental):
-#   - Level 3: Redis (memory/cache), PostgreSQL (checkpointer)
+#   - Level 3b: Advanced reasoning (ToT, GoT, Step-Back)
+#   - Level 3c: Full 7-layer memory consolidation
 #   - Level 4: Multi-agent system (no new services)
 #   - Level 5: Production optimization (monitoring, etc.)
 #   - Level 6: Self-evolving (no new services)
@@ -135,7 +138,111 @@ services:
           memory: 128M
 
   # ==========================================================================
-  # Weather AI Agent API (Port 8000) - Level 2
+  # Redis (Port 6379) - Level 3a: Short-Term Memory
+  # ==========================================================================
+  redis:
+    image: redis:8.4.0-alpine
+    container_name: weather-ai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================================================
+  # Neo4j (Ports 7474, 7687) - Level 3a: Long-Term Memory (Graphiti)
+  # ==========================================================================
+  neo4j:
+    image: neo4j:5.26.0
+    container_name: weather-ai-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # HTTP (Neo4j Browser)
+      - "7687:7687"  # Bolt (Graphiti connection)
+    environment:
+      - NEO4J_AUTH=neo4j/${GRAPHITI_PASSWORD:-weatherai2025}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      # Memory configuration to fit within Docker resource limits
+      - NEO4J_server_memory_heap_initial__size=128m
+      - NEO4J_server_memory_heap_max__size=256m
+      - NEO4J_server_memory_pagecache_size=128m
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${GRAPHITI_PASSWORD:-weatherai2025}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================================================
+  # PostgreSQL (Port 5432) - Level 3c: Procedural & Reflective Memory
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: weather-ai-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=weather_ai
+      - POSTGRES_USER=weather_ai
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-weatherai2025}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_ai -d weather_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================================================
+  # Weather AI Agent API (Port 8000) - Level 3a
   # ==========================================================================
   weather-ai-api:
     build:
@@ -153,26 +260,52 @@ services:
       # Optional: Anthropic for future levels
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       # MCP Server URLs (Docker network internal DNS)
-      - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
-      - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
-      - MCP_WEATHER_SERVER_ENABLED=true
-      - MCP_HURRICANE_SERVER_ENABLED=true
+      - MCP_WEATHER_SERVER_URL=${MCP_WEATHER_SERVER_URL:-http://weather-mcp:8080}
+      - MCP_HURRICANE_SERVER_URL=${MCP_HURRICANE_SERVER_URL:-http://hurricane-mcp:8080}
+      - MCP_WEATHER_SERVER_ENABLED=${MCP_WEATHER_SERVER_ENABLED:-true}
+      - MCP_HURRICANE_SERVER_ENABLED=${MCP_HURRICANE_SERVER_ENABLED:-true}
       # Qdrant Vector Database (Level 2 - RAG)
-      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      # Redis (Level 3a - Short-Term Memory)
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_TTL_SECONDS=${REDIS_TTL_SECONDS:-1800}
+      - REDIS_MAX_CONNECTIONS=${REDIS_MAX_CONNECTIONS:-50}
+      - REDIS_MAX_CONVERSATION_TURNS=${REDIS_MAX_CONVERSATION_TURNS:-10}
+      # L2 Cache (Redis Distributed Cache)
+      - L2_CACHE_REDIS_URL=${L2_CACHE_REDIS_URL:-redis://redis:6379/0}
+      # Neo4j/Graphiti (Level 3a - Long-Term Memory)
+      - GRAPHITI_URL=${GRAPHITI_URL:-bolt://neo4j:7687}
+      - GRAPHITI_USER=${GRAPHITI_USER:-neo4j}
+      - GRAPHITI_PASSWORD=${GRAPHITI_PASSWORD:-weatherai2025}
+      - GRAPHITI_DATABASE=${GRAPHITI_DATABASE:-weather_ai}
+      # PostgreSQL (Level 3c - Procedural & Reflective Memory)
+      - POSTGRES_URL=postgresql://weather_ai:${POSTGRES_PASSWORD:-weatherai2025}@postgres:5432/weather_ai
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-20}
+      # Memory System (Level 3a)
+      - ENABLE_MEMORY=${ENABLE_MEMORY:-true}
+      - ENABLE_USER_PROFILES=${ENABLE_USER_PROFILES:-true}
+      - ENABLE_ENTITY_TRACKING=${ENABLE_ENTITY_TRACKING:-true}
+      - ENABLE_PRONOUN_RESOLUTION=${ENABLE_PRONOUN_RESOLUTION:-true}
       # Application settings
-      - ENVIRONMENT=production
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
       # LangSmith tracing
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-level-2}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-dev-l3a}
     depends_on:
       weather-mcp:
         condition: service_started
       hurricane-mcp:
         condition: service_healthy
       qdrant:
-        condition: service_started  # Changed from service_healthy (no health check)
+        condition: service_started
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -199,7 +332,7 @@ networks:
     name: weather-ai-mcp-network
 
 # ============================================================================
-# Volumes (Current: Level 2)
+# Volumes (Current: Level 3a)
 # ============================================================================
 volumes:
   weather-logs:
@@ -208,43 +341,18 @@ volumes:
     name: hurricane-mcp-logs
   qdrant-data:
     name: weather-ai-qdrant-data  # Level 2 - Qdrant vector storage
-  # Future volumes (added progressively):
-  # redis-data:           # Level 3a - Redis persistence
-  # postgres-data:        # Level 3b - PostgreSQL checkpointer
+  redis-data:
+    name: weather-ai-redis-data  # Level 3a - Redis short-term memory
+  neo4j-data:
+    name: weather-ai-neo4j-data  # Level 3a - Neo4j graph database
+  neo4j-logs:
+    name: weather-ai-neo4j-logs  # Level 3a - Neo4j logs
+  postgres-data:
+    name: weather-ai-postgres-data  # Level 3c - PostgreSQL procedural/reflective memory
 
 # ============================================================================
 # Future Services (Commented - Added Progressively by Level)
 # ============================================================================
-#
-# # ==========================================================================
-# # Redis (Level 3a - Memory/Cache)
-# # ==========================================================================
-# redis:
-#   image: redis:7-alpine
-#   container_name: weather-ai-redis
-#   ports:
-#     - "6379:6379"
-#   volumes:
-#     - redis-data:/data
-#   networks:
-#     - mcp-network
-#
-# # ==========================================================================
-# # PostgreSQL (Level 3b - Checkpointer)
-# # ==========================================================================
-# postgres:
-#   image: postgres:16-alpine
-#   container_name: weather-ai-postgres
-#   environment:
-#     POSTGRES_DB: weather_ai
-#     POSTGRES_USER: weather_ai
-#     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-#   ports:
-#     - "5432:5432"
-#   volumes:
-#     - postgres-data:/var/lib/postgresql/data
-#   networks:
-#     - mcp-network
 #
 # # ==========================================================================
 # # Qdrant (✅ ACTIVE in Level 2 - See active services above)
@@ -276,3 +384,24 @@ volumes:
 #     - qdrant
 #   networks:
 #     - mcp-network
+
+# ============================================================================
+# Service Access URLs (Level 3c)
+# ============================================================================
+# After starting with `docker-compose up -d`:
+#
+# - Weather AI API:      http://localhost:8000/docs (Swagger UI)
+# - Weather MCP:         http://localhost:8080/health
+# - Hurricane MCP:       http://localhost:8081/health
+# - Qdrant Dashboard:    http://localhost:6333/dashboard
+# - Neo4j Browser:       http://localhost:7474 (user: neo4j, pass: weatherai2025)
+# - PostgreSQL:          postgresql://weather_ai:weatherai2025@localhost:5432/weather_ai
+# - Redis CLI:           docker exec -it weather-ai-redis redis-cli
+#
+# Quick Commands:
+# - Start all:           make docker-up
+# - Stop all:            make docker-down
+# - View logs:           make docker-logs
+# - Check health:        make docker-health
+# - Load RAG:            make rag-load
+# - Test memory:         make memory-test

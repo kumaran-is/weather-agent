@@ -3,7 +3,7 @@
   "graphs": {
     "weather_agent": {
       "path": "./backend/src/agents/weather_agent.py:create_weather_agent_graph",
-      "description": "Production weather agent with RAG + CoT (configure via .env: ENABLE_RAG/ENABLE_COT, override at runtime via configurable)"
+      "description": "Level 3a/3b: Weather agent with RAG, CoT, Memory, ToT, GoT. Runtime config via state params: enable_rag (bool), enable_cot (bool), use_memory (bool), enable_tot (bool), enable_got (bool). Defaults from .env: ENABLE_RAG/ENABLE_COT"
     },
     "weather_hitl_workflow": {
       "path": "./backend/src/workflows/weather_graph.py:get_weather_hitl_workflow",

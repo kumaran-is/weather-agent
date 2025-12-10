@@ -192,7 +192,7 @@ class Settings(BaseSettings):
     )
 
     ENABLE_COT: bool = Field(
-        default=True,
+        default=False,  # Changed from True to False for explicit Studio control
         description="Enable Chain-of-Thought reasoning (5-step framework). Can be overridden at runtime."
     )
 
@@ -220,7 +220,23 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str | None = Field(
         default=None,
-        description="PostgreSQL database URL (Level 3+)"
+        description="PostgreSQL database URL (Level 3+) - DEPRECATED, use POSTGRES_URL"
+    )
+
+    # ============================================================================
+    # DATABASE CONFIGURATION (Level 3c)
+    # ============================================================================
+
+    POSTGRES_URL: str | None = Field(
+        default=None,
+        description="PostgreSQL connection URL for Layers 5 & 7 (Procedural & Reflective Memory). Format: postgresql://user:password@host:port/database"
+    )
+
+    POSTGRES_MAX_CONNECTIONS: int = Field(
+        default=20,
+        description="Maximum PostgreSQL connection pool size",
+        ge=5,
+        le=100
     )
 
     REDIS_URL: str = Field(

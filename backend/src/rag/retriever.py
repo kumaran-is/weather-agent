@@ -19,8 +19,6 @@ Usage:
     >>> print(results[0].page_content)
 """
 
-from typing import Any
-
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
@@ -29,7 +27,7 @@ from backend.src.rag.vector_store import get_vector_store
 
 def get_retriever(
     k: int = 5,
-    search_kwargs: dict[str, Any] | None = None,
+    search_kwargs: dict[str, any] | None = None,
 ) -> BaseRetriever:
     """Get configured RAG retriever for weather knowledge base.
 
@@ -95,7 +93,7 @@ def get_retriever(
 def retrieve_weather_knowledge(
     query: str,
     k: int = 5,
-    filter_metadata: dict[str, Any] | None = None,
+    filter_metadata: dict[str, any] | None = None,
 ) -> list[Document]:
     """Retrieve weather knowledge documents for a query.
 
@@ -125,7 +123,7 @@ def retrieve_weather_knowledge(
         - Results are sorted by relevance (cosine similarity)
     """
     # Configure search kwargs
-    search_kwargs: dict[str, Any] = {}
+    search_kwargs: dict[str, any] = {}
     if filter_metadata:
         search_kwargs["filter"] = filter_metadata
 

@@ -156,25 +156,24 @@ def send_alert_node(state: WeatherAgentState) -> dict:
     message = state.get("alert_message", "No message")
     user_id = state.get("user_id", "unknown")
 
-    # Log alert being sent with structured logging
-    timestamp = datetime.now(timezone.utc).isoformat()
+    # Log alert being sent
     logger.critical(
         f"🚨 HURRICANE ALERT SENT | "
         f"Category {category} | "
         f"User: {user_id} | "
-        f"Message: {message} | "
-        f"Timestamp: {timestamp}"
+        f"Message: {message}"
     )
 
-    # Additional structured logging for visibility (Level 2)
-    logger.critical(f"\n{'='*60}")
-    logger.critical(f"🚨 HURRICANE ALERT SENT")
-    logger.critical(f"{'='*60}")
-    logger.critical(f"Category: {category}")
-    logger.critical(f"Message: {message}")
-    logger.critical(f"User: {user_id}")
-    logger.critical(f"Timestamp: {timestamp}")
-    logger.critical(f"{'='*60}\n")
+    # For Level 1, just print to console
+    # In production, this would trigger actual alert systems
+    print(f"\n{'='*60}")
+    print(f"🚨 HURRICANE ALERT SENT")
+    print(f"{'='*60}")
+    print(f"Category: {category}")
+    print(f"Message: {message}")
+    print(f"User: {user_id}")
+    print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
+    print(f"{'='*60}\n")
 
     return {
         "status": "sent",
@@ -208,27 +207,25 @@ def cancel_alert_node(state: WeatherAgentState) -> dict:
     message = state.get("alert_message", "No message")
     user_id = state.get("user_id", "unknown")
 
-    # Log alert cancellation with structured logging
-    timestamp = datetime.now(timezone.utc).isoformat()
+    # Log alert cancellation
     logger.warning(
         f"❌ HURRICANE ALERT CANCELLED | "
         f"Category {category} | "
         f"User: {user_id} | "
-        f"Message: {message} | "
-        f"Reason: Rejected by human reviewer | "
-        f"Timestamp: {timestamp}"
+        f"Message: {message}"
     )
 
-    # Additional structured logging for visibility (Level 2)
-    logger.warning(f"\n{'='*60}")
-    logger.warning(f"❌ HURRICANE ALERT CANCELLED")
-    logger.warning(f"{'='*60}")
-    logger.warning(f"Category: {category}")
-    logger.warning(f"Message: {message}")
-    logger.warning(f"User: {user_id}")
-    logger.warning(f"Reason: Rejected by human reviewer")
-    logger.warning(f"Timestamp: {timestamp}")
-    logger.warning(f"{'='*60}\n")
+    # For Level 1, just print to console
+    # In production, this would log to audit systems
+    print(f"\n{'='*60}")
+    print(f"❌ HURRICANE ALERT CANCELLED")
+    print(f"{'='*60}")
+    print(f"Category: {category}")
+    print(f"Message: {message}")
+    print(f"User: {user_id}")
+    print(f"Reason: Rejected by human reviewer")
+    print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
+    print(f"{'='*60}\n")
 
     return {
         "status": "cancelled",

@@ -1,23 +1,16 @@
 # ============================================================================
 # Weather AI Agent Service - Docker Compose (DEVELOPMENT)
 # ============================================================================
-# This file is for LOCAL DEVELOPMENT with hot reload enabled.
+# This file is for DEVELOPMENT and TESTING only.
+# Use docker-compose.yml for production deployment.
 #
-# Key Differences from docker-compose.yml:
-#   1. Uses 'development' target instead of 'production'
-#   2. Mounts source code as volumes (changes reflect immediately)
-#   3. Enables --reload flag for uvicorn
-#   4. Includes dev dependencies (pytest, mypy, ruff)
+# Key Differences from Production:
+#   - Single worker (--reload enabled) for L1 cache testing
+#   - Development target (not optimized for performance)
+#   - Auto-reload on code changes
 #
-# Usage:
-#   docker-compose -f docker-compose.dev.yml up -d
-#   docker-compose -f docker-compose.dev.yml down
-#
-# Benefits:
-#   ✅ Code changes reflect immediately (no rebuild)
-#   ✅ Faster development iteration
-#   ✅ Dev tools available (pytest, mypy, ruff)
-#   ✅ LangSmith tracing enabled by default
+# Run with: docker-compose -f docker-compose.dev.yml up -d
+# Stop with: docker-compose -f docker-compose.dev.yml down
 # ============================================================================
 
 services:
@@ -33,10 +26,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-production}
       - MCP_TRANSPORT=http
       - MCP_HTTP_PORT=8080
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=${WEATHER_LOG_LEVEL:-info}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
       interval: 30s
@@ -46,6 +39,7 @@ services:
     networks:
       - mcp-network
     volumes:
+      # Optional: Mount logs directory
       - weather-logs:/app/logs
 
   # ==========================================================================
@@ -59,15 +53,33 @@ services:
     container_name: hurricane-tracker-mcp
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "8081:8080"  # Map host 8081 to container 8080
+      # - "9090:9090"  # Metrics port (Optional - Uncomment for Prometheus/Grafana monitoring)
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-production}
       - MCP_TRANSPORT=http
       - HTTP_PORT=8080
       - HTTP_HOST=0.0.0.0
-      - LOG_LEVEL=debug
-      - LOG_FORMAT=json
+      - LOG_LEVEL=${HURRICANE_LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
       - PRETTY_LOGS=false
+      # Cache configuration
+      - CACHE_MAX_SIZE=${CACHE_MAX_SIZE:-1000}
+      - CACHE_CURRENT_HURRICANES_TTL=${CACHE_CURRENT_HURRICANES_TTL:-300000}
+      - CACHE_FORECAST_TTL=${CACHE_FORECAST_TTL:-900000}
+      - CACHE_ALERT_TTL=${CACHE_ALERT_TTL:-120000}
+      - CACHE_TRACK_TTL=${CACHE_TRACK_TTL:-600000}
+      - CACHE_HISTORICAL_TTL=${CACHE_HISTORICAL_TTL:-86400000}
+      # Timeouts
+      - REQUEST_TIMEOUT_MS=${REQUEST_TIMEOUT_MS:-30000}
+      - CONNECTION_TIMEOUT_MS=${CONNECTION_TIMEOUT_MS:-10000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      # Security
+      - AUTH_ENABLED=${AUTH_ENABLED:-false}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_PER_CLIENT=${RATE_LIMIT_PER_CLIENT:-100}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
       interval: 30s
@@ -77,14 +89,23 @@ services:
     networks:
       - mcp-network
     volumes:
+      # Optional: Mount logs directory
       - hurricane-logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   # ==========================================================================
   # Qdrant Vector Database (Port 6333) - Level 2
   # ==========================================================================
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: weather-ai-qdrant-dev
+    container_name: weather-ai-qdrant
     restart: unless-stopped
     ports:
       - "6333:6333"  # HTTP API
@@ -92,7 +113,6 @@ services:
     environment:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
-      - QDRANT__LOG_LEVEL=DEBUG  # Dev mode: verbose logging
     volumes:
       - qdrant-data:/qdrant/storage
     networks:
@@ -109,14 +129,118 @@ services:
           memory: 128M
 
   # ==========================================================================
+  # Redis (Port 6379) - Level 3a: Short-Term Memory
+  # ==========================================================================
+  redis:
+    image: redis:8.4.0-alpine
+    container_name: weather-ai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================================================
+  # Neo4j (Ports 7474, 7687) - Level 3a: Long-Term Memory (Graphiti)
+  # ==========================================================================
+  neo4j:
+    image: neo4j:5.26.0
+    container_name: weather-ai-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # HTTP (Neo4j Browser)
+      - "7687:7687"  # Bolt (Graphiti connection)
+    environment:
+      - NEO4J_AUTH=neo4j/${GRAPHITI_PASSWORD:-weatherai2025}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      # Memory configuration to fit within Docker resource limits
+      - NEO4J_server_memory_heap_initial__size=128m
+      - NEO4J_server_memory_heap_max__size=256m
+      - NEO4J_server_memory_pagecache_size=128m
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${GRAPHITI_PASSWORD:-weatherai2025}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================================================
+  # PostgreSQL (Port 5432) - Level 3c: Procedural & Reflective Memory
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: weather-ai-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=weather_ai
+      - POSTGRES_USER=weather_ai
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-weatherai2025}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_ai -d weather_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================================================
   # Weather AI Agent API (Port 8000) - DEVELOPMENT MODE
   # ==========================================================================
   weather-ai-api:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development  # ← Uses development stage (includes --reload)
-    container_name: weather-ai-api-dev
+      target: development  # ← DEVELOPMENT: Single worker, auto-reload enabled
+    container_name: weather-ai-api
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -124,28 +248,55 @@ services:
       # LLM API Keys (from host .env)
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      # Optional: Anthropic for future levels
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       # MCP Server URLs (Docker network internal DNS)
-      - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
-      - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
-      - MCP_WEATHER_SERVER_ENABLED=true
-      - MCP_HURRICANE_SERVER_ENABLED=true
+      - MCP_WEATHER_SERVER_URL=${MCP_WEATHER_SERVER_URL:-http://weather-mcp:8080}
+      - MCP_HURRICANE_SERVER_URL=${MCP_HURRICANE_SERVER_URL:-http://hurricane-mcp:8080}
+      - MCP_WEATHER_SERVER_ENABLED=${MCP_WEATHER_SERVER_ENABLED:-true}
+      - MCP_HURRICANE_SERVER_ENABLED=${MCP_HURRICANE_SERVER_ENABLED:-true}
       # Qdrant Vector Database (Level 2 - RAG)
-      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      # Redis (Level 3a - Short-Term Memory)
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_TTL_SECONDS=${REDIS_TTL_SECONDS:-1800}
+      - REDIS_MAX_CONNECTIONS=${REDIS_MAX_CONNECTIONS:-50}
+      - REDIS_MAX_CONVERSATION_TURNS=${REDIS_MAX_CONVERSATION_TURNS:-10}
+      # L2 Cache (Redis Distributed Cache)
+      - L2_CACHE_REDIS_URL=${L2_CACHE_REDIS_URL:-redis://redis:6379/0}
+      # Neo4j/Graphiti (Level 3a - Long-Term Memory)
+      - GRAPHITI_URL=${GRAPHITI_URL:-bolt://neo4j:7687}
+      - GRAPHITI_USER=${GRAPHITI_USER:-neo4j}
+      - GRAPHITI_PASSWORD=${GRAPHITI_PASSWORD:-weatherai2025}
+      - GRAPHITI_DATABASE=${GRAPHITI_DATABASE:-weather_ai}
+      # PostgreSQL (Level 3c - Procedural & Reflective Memory)
+      - POSTGRES_URL=postgresql://weather_ai:${POSTGRES_PASSWORD:-weatherai2025}@postgres:5432/weather_ai
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-20}
+      # Memory System (Level 3a)
+      - ENABLE_MEMORY=${ENABLE_MEMORY:-true}
+      - ENABLE_USER_PROFILES=${ENABLE_USER_PROFILES:-true}
+      - ENABLE_ENTITY_TRACKING=${ENABLE_ENTITY_TRACKING:-true}
+      - ENABLE_PRONOUN_RESOLUTION=${ENABLE_PRONOUN_RESOLUTION:-true}
       # Application settings
-      - ENVIRONMENT=development
-      - LOG_LEVEL=debug
-      # LangSmith tracing (enabled by default for dev)
-      - LANGCHAIN_TRACING_V2=true
-      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
-      - LANGCHAIN_PROJECT=weather-ai-agent-dev
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      # LangSmith tracing
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-dev-l3a}
     depends_on:
       weather-mcp:
         condition: service_started
       hurricane-mcp:
         condition: service_healthy
       qdrant:
-        condition: service_started  # Changed from service_healthy (no health check)
+        condition: service_started
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -155,12 +306,16 @@ services:
     networks:
       - mcp-network
     volumes:
-      # Mount source code for hot reload (read-only for safety)
-      - ./backend:/app/backend:ro
-      - ./pyproject.toml:/app/pyproject.toml:ro
-      - ./uv.lock:/app/uv.lock:ro
-      # Optional: Mount .env for easy updates
-      - ./.env:/app/.env:ro
+      # Mount source code for auto-reload (development only)
+      - ./backend:/app/backend
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
 # ============================================================================
 # Networks
@@ -168,15 +323,43 @@ services:
 networks:
   mcp-network:
     driver: bridge
-    name: weather-ai-mcp-network-dev
+    name: weather-ai-mcp-network
 
 # ============================================================================
-# Volumes
+# Volumes (Current: Level 3a)
 # ============================================================================
 volumes:
   weather-logs:
-    name: weather-mcp-logs-dev
+    name: weather-mcp-logs
   hurricane-logs:
-    name: hurricane-mcp-logs-dev
+    name: hurricane-mcp-logs
   qdrant-data:
-    name: weather-ai-qdrant-data-dev  # Level 2 - Qdrant vector storage (dev)
+    name: weather-ai-qdrant-data  # Level 2 - Qdrant vector storage
+  redis-data:
+    name: weather-ai-redis-data  # Level 3a - Redis short-term memory
+  neo4j-data:
+    name: weather-ai-neo4j-data  # Level 3a - Neo4j graph database
+  neo4j-logs:
+    name: weather-ai-neo4j-logs  # Level 3a - Neo4j logs
+  postgres-data:
+    name: weather-ai-postgres-data  # Level 3c - PostgreSQL procedural/reflective memory
+
+# ============================================================================
+# Service Access URLs (Development)
+# ============================================================================
+# After starting with `docker-compose -f docker-compose.dev.yml up -d`:
+#
+# - Weather AI API:      http://localhost:8000/docs (Swagger UI)
+# - Weather MCP:         http://localhost:8080/health
+# - Hurricane MCP:       http://localhost:8081/health
+# - Qdrant Dashboard:    http://localhost:6333/dashboard
+# - Neo4j Browser:       http://localhost:7474 (user: neo4j, pass: weatherai2025)
+# - PostgreSQL:          postgresql://weather_ai:weatherai2025@localhost:5432/weather_ai
+# - Redis CLI:           docker exec -it weather-ai-redis redis-cli
+#
+# Quick Commands:
+# - Start all:           docker-compose -f docker-compose.dev.yml up -d
+# - Stop all:            docker-compose -f docker-compose.dev.yml down
+# - View logs:           docker-compose -f docker-compose.dev.yml logs -f weather-ai-api
+# - Rebuild API:         docker-compose -f docker-compose.dev.yml build weather-ai-api
+# - Test L1/L2 cache:    python test_cache_l1_l2.py

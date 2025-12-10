@@ -1,7 +1,7 @@
 [project]
 name = "weather-ai-agent-service"
-version = "0.3.0"
-description = "Production-grade AI agent for weather queries with LangChain, LangGraph, and dual MCP servers"
+version = "0.6.0"  # Level 3c: Full 7-Layer Memory + Emotional Intelligence (COMPLETE)
+description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
 ]
@@ -29,7 +29,7 @@ dependencies = [
     # Vector stores & embeddings (Qdrant for RAG)
     "langchain-qdrant>=1.0.0",
     "qdrant-client>=1.11.0,<2.0.0",
-    # BM25 for hybrid search (Phase 7)
+    # BM25 for hybrid search (Level 2)
     "rank-bm25>=0.2.2",
     # LLM providers
     "openai>=2.8.1,<3.0.0",
@@ -39,17 +39,23 @@ dependencies = [
     "pydantic>=2.12.5,<3.0.0",
     "pydantic-settings>=2.7.0,<3.0.0",
     "httpx>=0.28.1,<1.0.0",
-    "pandas>=2.0.0,<3.0.0", # Level 2: RAG data processing
-    "numpy>=2.1.0,<3.0.0", # Level 2: Required by pandas and langchain-community
+    "pandas>=2.0.0,<3.0.0",  # Level 2: RAG data processing
+    "numpy>=2.1.0,<3.0.0",  # Level 2: Required by pandas and langchain-community
     # Logging & observability
     "structlog>=25.5.0",
     "langsmith>=0.4.49,<1.0.0",
     # Production API (FastAPI)
     "fastapi>=0.123.0,<1.0.0",
     "uvicorn[standard]>=0.38.0,<1.0.0",
-    # In-memory and persistent storage
-    "redis>=7.1.0,<8.0.0",
+    # Level 3a: Memory System (deployed as Docker containers)
+    "redis>=5.0.0,<6.0.0",  # Short-term memory (session context, 30min TTL) - Python client v5.x
+    "graphiti-core",  # Long-term memory (temporal knowledge graphs) - Latest from PyPI
+    "neo4j>=5.26.0,<6.0.0",  # Graph database driver for Graphiti - Latest: 5.26.0
     "langgraph-cli[inmem]>=0.4.7",
+    # Level 3c: Full 7-Layer Memory System
+    # NOTE: Using Qdrant (already installed) for semantic memory instead of ChromaDB
+    # ChromaDB has onnxruntime dependency incompatible with macOS <13
+    "textblob>=0.18.0,<1.0.0",  # Sentiment analysis (Layer 6 - emotional memory)
 ]
 
 [project.optional-dependencies]
@@ -62,6 +68,11 @@ dev = [
     "ruff>=0.9.0",
     "mypy>=1.15.0",
     "ipython>=8.31.0",
+]
+consolidation = [
+    #  "sentence-transformers>=3.3.0,<4.0.0",  # Phase 5: Semantic deduplication (requires macOS 13+)
+    # NOTE: sentence-transformers has onnxruntime dependency incompatible with macOS <13
+    # Alternative: Use simple embedding models or ChromaDB's built-in similarity for deduplication
 ]
 
 [build-system]

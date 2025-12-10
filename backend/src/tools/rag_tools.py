@@ -27,7 +27,7 @@ from backend.src.rag.hybrid_search import hybrid_search
 
 
 @tool
-def analyze_trends(
+async def analyze_trends(
     query: str,
     location: str | None = None,
     time_period: str | None = None,
@@ -47,7 +47,7 @@ def analyze_trends(
         str: Analysis of weather trends based on historical data
 
     Example:
-        >>> result = analyze_trends(
+        >>> result = await analyze_trends(
         ...     query="temperature trends",
         ...     location="Tokyo",
         ...     time_period="1980-2020"
@@ -64,40 +64,44 @@ def analyze_trends(
         - Includes Kaggle datasets (1980-2020, 1000+ cities)
         - Uses semantic search to find relevant data
     """
-    # Build search query
-    search_query = query
-    if location:
-        search_query += f" in {location}"
-    if time_period:
-        search_query += f" during {time_period}"
+    try:
+        # Build search query
+        search_query = query
+        if location:
+            search_query += f" in {location}"
+        if time_period:
+            search_query += f" during {time_period}"
 
-    # Retrieve relevant documents
-    docs = retrieve_weather_knowledge(search_query, k=5)
+        # Retrieve relevant documents
+        docs = retrieve_weather_knowledge(search_query, k=5)
 
-    if not docs:
-        return f"No historical data found for: {query}"
+        if not docs:
+            return f"No historical data found for trend analysis: {query}"
 
-    # Synthesize trends from documents
-    result = f"**Weather Trend Analysis: {query}**\n\n"
-    if location:
-        result += f"**Location:** {location}\n"
-    if time_period:
-        result += f"**Time Period:** {time_period}\n"
-    result += "\n**Key Findings:**\n\n"
+        # Synthesize trends from documents
+        result = f"**Weather Trend Analysis: {query}**\n\n"
+        if location:
+            result += f"**Location:** {location}\n"
+        if time_period:
+            result += f"**Time Period:** {time_period}\n"
+        result += "\n**Key Findings:**\n\n"
 
-    for i, doc in enumerate(docs, 1):
-        content = doc.page_content.strip()
-        source = doc.metadata.get("source", "unknown")
-        result += f"{i}. {content}\n"
-        result += f"   (Source: {source})\n\n"
+        for i, doc in enumerate(docs, 1):
+            content = doc.page_content.strip()
+            source = doc.metadata.get("source", "unknown")
+            result += f"{i}. {content}\n"
+            result += f"   (Source: {source})\n\n"
 
-    result += "**Analysis:** The data shows patterns in weather behavior that can inform forecasting and planning decisions."
+        result += "**Analysis:** The data shows patterns in weather behavior that can inform forecasting and planning decisions."
 
-    return result
+        return result
+
+    except Exception as e:
+        return f"Error analyzing trends for '{query}': {str(e)}"
 
 
 @tool
-def identify_patterns(
+async def identify_patterns(
     query: str,
     pattern_type: str | None = None,
 ) -> str:
@@ -115,7 +119,7 @@ def identify_patterns(
         str: Identified patterns and analysis
 
     Example:
-        >>> result = identify_patterns(
+        >>> result = await identify_patterns(
         ...     query="Category 5 hurricanes",
         ...     pattern_type="anomalous"
         ... )
@@ -138,37 +142,41 @@ def identify_patterns(
         - Identifies both normal and anomalous patterns
         - Includes historical storm data and climate patterns
     """
-    # Build search query
-    search_query = query
-    if pattern_type:
-        search_query += f" {pattern_type} patterns"
+    try:
+        # Build search query
+        search_query = query
+        if pattern_type:
+            search_query += f" {pattern_type} patterns"
 
-    # Retrieve relevant documents
-    docs = retrieve_weather_knowledge(search_query, k=5)
+        # Retrieve relevant documents
+        docs = retrieve_weather_knowledge(search_query, k=5)
 
-    if not docs:
-        return f"No pattern data found for: {query}"
+        if not docs:
+            return f"No pattern data found for: {query}"
 
-    # Synthesize patterns from documents
-    result = f"**Pattern Identification: {query}**\n\n"
-    if pattern_type:
-        result += f"**Pattern Type:** {pattern_type.capitalize()}\n\n"
+        # Synthesize patterns from documents
+        result = f"**Pattern Identification: {query}**\n\n"
+        if pattern_type:
+            result += f"**Pattern Type:** {pattern_type.capitalize()}\n\n"
 
-    result += "**Identified Patterns:**\n\n"
+        result += "**Identified Patterns:**\n\n"
 
-    for i, doc in enumerate(docs, 1):
-        content = doc.page_content.strip()
-        source = doc.metadata.get("source", "unknown")
-        result += f"{i}. {content}\n"
-        result += f"   (Source: {source})\n\n"
+        for i, doc in enumerate(docs, 1):
+            content = doc.page_content.strip()
+            source = doc.metadata.get("source", "unknown")
+            result += f"{i}. {content}\n"
+            result += f"   (Source: {source})\n\n"
 
-    result += "**Pattern Analysis:** These patterns indicate recurring behaviors in weather systems that can inform predictions and risk assessment."
+        result += "**Pattern Analysis:** These patterns indicate recurring behaviors in weather systems that can inform predictions and risk assessment."
 
-    return result
+        return result
+
+    except Exception as e:
+        return f"Error identifying patterns for '{query}': {str(e)}"
 
 
 @tool
-def compare_conditions(
+async def compare_conditions(
     location_a: str,
     location_b: str,
     aspect: str = "climate",
@@ -187,7 +195,7 @@ def compare_conditions(
         str: Comparative analysis of weather conditions
 
     Example:
-        >>> result = compare_conditions(
+        >>> result = await compare_conditions(
         ...     location_a="Tokyo",
         ...     location_b="Los Angeles",
         ...     aspect="climate"
@@ -216,51 +224,55 @@ def compare_conditions(
         - Includes both historical and recent data
         - Provides context for decision-making
     """
-    # Retrieve data for location A
-    query_a = f"{aspect} in {location_a}"
-    docs_a = retrieve_weather_knowledge(query_a, k=3)
+    try:
+        # Retrieve data for location A
+        query_a = f"{aspect} in {location_a}"
+        docs_a = retrieve_weather_knowledge(query_a, k=3)
 
-    # Retrieve data for location B
-    query_b = f"{aspect} in {location_b}"
-    docs_b = retrieve_weather_knowledge(query_b, k=3)
+        # Retrieve data for location B
+        query_b = f"{aspect} in {location_b}"
+        docs_b = retrieve_weather_knowledge(query_b, k=3)
 
-    # Build comparison result
-    result = f"**Weather Comparison**\n\n"
-    result += f"**Locations:** {location_a} vs {location_b}\n"
-    result += f"**Aspect:** {aspect.capitalize()}\n\n"
+        # Build comparison result
+        result = f"**Weather Comparison**\n\n"
+        result += f"**Locations:** {location_a} vs {location_b}\n"
+        result += f"**Aspect:** {aspect.capitalize()}\n\n"
 
-    # Location A data
-    result += f"**{location_a} Data:**\n\n"
-    if docs_a:
-        for i, doc in enumerate(docs_a, 1):
-            content = doc.page_content.strip()
-            source = doc.metadata.get("source", "unknown")
-            result += f"{i}. {content}\n"
-            result += f"   (Source: {source})\n\n"
-    else:
-        result += f"No data found for {location_a}\n\n"
+        # Location A data
+        result += f"**{location_a} Data:**\n\n"
+        if docs_a:
+            for i, doc in enumerate(docs_a, 1):
+                content = doc.page_content.strip()
+                source = doc.metadata.get("source", "unknown")
+                result += f"{i}. {content}\n"
+                result += f"   (Source: {source})\n\n"
+        else:
+            result += f"No data found for {location_a}\n\n"
 
-    # Location B data
-    result += f"**{location_b} Data:**\n\n"
-    if docs_b:
-        for i, doc in enumerate(docs_b, 1):
-            content = doc.page_content.strip()
-            source = doc.metadata.get("source", "unknown")
-            result += f"{i}. {content}\n"
-            result += f"   (Source: {source})\n\n"
-    else:
-        result += f"No data found for {location_b}\n\n"
+        # Location B data
+        result += f"**{location_b} Data:**\n\n"
+        if docs_b:
+            for i, doc in enumerate(docs_b, 1):
+                content = doc.page_content.strip()
+                source = doc.metadata.get("source", "unknown")
+                result += f"{i}. {content}\n"
+                result += f"   (Source: {source})\n\n"
+        else:
+            result += f"No data found for {location_b}\n\n"
 
-    # Comparison summary
-    result += "**Comparison Summary:**\n"
-    result += "Based on available data, both locations show distinct weather characteristics. "
-    result += "Consider local climate patterns when making weather-related decisions."
+        # Comparison summary
+        result += "**Comparison Summary:**\n"
+        result += "Based on available data, both locations show distinct weather characteristics. "
+        result += "Consider local climate patterns when making weather-related decisions."
 
-    return result
+        return result
+
+    except Exception as e:
+        return f"Error comparing conditions between '{location_a}' and '{location_b}': {str(e)}"
 
 
 @tool
-def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> str:
+async def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> str:
     """Retrieve weather knowledge from the knowledge base.
 
     Performs semantic search over 600+ weather documents to find relevant
@@ -275,7 +287,7 @@ def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> str:
         str: Relevant weather knowledge from the knowledge base
 
     Example:
-        >>> result = retrieve_weather_knowledge_tool(
+        >>> result = await retrieve_weather_knowledge_tool(
         ...     query="What is a Category 5 hurricane?",
         ...     num_results=3
         ... )
@@ -301,26 +313,30 @@ def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> str:
         - Uses OpenAI text-embedding-3-small for semantic search
         - Qdrant cosine similarity for relevance ranking
     """
-    # Limit num_results to avoid overwhelming responses
-    k = min(num_results, 10)
+    try:
+        # Limit num_results to avoid overwhelming responses
+        k = min(num_results, 10)
 
-    # Retrieve documents
-    docs = retrieve_weather_knowledge(query, k=k)
+        # Retrieve documents
+        docs = retrieve_weather_knowledge(query, k=k)
 
-    if not docs:
-        return f"No relevant information found for: {query}"
+        if not docs:
+            return f"No relevant information found for: {query}"
 
-    # Format results
-    result = f"**Weather Knowledge: {query}**\n\n"
-    result += f"**Retrieved Information:**\n\n"
+        # Format results
+        result = f"**Weather Knowledge: {query}**\n\n"
+        result += f"**Retrieved Information:**\n\n"
 
-    for i, doc in enumerate(docs, 1):
-        content = doc.page_content.strip()
-        source = doc.metadata.get("source", "unknown")
-        result += f"{i}. {content}\n"
-        result += f"   (Source: {source})\n\n"
+        for i, doc in enumerate(docs, 1):
+            content = doc.page_content.strip()
+            source = doc.metadata.get("source", "unknown")
+            result += f"{i}. {content}\n"
+            result += f"   (Source: {source})\n\n"
 
-    return result
+        return result
+
+    except Exception as e:
+        return f"Error retrieving weather knowledge for '{query}': {str(e)}"
 
 
 @tool

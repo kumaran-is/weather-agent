@@ -21,6 +21,10 @@ Deferred to Level 5a:
 - Advanced RRF variants
 """
 
+# ✅ LangChain v1.x Compliance Note:
+# BM25Retriever from langchain_community is acceptable for Level 2
+# No direct equivalent in langchain_core yet (as of v1.0)
+# This is the recommended approach until a core BM25 retriever exists
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 from backend.src.rag.vector_store import get_vector_store
@@ -43,8 +47,6 @@ def get_all_documents_from_vectorstore() -> list[Document]:
         This loads all documents into memory. For large collections (>10K docs),
         consider pagination or incremental BM25 updates (deferred to L5a).
     """
-    vectorstore = get_vector_store()
-
     # Qdrant client for raw access (uses settings.QDRANT_URL for Docker compatibility)
     from qdrant_client import QdrantClient
     client = QdrantClient(url=settings.QDRANT_URL)
@@ -156,47 +158,101 @@ def reciprocal_rank_fusion(
     return [doc_objects[doc_key] for doc_key, _ in sorted_docs[:top_k]]
 
 
-# Global components (lazy initialization)
-_vector_retriever = None
-_bm25_retriever = None
+class HybridRetrieverManager:
+    """✅ v1.x: Class-based retriever management (replaces global singletons).
 
-
-def _initialize_retrievers(k: int = 10, fetch_k: int = 20, lambda_mult: float = 0.7):
-    """Initialize vector and BM25 retrievers (called once on first use).
-
-    Args:
-        k: Number of documents to retrieve
-        fetch_k: Number of documents to fetch before MMR reranking
-        lambda_mult: MMR diversity parameter (0.7 = 70% relevance, 30% diversity)
+    Benefits over global state:
+    - Test isolation (each test gets independent instance)
+    - No race conditions in concurrent environments
+    - Easier to mock/stub for testing
+    - Follows SOLID principles
     """
-    global _vector_retriever, _bm25_retriever
 
-    if _vector_retriever is None or _bm25_retriever is None:
-        logger.info("🔧 Initializing hybrid search retrievers (first call)")
+    def __init__(self):
+        """Initialize retriever manager with lazy loading."""
+        self._vector_retriever = None
+        self._bm25_retriever = None
+        self._initialized = False
 
-        vectorstore = get_vector_store()
+    def _initialize_retrievers(self, k: int = 10, fetch_k: int = 20, lambda_mult: float = 0.7):
+        """Initialize vector and BM25 retrievers (called once on first use).
 
-        # Dense retriever (semantic) with Maximum Marginal Relevance
-        # MMR balances relevance with diversity to avoid redundant results
-        _vector_retriever = vectorstore.as_retriever(
-            search_type="mmr",  # Maximum Marginal Relevance
-            search_kwargs={
-                "k": k,  # Return k final documents
-                "fetch_k": fetch_k,  # Fetch more, then re-rank to k (diversity)
-                "lambda_mult": lambda_mult  # Balance relevance vs diversity
-            }
-        )
+        Args:
+            k: Number of documents to retrieve
+            fetch_k: Number of documents to fetch before MMR reranking
+            lambda_mult: MMR diversity parameter (0.7 = 70% relevance, 30% diversity)
+        """
+        if not self._initialized:
+            logger.info("🔧 Initializing hybrid search retrievers (first call)")
 
-        logger.info(f"✅ Dense retriever: MMR (k={k}, fetch_k={fetch_k}, lambda={lambda_mult})")
+            vectorstore = get_vector_store()
 
-        # Sparse retriever (keyword) with BM25
-        # BM25 is excellent for exact term matching (e.g., "Saffir-Simpson", "Cat 5")
-        all_docs = get_all_documents_from_vectorstore()
+            # Dense retriever (semantic) with Maximum Marginal Relevance
+            # MMR balances relevance with diversity to avoid redundant results
+            self._vector_retriever = vectorstore.as_retriever(
+                search_type="mmr",  # Maximum Marginal Relevance
+                search_kwargs={
+                    "k": k,  # Return k final documents
+                    "fetch_k": fetch_k,  # Fetch more, then re-rank to k (diversity)
+                    "lambda_mult": lambda_mult  # Balance relevance vs diversity
+                }
+            )
 
-        _bm25_retriever = BM25Retriever.from_documents(all_docs)
-        _bm25_retriever.k = k  # Retrieve top k
+            logger.info(f"✅ Dense retriever: MMR (k={k}, fetch_k={fetch_k}, lambda={lambda_mult})")
 
-        logger.info(f"✅ Sparse retriever: BM25 (k={k}, indexed {len(all_docs)} docs)")
+            # Sparse retriever (keyword) with BM25
+            # BM25 is excellent for exact term matching (e.g., "Saffir-Simpson", "Cat 5")
+            all_docs = get_all_documents_from_vectorstore()
+
+            self._bm25_retriever = BM25Retriever.from_documents(all_docs)
+            self._bm25_retriever.k = k  # Retrieve top k
+
+            logger.info(f"✅ Sparse retriever: BM25 (k={k}, indexed {len(all_docs)} docs)")
+
+            self._initialized = True
+
+    def get_retrievers(self, k: int = 10, fetch_k: int = 20, lambda_mult: float = 0.7):
+        """Get or initialize retrievers.
+
+        Args:
+            k: Number of documents to retrieve
+            fetch_k: Number of documents to fetch before MMR reranking
+            lambda_mult: MMR diversity parameter
+
+        Returns:
+            tuple: (vector_retriever, bm25_retriever)
+        """
+        self._initialize_retrievers(k=k, fetch_k=fetch_k, lambda_mult=lambda_mult)
+        return self._vector_retriever, self._bm25_retriever
+
+
+# ⚠️ Module-level singleton for backward compatibility (Level 2 simplicity)
+# Prefer get_hybrid_retriever_manager() in production for test isolation
+_default_manager = HybridRetrieverManager()
+
+
+def get_hybrid_retriever_manager() -> HybridRetrieverManager:
+    """✅ v1.x: Factory function to create HybridRetrieverManager instance.
+
+    Benefits over module-level singleton:
+    - Test isolation (each test gets independent instance)
+    - No race conditions in concurrent environments
+    - Easier to mock/stub for testing
+    - Follows SOLID principles (dependency injection)
+
+    Returns:
+        HybridRetrieverManager: New manager instance
+
+    Example:
+        >>> # Production code (preferred)
+        >>> manager = get_hybrid_retriever_manager()
+        >>> docs = hybrid_search_with_rrf("query", manager=manager)
+        >>>
+        >>> # Testing code
+        >>> manager = get_hybrid_retriever_manager()
+        >>> # Mock manager._vector_retriever as needed
+    """
+    return HybridRetrieverManager()
 
 
 def hybrid_search_with_rrf(
@@ -204,7 +260,8 @@ def hybrid_search_with_rrf(
     vector_weight: float | None = None,
     bm25_weight: float | None = None,
     top_k: int = 10,
-    rrf_k: int = 60
+    rrf_k: int = 60,
+    manager: HybridRetrieverManager | None = None
 ) -> list[Document]:
     """Hybrid search using RRF fusion (LangChain 1.x compatible).
 
@@ -217,6 +274,7 @@ def hybrid_search_with_rrf(
         bm25_weight: Weight for BM25 search (None = use env HYBRID_SEARCH_BM25_WEIGHT, default: 0.3)
         top_k: Number of final documents to return
         rrf_k: RRF constant (default: 60)
+        manager: Optional HybridRetrieverManager instance (for testing/DI)
 
     Returns:
         list[Document]: Combined and re-ranked documents
@@ -227,17 +285,25 @@ def hybrid_search_with_rrf(
         >>>
         >>> # Override weights for specific query
         >>> docs = hybrid_search_with_rrf("Category 5 hurricane", vector_weight=0.5, bm25_weight=0.5, top_k=5)
+        >>>
+        >>> # Use custom manager for testing
+        >>> manager = HybridRetrieverManager()
+        >>> docs = hybrid_search_with_rrf("query", manager=manager)
     """
     # Use settings if weights not provided
     vector_weight = vector_weight if vector_weight is not None else settings.HYBRID_SEARCH_VECTOR_WEIGHT
     bm25_weight = bm25_weight if bm25_weight is not None else settings.HYBRID_SEARCH_BM25_WEIGHT
 
+    # Use provided manager or default
+    if manager is None:
+        manager = _default_manager
+
     # Initialize retrievers on first call
-    _initialize_retrievers(k=top_k * 2, fetch_k=top_k * 4)  # Fetch more for diversity
+    vector_retriever, bm25_retriever = manager.get_retrievers(k=top_k * 2, fetch_k=top_k * 4)
 
     # Get results from both retrievers
-    vector_results = _vector_retriever.invoke(query)
-    bm25_results = _bm25_retriever.invoke(query)
+    vector_results = vector_retriever.invoke(query)
+    bm25_results = bm25_retriever.invoke(query)
 
     logger.info(
         f"🔍 Hybrid search components | "
