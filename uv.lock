@@ -2767,7 +2767,7 @@ wheels = [
 ]
 
 [[package]]
-name = "weather-agent"
+name = "weather-ai-agent-service"
 version = "0.6.0"
 source = { editable = "." }
 dependencies = [

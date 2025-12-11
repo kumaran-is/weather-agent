@@ -5,14 +5,43 @@ This module defines Pydantic models for weather-related API requests and respons
 PROGRESSIVE ENHANCEMENT PATTERN (from Level 2 learnings):
 - Level 2: Basic query model with user tracking
 - Level 3a: Add memory support (use_memory, enable_rag, enable_cot)
-- Future: Level 3b/3c will add more fields (enable_tot, enable_got)
+- Level 3b: Add advanced reasoning (enable_tot, enable_got)
+- Level 4: Multi-agent orchestration (AUTO-ROUTED based on query intent)
+
+AUTO-ROUTING (v0.6.0+):
+- Removed: use_multi_agent, agent_level flags
+- Added: Intelligent query classification based on intent
+- Routing is automatic - no user configuration needed
 
 CRITICAL RULE: ENHANCE existing models, NEVER create versioned models (WeatherQueryV2)
 """
 
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+# NOTE: AgentLevel enum kept for internal use and backward compatibility
+# It is NOT exposed in the API anymore - routing is automatic
+class AgentLevel(str, Enum):
+    """Agent orchestration level for Level 4 multi-agent system.
+
+    NOTE: This enum is for INTERNAL use only. The API no longer exposes
+    agent level selection - routing is automatic based on query intent.
+
+    Levels:
+    - BASIC: Single agent (Level 1-3 behavior)
+    - L4A: 3-agent system (Triage, Hurricane Specialist, Alert Manager)
+    - L4B: 8-agent system with Supervisor orchestration and parallel execution
+    - L4C: 15-agent production system with debate, reflection, and advanced features
+    """
+
+    BASIC = "basic"  # Single agent, Level 1-3 behavior
+    L4A = "l4a"      # 3-agent: Triage, Hurricane Specialist, Alert Manager
+    L4B = "l4b"      # 8-agent: + Supervisor, Forecaster, Historical, Research, Reflection
+    L4C = "l4c"      # 15-agent: + Debate, Meta-Prompt, Emergency, Climate, Personalization, etc.
 
 
 class WeatherQuery(BaseModel):
@@ -22,11 +51,19 @@ class WeatherQuery(BaseModel):
     - Level 2: query, user_id, session_id
     - Level 3a: + location, enable_rag, enable_cot, use_memory
     - Level 3b: + enable_tot, enable_got
+    - Level 4: AUTO-ROUTING (no explicit flags needed)
+
+    AUTO-ROUTING (v0.6.0+):
+    Multi-agent routing is now AUTOMATIC based on query intent:
+    - Simple weather queries → Basic agent
+    - Hurricane/storm queries → L4A (3-agent)
+    - Complex analysis queries → L4B (8-agent)
+    - Emergency/safety queries → L4C (15-agent with HITL)
 
     NOTE: Feature flags (enable_rag, enable_cot, enable_tot, enable_got, use_memory)
-    should be set via QUERY PARAMETERS, not in request body.
+    can still be set via QUERY PARAMETERS for fine-tuning.
 
-    Clean example for Swagger UI (use query params for flags):
+    Clean example for Swagger UI:
         {
             "query": "What's the weather in London?",
             "user_id": "user123",
@@ -41,6 +78,16 @@ class WeatherQuery(BaseModel):
                     "query": "What's the weather in London?",
                     "user_id": "user123",
                     "session_id": "session456"
+                },
+                {
+                    "query": "Is Hurricane Milton going to hit Tampa?",
+                    "user_id": "user456",
+                    "session_id": "session789"
+                },
+                {
+                    "query": "Should I evacuate from Miami Beach?",
+                    "user_id": "user789",
+                    "session_id": "session012"
                 }
             ]
         }
@@ -52,7 +99,12 @@ class WeatherQuery(BaseModel):
         description="Weather question from the user",
         min_length=1,
         max_length=500,
-        examples=["What's the weather in London?", "Will it rain tomorrow in Seattle?"],
+        examples=[
+            "What's the weather in London?",
+            "Will it rain tomorrow in Seattle?",
+            "Is Hurricane Milton going to hit Tampa?",
+            "Should I evacuate?",
+        ],
     )
 
     # User tracking (Level 2)
@@ -95,12 +147,17 @@ class WeatherQuery(BaseModel):
         description="Enable memory features (short-term + long-term)",
     )
 
+    # NOTE: use_multi_agent and agent_level REMOVED in v0.6.0
+    # Routing is now automatic based on query intent classification
+    # See backend/src/routing/ for the classification logic
+
 
 class WeatherResponse(BaseModel):
     """Response model for weather query endpoint.
 
     Progressive enhancement across levels:
     - Level 2: response, user_id, timestamp
+    - Level 4: + agents_invoked, agent_level, query_complexity, execution_time_ms
     - Level 5a: + cache_hit, cache_layer (for observability)
 
     Example (cache miss):
@@ -133,6 +190,28 @@ class WeatherResponse(BaseModel):
     timestamp: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(),
         description="ISO 8601 timestamp in UTC"
+    )
+
+    # 🆕 Level 4: Multi-agent orchestration metadata
+    agents_invoked: list[str] = Field(
+        default_factory=list,
+        description="List of agents that participated in generating this response",
+        examples=[["triage", "hurricane_specialist", "alert_manager"]],
+    )
+    agent_level: str | None = Field(
+        default=None,
+        description="Multi-agent orchestration level used (basic, l4a, l4b, l4c)",
+        examples=["l4a", "l4b", "l4c", "basic"],
+    )
+    query_complexity: str | None = Field(
+        default=None,
+        description="Detected query complexity (simple, moderate, complex, emergency)",
+        examples=["simple", "moderate", "complex", "emergency"],
+    )
+    execution_time_ms: float | None = Field(
+        default=None,
+        description="Total execution time in milliseconds for multi-agent processing",
+        examples=[150.5, 892.3],
     )
 
     # 🆕 L5a: Cache observability fields

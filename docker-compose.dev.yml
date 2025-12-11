@@ -250,22 +250,22 @@ services:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
       # Optional: Anthropic for future levels
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      # MCP Server URLs (Docker network internal DNS)
-      - MCP_WEATHER_SERVER_URL=${MCP_WEATHER_SERVER_URL:-http://weather-mcp:8080}
-      - MCP_HURRICANE_SERVER_URL=${MCP_HURRICANE_SERVER_URL:-http://hurricane-mcp:8080}
+      # MCP Server URLs (Docker network internal DNS - ALWAYS use service names in containers)
+      - MCP_WEATHER_SERVER_URL=http://weather-mcp:8080
+      - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
       - MCP_WEATHER_SERVER_ENABLED=${MCP_WEATHER_SERVER_ENABLED:-true}
       - MCP_HURRICANE_SERVER_ENABLED=${MCP_HURRICANE_SERVER_ENABLED:-true}
       # Qdrant Vector Database (Level 2 - RAG)
-      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
-      # Redis (Level 3a - Short-Term Memory)
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - QDRANT_URL=http://qdrant:6333
+      # Redis (Level 3a - Short-Term Memory - ALWAYS use service name in containers)
+      - REDIS_URL=redis://redis:6379/0
       - REDIS_TTL_SECONDS=${REDIS_TTL_SECONDS:-1800}
       - REDIS_MAX_CONNECTIONS=${REDIS_MAX_CONNECTIONS:-50}
       - REDIS_MAX_CONVERSATION_TURNS=${REDIS_MAX_CONVERSATION_TURNS:-10}
-      # L2 Cache (Redis Distributed Cache)
-      - L2_CACHE_REDIS_URL=${L2_CACHE_REDIS_URL:-redis://redis:6379/0}
-      # Neo4j/Graphiti (Level 3a - Long-Term Memory)
-      - GRAPHITI_URL=${GRAPHITI_URL:-bolt://neo4j:7687}
+      # L2 Cache (Redis Distributed Cache - ALWAYS use service name in containers)
+      - L2_CACHE_REDIS_URL=redis://redis:6379/0
+      # Neo4j/Graphiti (Level 3a - Long-Term Memory - ALWAYS use service name in containers)
+      - GRAPHITI_URL=bolt://neo4j:7687
       - GRAPHITI_USER=${GRAPHITI_USER:-neo4j}
       - GRAPHITI_PASSWORD=${GRAPHITI_PASSWORD:-weatherai2025}
       - GRAPHITI_DATABASE=${GRAPHITI_DATABASE:-weather_ai}

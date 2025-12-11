@@ -1,6 +1,6 @@
 [project]
-name = "weather-agent"
-version = "0.6.0"  # Level 3c: Full 7-Layer Memory + Emotional Intelligence (COMPLETE)
+name = "weather-ai-agent-service"
+version = "0.7.0"  # Level 4: Multi-Agent Orchestration + Auto-Routing (IN PROGRESS)
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
@@ -130,7 +130,8 @@ warn_unused_ignores = true
 warn_no_return = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "backend/tests"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
