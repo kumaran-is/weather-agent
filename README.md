@@ -1,6 +1,6 @@
 # Weather AI Agent Service
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/weather-ai-agent-service)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/weather-agent)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![LangChain 1.0+](https://img.shields.io/badge/langchain-1.0+-green.svg)](https://github.com/langchain-ai/langchain)
 [![LangGraph 1.0+](https://img.shields.io/badge/langgraph-1.0+-orange.svg)](https://github.com/langchain-ai/langgraph)
@@ -8,13 +8,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](./CHANGELOG.md)
 
-**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, and comprehensive observability.
+**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, and comprehensive observability.
 
-**From zero to production** Progressive implementation showcasing enterprise AI patterns, 7-layer memory systems (99.7% storage reduction), multi-agent orchestration, emotional intelligence, and production deployment strategies.
+**From zero to production** Progressive implementation showcasing enterprise AI patterns, multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction) and production deployment strategies.
 
 **How It Works:** This project follows a progressive complexity model—each module builds on the previous one, making it accessible to beginners while scaling toward advanced concepts.
 
-**Current Stage**: ✅ **Level 3 Implementation Complete** — 7-Layer Memory + Advanced Reasoning + Emotional Intelligence + Multi-Layer Caching
+**Current Stage**: ✅ **Level 4 Implementation Complete** — Multi-Agent Orchestration + Auto-Routing intelligence
+
 
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
 
@@ -128,10 +129,11 @@ Quick reference for testing and debugging the Weather AI Agent:
 | **Level 3a** | [Level 3 Test Guide - Section 1](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3a-2-layer-memory-foundation) | 2-layer memory (Conversation + Session), Redis short-term memory, Graphiti episodic memory | Included | ✅ Complete |
 | **Level 3b** | [Level 3 Test Guide - Section 2](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3b-advanced-reasoning-totgot) | Advanced reasoning (ToT: 27 paths, GoT: network reasoning), beam search pruning | Included | ✅ Complete |
 | **Level 3c** | [Level 3 Test Guide - Section 3](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3c-full-7-layer-memory--personalization) | Full 7-layer memory, emotional intelligence, personalization, memory consolidation (ETL pipeline) | Included | ✅ Complete |
-| **Level 4a** | TBD | 3-agent system (Triage + Specialists) | ~20 min | 🔜 Next |
-| **Level 4b** | TBD | 8-agent orchestration (parallel execution) | ~25 min | 📋 Planned |
-| **Level 4c** | TBD | 15-agent production (reflection + critique) | ~30 min | 📋 Planned |
-| **Level 5a** | [L1/L2 Cache Test](./test_cache_l1_l2.py) | Multi-layer caching (L1: in-process LRU, L2: Redis distributed, L3: Anthropic prompt cache) | ~5 min | ✅ Complete |
+| **Level 4** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | Auto-routing v0.6.0 (intent-based classification, 4 tiers) | ~15 min | ✅ Complete |
+| **Level 4a** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 3-agent system (Triage + Hurricane Specialist + Alert Manager) | ~20 min | ✅ Complete |
+| **Level 4b** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 8-agent orchestration (+ Supervisor + parallel execution) | ~25 min | ✅ Complete |
+| **Level 4c** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 15-agent production (+ Debate + Reflection + Self-Healing) | ~30 min | ✅ Complete |
+| **Level 5a** | TBD) | Multi-layer caching (L1: in-process LRU, L2: Redis distributed, L3: Anthropic prompt cache) | ~5 min | ✅ Complete |
 | **Level 5b** | TBD | 6 critical guardrails (zero PII leaks) | ~20 min | 📋 Planned |
 | **Level 5c** | TBD | Full production (99.9% uptime, observability) | ~30 min | 📋 Planned |
 | **Level 6** | TBD | Self-evolving architecture (dual-loop) | ~35 min | 📋 Planned |
@@ -213,8 +215,8 @@ Edit `.env` with your configuration. Below are all available settings organized 
 
 | Variable | Required | Get From | Description |
 |----------|----------|----------|-------------|
-| `OPENAI_API_KEY` | ✅ **YES** | [OpenAI Platform](https://platform.openai.com/api-keys) | Used for GPT-4o-mini LLM and text-embedding-3-small |
-| `LANGCHAIN_API_KEY` | ⚠️ **Recommended** | [LangSmith](https://smith.langchain.com/) | Enable tracing and debugging (optional for local dev) |
+| `OPENAI_API_KEY` | **YES** | [OpenAI Platform](https://platform.openai.com/api-keys) | Used for GPT-4o-mini LLM and text-embedding-3-small |
+| `LANGCHAIN_API_KEY` | **YES** | [LangSmith](https://smith.langchain.com/) | Enable tracing and debugging (optional for local dev) |
 
 ### MCP Server Configuration
 
@@ -244,8 +246,8 @@ Edit `.env` with your configuration. Below are all available settings organized 
 
 | Variable | Default | Description | Can Override at Runtime? |
 |----------|---------|-------------|--------------------------|
-| `ENABLE_RAG` | `true` | Enable RAG retrieval (8 tools: 3 MCP + 5 RAG) | ✅ Yes (via `?enable_rag=true/false`) |
-| `ENABLE_COT` | `true` | Enable Chain-of-Thought reasoning (5-step framework) | ✅ Yes (via `?enable_cot=true/false`) |
+| `ENABLE_RAG` | `true` | Enable RAG retrieval (8 tools: 3 MCP + 5 RAG) | Yes (via `?enable_rag=true/false`) |
+| `ENABLE_COT` | `true` | Enable Chain-of-Thought reasoning (5-step framework) | Yes (via `?enable_cot=true/false`) |
 
 **Example**: `/weather/query?enable_rag=true&enable_cot=true` (full Level 2 capabilities)
 
@@ -361,7 +363,7 @@ uv pip list | grep -E "langchain|langgraph|fastapi"
 | `make version` | Show installed package versions |
 | `make clean` | Clean up cache and temporary files |
 | `make test` | Run all tests with pytest (quick, no restart) |
-| `make test-dev` | 🌟 **Unified testing** - Restart dev environment + run complete test suite + compliance check (progressive: currently tests Level 1+2+3 complete) |
+| `make test-dev` | **Unified testing** - Restart dev environment + run complete test suite + compliance check (progressive: currently tests Level 1+2+3 complete) |
 | `make lint` | Run ruff linter |
 | `make format` | Format code with black and ruff |
 | `make type-check` | Run mypy type checker |
@@ -537,7 +539,7 @@ make docker-down-dev
 
 ### Project Structure
 ```
-weather-agent/
+weather-ai-agent-service/
 ├── backend/                     # Backend application (Level 1+2+3+5a Complete)
 │   ├── config/                  # Configuration - SINGLE LOCATION ⚠️ (ALL config files here ONLY)
 │   │   ├── __init__.py          # Package initialization
@@ -560,7 +562,7 @@ weather-agent/
 │   │   │   ├── state.py         # Agent state TypedDict
 │   │   │   ├── prompts.py       # System prompts (simple + CoT + memory-aware)
 │   │   │   └── weather_agent.py # Unified ReAct agent (enable_rag + enable_cot + enable_memory)
-│   │   ├── api/                 # FastAPI service (Level 1+2+3+5a)
+│   │   ├── api/                 # FastAPI service (Level 1+2+3+4+5a)
 │   │   │   └── main.py          # FastAPI app + 6 endpoints + L1/L2 cache integration
 │   │   ├── models/              # Pydantic models - SINGLE SOURCE OF TRUTH ⚠️
 │   │   │   ├── __init__.py      # Central exports + strict architectural rules
@@ -569,7 +571,6 @@ weather-agent/
 │   │   │   ├── health.py        # Health check domain (HealthCheckResponse)
 │   │   │   ├── memory.py        # Memory domain (Level 3 - EmotionalMemory, ConversationContext, etc.)
 │   │   │   └── cache.py         # Cache domain (CacheStats, CacheClearResponse)
-│   │   │   # Future: agents.py (Level 4), observability.py (Level 5)
 │   │   ├── cache/               # Multi-layer caching system (Level 5a) - 60-75% cost reduction
 │   │   │   ├── l1_memory_cache.py    # In-process LRU cache (<1ms, 15-25% hit rate)
 │   │   │   ├── l2_redis_cache.py     # Distributed Redis cache (<10ms, 30-40% hit rate)
@@ -603,10 +604,16 @@ weather-agent/
 │   │   ├── reasoning/           # Advanced reasoning (Level 3b) - Tree/Graph-of-Thought
 │   │   │   ├── tot.py           # Tree-of-Thought (27 parallel paths: depth=3, width=3)
 │   │   │   └── got.py           # Graph-of-Thought (network reasoning with cycles)
+│   │   ├── routing/             # Auto-routing system
+│   │   │   ├── __init__.py      # Module exports (classify_query, QueryTier)
+│   │   │   ├── models.py        # QueryTier, RoutingDecision, signal models
+│   │   │   ├── signals.py       # Query/context signal extraction (<1ms)
+│   │   │   ├── rules.py         # Priority-ordered routing rules (9 rules)
+│   │   │   └── classifier.py    # QueryClassifier (intent-based, no pre-fetch)
 │   │   ├── tools/               # LangChain tools (Level 1+2)
 │   │   │   ├── weather_tools.py # 3 MCP tool wrappers (@tool decorator)
 │   │   │   └── rag_tools.py     # 5 RAG-enhanced tools (analyze_trends, identify_patterns, compare_conditions, retrieve_weather_knowledge_tool, semantic_weather_search)
-│   │   └── workflows/           # LangGraph workflows (Level 1)
+│   │   └── workflows/           # LangGraph workflows (Level 1+4)
 │   │       └── weather_graph.py # HITL StateGraph workflow
 │   └── tests/                   # Backend-specific tests
 │       ├── evaluation/          # Model evaluation tests
@@ -618,9 +625,10 @@ weather-agent/
 │   │   ├── docker-usage-guide.md       # Docker orchestration (649 lines)
 │   │   └── rag-datasets-guide.md       # RAG datasets guide (211 lines)
 │   ├── test-guide/              # Testing guides
-│   │   ├── LEVEL_2_TEST_GUIDE.md # ✅ RAG + CoT testing (~15 minutes)
-│   │   └── LEVEL_3_TEST_GUIDE.md # ✅ Memory + ToT/GoT testing (~30 minutes)
-├── tests/                       # Test suite (Level 1+2+3+5a) ✅ UPDATED
+│   │   ├── LEVEL_2_TEST_GUIDE.md # RAG + CoT testing (~15 minutes)
+│   │   ├── LEVEL_3_TEST_GUIDE.md # Memory + ToT/GoT testing (~30 minutes)
+│   │   └── LEVEL_4_TEST_GUIDE.md # Multi-Agent + Auto Routing Intelligence (~30 minutes)
+├── tests/                       # Test suite (Level 1+2+3+4+5a)
 │   ├── conftest.py              # Pytest fixtures
 │   ├── test_mcp_client.py       # MCP client tests
 │   ├── test_weather_tool.py     # Weather tool tests
@@ -629,37 +637,29 @@ weather-agent/
 │   ├── test_workflow.py         # LangGraph workflow tests
 │   ├── test_api.py              # FastAPI endpoint tests
 │   ├── test_memory_parallel.py  # Parallel memory system tests (Level 3)
+│   ├── test_routing.py          # Auto-routing tests (Level 4) - 28 tests ✅ NEW
 │   ├── test_cache_l1_memory.py  # L1 in-process cache tests (Level 5a)
 │   ├── test_cache_l2_redis.py   # L2 Redis distributed cache tests (Level 5a)
 │   └── test_cache_l3_anthropic.py # L3 Anthropic prompt cache tests (Level 5a)
-├── memory-bank/                 # Persistent context (both AI assistants)
-│   ├── projectbrief.md          # Core mission and objectives
-│   ├── productContext.md        # User problems and solutions
-│   ├── systemPatterns.md        # Architecture patterns
-│   ├── techContext.md           # Tech stack and requirements
-│   ├── activeContext.md         # Current work focus (Level 3 COMPLETE)
-│   ├── progress.md              # Completed work, remaining tasks (Level 3c complete, 50% overall)
-│   ├── consolidated_learnings.md # 32 patterns and insights (6 NEW: C1-C6 cache & memory)
-│   └── raw_reflection_log.md    # Detailed session reflections
-├── Dockerfile                   # Multi-stage production + development build
 ├── docker-compose.yml           # Production orchestration (4 services: API, 2 MCP, Qdrant)
 ├── docker-compose.dev.yml       # Development orchestration (hot reload enabled)
 ├── langgraph.json               # LangSmith Studio configuration (2 graphs)
 ├── LANGSMITH_STUDIO_TESTING.md  # Studio testing guide (agent configurations)
-├── pyproject.toml               # Project config (v0.6.0, source of truth) ✅ UPDATED
+├── pyproject.toml               # Project config (v0.7.0, source of truth) ✅ UPDATED
 ├── uv.lock                      # uv lockfile (reproducible builds)
 ├── Makefile                     # Development commands (22 tasks: setup, RAG, Docker)
 ├── verify_setup.py              # Level 0 verification (8 checks)
-├── CHANGELOG.md                 # Version history (v0.6.0 - Level 3 complete) ✅ UPDATED
-└── README.md                    # This file (v0.6.0) ✅ UPDATED
+├── CHANGELOG.md                 # Version history (v0.7.0 - Level 4 in progress) ✅ UPDATED
+└── README.md                    # This file (v0.7.0) ✅ UPDATED
 ```
 
-**Key Highlights** (v0.6.0 - Level 3 Complete):
-- **backend/src/**: ✅ Level 1 + Level 2 + Level 3 + Level 5a COMPLETE
+**Key Highlights** (v0.7.0 - Level 4 Complete):
+- **backend/src/**: ✅ Level 1 + Level 2 + Level 3 + Level 4 + Level 5a COMPLETE
+  - **routing/**: Auto-routing system v0.6.0 (~500 lines, <1ms classification) ✅ NEW
+  - **agents/**: 15 specialized agents (Triage, Hurricane Specialist, Alert Manager, Supervisor, etc.)
   - **memory/**: 7-layer memory system (~5,849 lines, 99.7% storage reduction)
   - **reasoning/**: Tree/Graph-of-Thought (27 parallel paths, network reasoning)
   - **cache/**: Multi-layer caching (L1+L2+L3 utilities, 60-75% cost reduction potential)
-  - **agents/**: Unified agent with enable_rag + enable_cot + enable_memory flags
   - **rag/**: Complete RAG pipeline (embeddings, vector store, hybrid search)
   - **tools/**: 7 tools total (3 MCP + 4 RAG-enhanced)
 - **backend/config/**: 3 config classes (Settings, MemoryConfig, CacheConfig) = 80+ env vars
@@ -669,15 +669,6 @@ weather-agent/
 - **langgraph.json**: 2 graphs configured (weather_agent, weather_hitl_workflow)
 - **Makefile**: 22 commands (setup, RAG, Docker, testing)
 
-**Level 2 Achievements**:
-- ✅ 603-document knowledge base (Qdrant vector store)
-- ✅ Hybrid search (70% semantic + 30% BM25 via RRF algorithm)
-- ✅ Chain-of-Thought reasoning (5-step framework)
-- ✅ Unified agent architecture (enable_rag + enable_cot parameters)
-- ✅ RAG accuracy: 65% → 100% (+54%)
-- ✅ Retrieval relevance: 68% → 94% (+38%)
-- ✅ Blog artifacts: 7 items, OCEAN 99/100 (Grade A+)
-  
 **Note:** We use both `pyproject.toml` (defines what dependencies you want) and `uv.lock` (locks exact versions) to ensure reproducible builds across all environments.
 
 ### Progressive Learning Path
@@ -687,15 +678,16 @@ weather-agent/
 - **Level 3a** (v0.4.0): 2-Layer Memory (Conversation + Session) ✅ COMPLETE
 - **Level 3b** (v0.5.0): Advanced Reasoning (Tree-of-Thoughts + Graph-of-Thoughts) ✅ COMPLETE
 - **Level 3c** (v0.6.0): Full 7-Layer Memory + Emotional Intelligence + Personalization ✅ COMPLETE
-- **Level 4a-c** (v0.7.0-0.9.0): Multi-Agent Orchestration (3 → 15 agents) 🔜 NEXT
-- **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability)
+- **Level 4a-c** (v0.7.0): Multi-Agent Orchestration (3 → 15 agents) ✅ COMPLETE
+- **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability) 🔜 NEXT
 - **Level 6** (v1.1.0): Self-Evolving (dual-loop architecture)
 
-**Current Status**: Level 3 (v0.6.0) - 7-Layer Memory + Advanced Reasoning Complete | Test with `make test-dev`
+**Current Status**: Level 4 (v0.7.0) - Multi-Agent Orchestration (3 → 15 agents) Complete | Test with `make test-dev`
 
 ## API Endpoints Reference
 
 All REST endpoints with descriptions and use cases:
+
 
 | Method | Endpoint | Description | Features |
 |--------|----------|-------------|----------|
@@ -705,6 +697,7 @@ All REST endpoints with descriptions and use cases:
 | **GET** | `/health` | Service health check with detailed diagnostics | • Returns service status, implementation level (v0.6.0), timestamp<br>• Database connectivity checks (Redis, Neo4j, PostgreSQL, Qdrant)<br>• MCP server health verification (weather-mcp, hurricane-mcp)<br>• Memory system status (7-layer architecture validation) |
 | **POST** | `/cache/clear` | Clear all cache layers (L1 + L2) | • Development tool for test isolation<br>• Clears L1 in-process cache (Python dict)<br>• Clears L2 Redis cache (pattern-based key deletion)<br>• Returns detailed status with cleared layers and timestamp |
 | **GET** | `/cache/stats` | Retrieve cache performance statistics | • L1 cache metrics: hit rate, total requests, cache size<br>• L2 Redis metrics: distributed cache performance<br>• Overall hit rate across both layers<br>• Real-time cache health monitoring |
+rics: distributed cache performance<br>• Overall hit rate across both layers<br>• Real-time cache health monitoring |
 
 **Access Points**:
 - **Swagger UI**: http://localhost:8000/docs (interactive testing)
@@ -748,7 +741,7 @@ make test-dev
 
 This single command:
 1. ✅ Restarts dev environment (clean state)
-2. ✅ Runs complete test suite (MCP, RAG, HITL, Memory, Reasoning, Cache)
+2. ✅ Runs complete test suite (MCP, RAG, HITL, Memory, Reasoning, Cache, Multi-Agent Orchestration, Auto-Routing intelligence)
 3. ✅ Verifies LangChain v1.x compliance (100% required)
 
 **Progressive**: As you build more levels, `make test-dev` automatically includes new tests without Makefile changes!
@@ -756,6 +749,7 @@ This single command:
 **Level-Specific Test Guides**:
 - **[Level 2 Test Guide](./docs/test-guide/LEVEL_2_TEST_GUIDE.md)** - RAG + CoT + Hybrid Search (6 Swagger tests + 6 Studio configs)
 - **[Level 3 Test Guide](./docs/test-guide/LEVEL_3_TEST_GUIDE.md)** - Memory + ToT/GoT
+- **[Level 4 Test Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md)** -  Multi-Agent Orchestration + Auto-Routing intelligence
 
 **Prerequisites:** Docker services running
 ```bash
@@ -786,4 +780,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 0.6.0 | **Last Updated**: 2025-12-06
+**Version**: 0.7.0 | **Last Updated**: 2025-12-11

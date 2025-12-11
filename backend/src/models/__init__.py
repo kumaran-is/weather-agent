@@ -34,12 +34,13 @@ When to Create NEW Model vs Enhance Existing:
    - Incremental improvements (L2→L3→L4)
    - Backward-compatible changes
 
-Current Models (Level 2):
+Current Models:
 - weather.py: WeatherQuery, WeatherResponse (2 models)
 - hurricane.py: HurricaneAlertRequest, HurricaneAlertResponse, HurricaneApprovalRequest, HurricaneApprovalResponse (4 models)
 - health.py: HealthCheckResponse (1 model)
+- multi_agent.py: AgentRole, QueryComplexity, RoutingDecision, AgentResponse, AgentState, MultiAgentState (6 models - Level 4a)
 
-Total: 7 models, 100% utilized, 0% unused
+Total: 13 models, 100% utilized, 0% unused
 
 Future Enhancements (Level 3-6) - ENHANCE, DON'T PROLIFERATE:
 - Level 3: ENHANCE WeatherQuery/Response with session_id, memory_context (NOT new models)
@@ -59,8 +60,9 @@ Design Principles (STRICTLY ENFORCED):
 5. Progressive Addition: Add when needed in that level, not prematurely
 """
 
-# Weather models
+# Weather models (v0.6.0: AgentLevel kept for internal use, not in API)
 from backend.src.models.weather import (
+    AgentLevel,  # Internal use only - API uses auto-routing now
     WeatherQuery,
     WeatherResponse,
 )
@@ -78,8 +80,19 @@ from backend.src.models.health import (
     HealthCheckResponse,
 )
 
+# Multi-agent models (Level 4a)
+from backend.src.models.multi_agent import (
+    AgentRole,
+    QueryComplexity,
+    RoutingDecision,
+    AgentResponse,
+    AgentState,
+    MultiAgentState,
+)
+
 __all__ = [
-    # Weather
+    # Weather (v0.6.0: AgentLevel for internal use, API uses auto-routing)
+    "AgentLevel",  # Internal - not exposed in API
     "WeatherQuery",
     "WeatherResponse",
     # Hurricane
@@ -89,4 +102,11 @@ __all__ = [
     "HurricaneApprovalResponse",
     # Health
     "HealthCheckResponse",
+    # Multi-Agent (Level 4a)
+    "AgentRole",
+    "QueryComplexity",
+    "RoutingDecision",
+    "AgentResponse",
+    "AgentState",
+    "MultiAgentState",
 ]

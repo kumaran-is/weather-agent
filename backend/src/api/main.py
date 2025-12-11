@@ -1,4 +1,4 @@
-"""FastAPI application for Weather AI Agent - Level 3a + L5a Caching.
+"""FastAPI application for Weather AI Agent - Level 4 Multi-Agent + L5a Caching.
 
 This module provides the main FastAPI application with REST endpoints for
 weather queries and hurricane alert management with HITL approval.
@@ -26,7 +26,15 @@ Level 3a Enhancements:
 - Pronoun resolution ("there" → tracked location)
 - User profile and session management
 
-Level 5a Caching Enhancements: 🆕
+Level 4 Multi-Agent Enhancements: 🆕
+- L4a: 3-agent system (Triage, Hurricane Specialist, Alert Manager)
+- L4b: 8-agent orchestration with Supervisor and parallel execution
+- L4c: 15-agent production system with debate, reflection, and advanced features
+- AUTO mode: Automatic agent level selection based on query complexity
+- Confidence-based routing and risk assessment
+- Multi-agent response synthesis and quality improvement
+
+Level 5a Caching Enhancements:
 - L1: In-process LRU cache (<1ms, 15-25% hit rate, 100% savings)
 - L2: Redis distributed cache (<10ms, 30-40% hit rate, 100% savings)
 - L3: Anthropic prompt cache (transparent, 60-70% hit rate, 90% savings)
@@ -39,7 +47,7 @@ Still Deferred:
 - NO metrics tracking (deferred to L5c)
 
 API Endpoints:
-- POST /weather/query - Flexible weather queries (supports enable_rag/enable_cot/use_memory)
+- POST /weather/query - Flexible weather queries (supports multi-agent, RAG, CoT, memory)
 - POST /weather/hurricane/alert - Create hurricane alert (may require approval)
 - POST /weather/hurricane/approve/{thread_id} - Approve or reject pending alert
 - GET /health - Health check
@@ -74,6 +82,15 @@ from backend.src.models import (
     WeatherQuery,
     WeatherResponse,
 )
+# 🆕 v0.6.0: Auto-routing classifier (replaces explicit agent_level)
+from backend.src.routing import classify_query, QueryTier
+# 🆕 Level 4: Multi-agent workflow imports
+from backend.src.orchestration.multi_agent_workflow import (
+    compile_workflow,
+    compile_level4b_workflow,
+    invoke_workflow,
+    invoke_workflow_v2,
+)
 from backend.src.workflows.weather_graph import get_weather_hitl_workflow
 
 # Configure logging
@@ -95,16 +112,22 @@ async def lifespan(app: FastAPI):
     """
     # ========== STARTUP ==========
     logger.info("🚀 Weather AI Agent API starting up...")
-    logger.info("Level 3a + L5a: Memory System + 3-Layer Caching 🆕")
+    logger.info("Level 4 Multi-Agent + L5a Caching 🆕")
+    logger.info("Level 4 Multi-Agent System:")
+    logger.info("  - L4a: 3-agent (Triage, Hurricane Specialist, Alert Manager)")
+    logger.info("  - L4b: 8-agent with Supervisor orchestration + parallel execution")
+    logger.info("  - L4c: 15-agent production (debate, reflection, emergency)")
+    logger.info("  - AUTO mode: Automatic agent selection based on complexity")
+    logger.info("Level 3 Memory System:")
     logger.info("  - Short-term memory: Redis (30min TTL, entity tracking)")
     logger.info("  - Long-term memory: Graphiti + Neo4j (user profiles, temporal facts)")
     logger.info("  - Semantic tool discovery: 37.5% context reduction (8→3 tools)")
     logger.info("  - Pronoun resolution: 'there' → tracked location")
+    logger.info("Level 5a Caching:")
     logger.info("  - L1 cache: In-process LRU (<1ms, 15-25% hit rate)")
     logger.info("  - L2 cache: Redis distributed (<10ms, 30-40% hit rate)")
     logger.info("  - L3 cache: Anthropic prompt (transparent, 60-70% hit rate)")
     logger.info("  - Target: 60-75% cost reduction")
-    logger.info("Previous: Level 2 (RAG + CoT + Hybrid Search + LLM Tuning)")
     logger.info("API documentation available at /docs")
 
     # 🆕 L5a: Initialize cache layers
@@ -183,6 +206,27 @@ async def lifespan(app: FastAPI):
                 logger.error("   Memory features will be disabled until service restart")
                 app.state.memory_manager = None
 
+    # 🆕 Level 4: Pre-compile multi-agent workflows for faster request handling
+    logger.info("🤖 Initializing Level 4 multi-agent workflows...")
+    try:
+        # Compile Level 4a workflow (3-agent)
+        app.state.workflow_l4a = compile_workflow()
+        logger.info("✅ Level 4a workflow compiled (3-agent: Triage, Specialist, Alert)")
+
+        # Compile Level 4b workflow (8-agent with supervisor)
+        app.state.workflow_l4b = compile_level4b_workflow()
+        logger.info("✅ Level 4b workflow compiled (8-agent with Supervisor)")
+
+        # Level 4c uses invoke_workflow_v2 with supervisor orchestration
+        # No separate compilation needed - it dynamically orchestrates
+        logger.info("✅ Level 4c ready (15-agent production via Supervisor)")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Level 4 workflows: {e}")
+        logger.error("   Multi-agent features will fall back to basic agent")
+        app.state.workflow_l4a = None
+        app.state.workflow_l4b = None
+
     yield  # Application runs here
 
     # ========== SHUTDOWN ==========
@@ -208,8 +252,31 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app with lifespan context manager
 app = FastAPI(
     title="Weather AI Agent API",
-    description="Level 3a: ReAct Agent with RAG, CoT, Memory System (short-term + long-term), Semantic Tool Discovery, and HITL approval",
-    version="0.4.0",
+    description=(
+        "Level 4 Multi-Agent System with AUTO-ROUTING (v0.6.0):\n\n"
+        "**🆕 AUTO-ROUTING (v0.6.0):**\n"
+        "- No explicit `use_multi_agent` or `agent_level` flags needed\n"
+        "- Intelligent query classification based on intent\n"
+        "- Simple queries → Basic agent (fast, low cost)\n"
+        "- Hurricane queries → L4A 3-agent\n"
+        "- Complex analysis → L4B 8-agent\n"
+        "- Emergency/safety → L4C 15-agent with HITL\n\n"
+        "**Level 4 Multi-Agent Orchestration:**\n"
+        "- L4a: 3-agent (Triage, Hurricane Specialist, Alert Manager)\n"
+        "- L4b: 8-agent with Supervisor orchestration + parallel execution\n"
+        "- L4c: 15-agent production (debate, reflection, emergency)\n\n"
+        "**Level 3 Memory System:**\n"
+        "- Short-term: Redis (entity tracking, pronoun resolution)\n"
+        "- Long-term: Graphiti + Neo4j (user profiles, temporal facts)\n\n"
+        "**Level 2 RAG + CoT:**\n"
+        "- Hybrid Search (70% semantic + 30% BM25)\n"
+        "- Chain-of-Thought reasoning\n\n"
+        "**Level 5a Caching:**\n"
+        "- L1: In-process LRU, L2: Redis, L3: Anthropic prompt\n\n"
+        "**HITL Approval:**\n"
+        "- Emergency tier queries may trigger human approval"
+    ),
+    version="0.6.0",  # 🆕 Auto-routing version
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,  # ✅ Modern pattern (FastAPI 0.100+)
@@ -259,79 +326,139 @@ async def get_l3_metrics(request: Request) -> AnthropicCacheMetrics | None:
     return getattr(request.app.state, "l3_cache_metrics", None)
 
 
+# 🆕 Level 4: Workflow dependency injection
+async def get_workflow_l4a(request: Request):
+    """Dependency injection for Level 4a workflow (3-agent)."""
+    return getattr(request.app.state, "workflow_l4a", None)
+
+
+async def get_workflow_l4b(request: Request):
+    """Dependency injection for Level 4b workflow (8-agent)."""
+    return getattr(request.app.state, "workflow_l4b", None)
+
+
+# 🆕 v0.6.0: Helper function removed - replaced by backend.src.routing.classify_query
+# The old _resolve_agent_level function has been replaced by the new routing module
+# which provides more sophisticated intent-based classification.
+
+
+async def _invoke_basic_agent(
+    query: str,
+    effective_rag: bool,
+    effective_cot: bool,
+    effective_memory: bool,
+    effective_tot: bool,
+    effective_got: bool,
+    memory_context: dict | None,
+) -> str:
+    """Invoke the basic single-agent weather agent (Level 1-3 behavior).
+
+    This is the fallback when multi-agent is disabled or unavailable.
+
+    Args:
+        query: User's query
+        effective_rag: Whether RAG is enabled
+        effective_cot: Whether CoT is enabled
+        effective_memory: Whether memory is enabled
+        effective_tot: Whether ToT is enabled
+        effective_got: Whether GoT is enabled
+        memory_context: Memory context dict (if any)
+
+    Returns:
+        Response text from the agent
+    """
+    agent = create_weather_agent(
+        use_case="default",
+        enable_rag=effective_rag,
+        enable_cot=effective_cot,
+        enable_memory=effective_memory,
+        enable_tot=effective_tot,
+        enable_got=effective_got,
+        memory_context=memory_context,
+    )
+
+    result = await agent.ainvoke({
+        "messages": [{"role": "user", "content": query}]
+    })
+
+    return result["messages"][-1].content
+
+
 @app.post(
     "/weather/query",
     response_model=WeatherResponse,
     status_code=status.HTTP_200_OK,
     summary="Query weather conditions",
-    description="Ask the weather agent about current conditions or forecasts. Supports RAG, CoT, Memory (Level 3a), and 3-layer caching (L5a). Optionally override settings via query parameters.",
+    description=(
+        "Ask the weather agent about current conditions or forecasts. "
+        "Uses AUTO-ROUTING (v0.6.0) to automatically select the optimal agent tier. "
+        "Supports RAG, CoT, Memory, and 3-layer caching."
+    ),
     tags=["Weather"]
 )
 async def weather_query_endpoint(
     query: WeatherQuery,
     enable_rag: bool | None = None,
     enable_cot: bool | None = None,
-    enable_tot: bool | None = None,  # 🆕 Level 3b
-    enable_got: bool | None = None,  # 🆕 Level 3b
-    use_memory: bool | None = None,  # 🆕 Level 3a
-    memory_manager: MemoryManager | None = Depends(get_memory_manager),  # ✅ DI pattern
-    l1_cache: QueryCache | None = Depends(get_l1_cache),  # 🆕 L5a: L1 cache DI
-    l2_cache: RedisQueryCache | None = Depends(get_l2_cache),  # 🆕 L5a: L2 cache DI
-    l3_metrics: AnthropicCacheMetrics | None = Depends(get_l3_metrics),  # 🆕 L5a: L3 metrics DI
+    enable_tot: bool | None = None,  # Level 3b
+    enable_got: bool | None = None,  # Level 3b
+    use_memory: bool | None = None,  # Level 3a
+    # 🆕 v0.6.0: REMOVED use_multi_agent and agent_level
+    # Routing is now automatic based on query intent
+    memory_manager: MemoryManager | None = Depends(get_memory_manager),
+    l1_cache: QueryCache | None = Depends(get_l1_cache),
+    l2_cache: RedisQueryCache | None = Depends(get_l2_cache),
+    l3_metrics: AnthropicCacheMetrics | None = Depends(get_l3_metrics),
+    workflow_l4a=Depends(get_workflow_l4a),
+    workflow_l4b=Depends(get_workflow_l4b),
 ):
-    """Query weather agent with flexible configuration including memory support (Level 3a).
+    """Query weather agent with AUTO-ROUTING (v0.6.0).
 
-    This endpoint accepts natural language weather questions and returns
-    responses from the weather agent. Feature flags can be overridden per request.
+    This endpoint accepts natural language weather questions and automatically
+    routes to the optimal agent tier based on query intent classification.
 
-    **Configuration Priority**:
-    1. Query parameters (enable_rag, enable_cot) - Highest priority
-    2. WeatherQuery model fields (enable_rag, enable_cot, use_memory) - Model defaults
-    3. Environment variables (ENABLE_RAG, ENABLE_COT) - System defaults
-    4. Code defaults (True, True, True) - Fallback
+    **🆕 AUTO-ROUTING (v0.6.0)**:
+    No need to specify `use_multi_agent` or `agent_level` - routing is automatic!
 
-    **Level 3a Memory Features**: 🆕
-    - Short-term memory: Session context, entity tracking, pronoun resolution
-    - Long-term memory: User profiles, preferences, historical queries
-    - Semantic tool discovery: Only relevant tools loaded (37.5% savings)
+    - SIMPLE queries (weather, temperature) → Basic agent
+    - STANDARD queries (hurricane, storm) → L4A 3-agent
+    - COMPLEX queries (compare, analyze) → L4B 8-agent
+    - EMERGENCY queries (evacuate, safety) → L4C 15-agent with HITL
 
-    Example Request (Level 3a with memory):
+    **Configuration Priority** (for feature flags):
+    1. Query parameters - Highest priority
+    2. WeatherQuery model fields - Model defaults
+    3. Environment variables - System defaults
+    4. Code defaults - Fallback
+
+    Example Request:
         POST /weather/query
         {
-            "query": "What about there tomorrow?",
+            "query": "Is Hurricane Milton going to hit Tampa?",
             "user_id": "user123",
-            "session_id": "session456",
-            "use_memory": true,
-            "enable_rag": true,
-            "enable_cot": false
-        }
-        # Agent resolves "there" using previous location from memory
-
-    Example Request (use .env defaults):
-        POST /weather/query
-        {
-            "query": "What's the weather in London?",
-            "user_id": "user123"
-        }
-
-    Example Request (override RAG):
-        POST /weather/query?enable_rag=false
-        {
-            "query": "What's the weather in London?",
-            "user_id": "user123"
+            "session_id": "session456"
         }
 
     Example Response:
         {
-            "response": "The weather in London is currently 15°C and rainy...",
+            "response": "Based on current NHC data...",
             "user_id": "user123",
-            "timestamp": "2025-12-03T16:20:00Z"
+            "timestamp": "2025-12-03T16:20:00Z",
+            "agents_invoked": ["triage", "hurricane_specialist", "alert_manager"],
+            "agent_level": "l4a",
+            "query_complexity": "standard",
+            "execution_time_ms": 892.3,
+            "cache_hit": false,
+            "cache_layer": null
         }
 
     Args:
-        query: WeatherQuery with user question, user_id, session_id, and feature flags
-        enable_rag: Optional override for ENABLE_RAG (None = use model/env default)
-        enable_cot: Optional override for ENABLE_COT (None = use model/env default)
+        query: WeatherQuery with user question, user_id, session_id
+        enable_rag: Optional override for RAG (None = use default)
+        enable_cot: Optional override for CoT (None = use default)
+        enable_tot: Optional override for ToT (None = use default)
+        enable_got: Optional override for GoT (None = use default)
+        use_memory: Optional override for memory (None = use default)
 
     Returns:
         WeatherResponse with agent's answer and metadata
@@ -369,6 +496,9 @@ async def weather_query_endpoint(
         else (query.use_memory if hasattr(query, "use_memory") else False)
     )
 
+    # 🆕 v0.6.0: REMOVED use_multi_agent and agent_level configuration
+    # Routing is now automatic via classify_query()
+
     # Generate session_id if not provided
     session_id = query.session_id or f"session_{uuid.uuid4().hex[:8]}"
 
@@ -380,8 +510,8 @@ async def weather_query_endpoint(
             f"query: {query.query} | "
             f"enable_rag: {effective_rag} | "
             f"enable_cot: {effective_cot} | "
-            f"enable_tot: {effective_tot} | "  # 🆕 Level 3b
-            f"enable_got: {effective_got} | "  # 🆕 Level 3b
+            f"enable_tot: {effective_tot} | "
+            f"enable_got: {effective_got} | "
             f"use_memory: {effective_memory}"
         )
 
@@ -426,9 +556,18 @@ async def weather_query_endpoint(
                     )
                     logger.debug(f"💾 L1 cache BACKFILL from L2")
 
+        # 🆕 Level 4: Initialize multi-agent metadata
+        agents_invoked: list[str] = []
+        final_agent_level: str | None = None
+        detected_complexity: str | None = None
+        execution_time_ms: float | None = None
+
         # 🆕 L5a: Cache miss - invoke agent (L3 Anthropic caching automatic)
         if not cache_hit:
             logger.info(f"❌ Cache MISS (L1+L2) | user_id: {query.user_id} | Invoking agent...")
+
+            import time
+            start_time = time.time()
 
             # 🆕 Level 3a: Load memory context if enabled
             memory_context = None
@@ -442,24 +581,146 @@ async def weather_query_endpoint(
             elif effective_memory and not memory_manager:
                 logger.warning("⚠️  Memory requested but manager not initialized")
 
-            # Create agent with memory support (Level 3a enhancement)
-            agent = create_weather_agent(
-                use_case="default",
-                enable_rag=effective_rag,
-                enable_cot=effective_cot,
-                enable_memory=effective_memory,  # 🆕 Level 3a
-                enable_tot=effective_tot,  # 🆕 Level 3b
-                enable_got=effective_got,  # 🆕 Level 3b
-                memory_context=memory_context,  # 🆕 Level 3a
+            # 🆕 v0.6.0: AUTO-ROUTING based on query intent classification
+            routing_decision = classify_query(
+                query=query.query,
+                memory_context=memory_context,
             )
 
-            # Invoke agent (L3 Anthropic caching transparent)
-            result = await agent.ainvoke({
-                "messages": [{"role": "user", "content": query.query}]
-            })
+            logger.info(
+                f"🎯 Auto-routing decision | "
+                f"tier: {routing_decision.tier.value} | "
+                f"agent_level: {routing_decision.agent_level} | "
+                f"confidence: {routing_decision.confidence:.2f} | "
+                f"rule: {routing_decision.primary_signal}"
+            )
 
-            # Extract response from agent result
-            response_text = result["messages"][-1].content
+            # Route to appropriate workflow based on classification
+            if routing_decision.tier == QueryTier.EMERGENCY:
+                # EMERGENCY: L4C 15-agent with HITL potential
+                final_agent_level = "l4c"
+                detected_complexity = "emergency"
+                workflow_result = await invoke_workflow_v2(
+                    query=query.query,
+                    user_id=query.user_id,
+                    session_id=session_id,
+                    memory_context=memory_context,
+                    use_supervisor=True,
+                )
+                response_text = workflow_result.get("final_response", "")
+                agents_invoked = workflow_result.get("agents_invoked", [])
+
+            elif routing_decision.tier == QueryTier.COMPLEX:
+                # COMPLEX: L4B 8-agent with supervisor
+                if workflow_l4b:
+                    final_agent_level = "l4b"
+                    detected_complexity = "complex"
+                    workflow_result = await workflow_l4b.ainvoke(
+                        {
+                            "query": query.query,
+                            "user_id": query.user_id,
+                            "session_id": session_id,
+                            "memory_context": memory_context,
+                            "agent_responses": [],
+                            "agents_invoked": [],
+                        },
+                        config={"configurable": {"thread_id": session_id}},
+                    )
+                    response_text = workflow_result.get("final_response", "")
+                    agents_invoked = workflow_result.get("agents_invoked", [])
+                elif workflow_l4a:
+                    # Fallback to L4A if L4B not available
+                    logger.warning("⚠️  L4B workflow not available, using L4A")
+                    final_agent_level = "l4a"
+                    detected_complexity = "complex"
+                    workflow_result = await workflow_l4a.ainvoke(
+                        {
+                            "query": query.query,
+                            "user_id": query.user_id,
+                            "session_id": session_id,
+                            "memory_context": memory_context,
+                            "agent_responses": [],
+                            "agents_invoked": [],
+                        },
+                        config={"configurable": {"thread_id": session_id}},
+                    )
+                    response_text = workflow_result.get("final_response", "")
+                    agents_invoked = workflow_result.get("agents_invoked", [])
+                else:
+                    # Fallback to basic agent
+                    logger.warning("⚠️  No multi-agent workflows available, using basic agent")
+                    final_agent_level = "basic"
+                    detected_complexity = "complex"
+                    response_text = await _invoke_basic_agent(
+                        query=query.query,
+                        effective_rag=effective_rag,
+                        effective_cot=effective_cot,
+                        effective_memory=effective_memory,
+                        effective_tot=effective_tot,
+                        effective_got=effective_got,
+                        memory_context=memory_context,
+                    )
+                    agents_invoked = ["weather_agent"]
+
+            elif routing_decision.tier == QueryTier.STANDARD:
+                # STANDARD: L4A 3-agent system
+                if workflow_l4a:
+                    final_agent_level = "l4a"
+                    detected_complexity = "standard"
+                    workflow_result = await workflow_l4a.ainvoke(
+                        {
+                            "query": query.query,
+                            "user_id": query.user_id,
+                            "session_id": session_id,
+                            "memory_context": memory_context,
+                            "agent_responses": [],
+                            "agents_invoked": [],
+                        },
+                        config={"configurable": {"thread_id": session_id}},
+                    )
+                    response_text = workflow_result.get("final_response", "")
+                    agents_invoked = workflow_result.get("agents_invoked", [])
+                else:
+                    # Fallback to basic agent
+                    logger.warning("⚠️  L4A workflow not available, using basic agent")
+                    final_agent_level = "basic"
+                    detected_complexity = "standard"
+                    response_text = await _invoke_basic_agent(
+                        query=query.query,
+                        effective_rag=effective_rag,
+                        effective_cot=effective_cot,
+                        effective_memory=effective_memory,
+                        effective_tot=effective_tot,
+                        effective_got=effective_got,
+                        memory_context=memory_context,
+                    )
+                    agents_invoked = ["weather_agent"]
+
+            else:
+                # SIMPLE: Basic single agent (fast, low cost)
+                logger.info("🤖 Using BASIC single-agent mode (SIMPLE tier)")
+                final_agent_level = "basic"
+                detected_complexity = "simple"
+                response_text = await _invoke_basic_agent(
+                    query=query.query,
+                    effective_rag=effective_rag,
+                    effective_cot=effective_cot,
+                    effective_memory=effective_memory,
+                    effective_tot=effective_tot,
+                    effective_got=effective_got,
+                    memory_context=memory_context,
+                )
+                agents_invoked = ["weather_agent"]
+
+            # Calculate execution time
+            execution_time_ms = (time.time() - start_time) * 1000
+
+            logger.info(
+                f"✅ Agent invocation complete | "
+                f"agent_level: {final_agent_level} | "
+                f"agents: {agents_invoked} | "
+                f"execution_ms: {execution_time_ms:.2f}"
+            )
 
             # 🆕 L5a: Write to L1 and L2 caches
             if l1_cache:
@@ -497,6 +758,8 @@ async def weather_query_endpoint(
             f"user_id: {query.user_id} | "
             f"cache_hit: {cache_hit} | "
             f"cache_layer: {cache_layer or 'MISS'} | "
+            f"agent_level: {final_agent_level} | "  # 🆕 Level 4
+            f"agents: {agents_invoked} | "  # 🆕 Level 4
             f"response_length: {len(response_text)}"
         )
 
@@ -508,8 +771,14 @@ async def weather_query_endpoint(
             response=response_text,
             user_id=query.user_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
-            cache_hit=cache_hit,  # 🆕 L5a: Cache hit indicator
-            cache_layer=cache_layer,  # 🆕 L5a: Cache layer that served response
+            # 🆕 Level 4: Multi-agent metadata
+            agents_invoked=agents_invoked,
+            agent_level=final_agent_level,
+            query_complexity=detected_complexity,
+            execution_time_ms=execution_time_ms,
+            # L5a: Cache metadata
+            cache_hit=cache_hit,
+            cache_layer=cache_layer,
         )
 
     except Exception as e:
@@ -771,7 +1040,7 @@ async def health_check():
 
     return HealthCheckResponse(
         status="healthy",
-        level="3a+L5a",  # Updated to Level 3a + L5a (Memory + 3-Layer Caching)
+        level="L4+L5a",  # Updated to Level 4 Multi-Agent + L5a Caching
         timestamp=datetime.now(timezone.utc).isoformat()
     )
 
