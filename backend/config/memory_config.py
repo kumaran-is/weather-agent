@@ -56,6 +56,9 @@ class MemoryConfig(BaseSettings):
     MEMORY_PARALLEL_RETRIEVAL: bool = True  # Enable parallel layer retrieval
     MEMORY_LAYER_TIMEOUT: float = 5.0  # Timeout per layer in seconds (prevents hangs)
 
+    # 🆕 L5 FIX: Configurable Graphiti episode save timeout
+    GRAPHITI_SAVE_TIMEOUT: float = 20.0  # Timeout for episode saves in seconds (increased from 10s to 20s for Graphiti performance)
+
     # 🆕 Future: Multi-layer memory configuration (Level 3c - 7 layers)
     # These flags control which memory layers are active
     # Currently only Layers 1-3 are implemented:

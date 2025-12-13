@@ -86,6 +86,7 @@ class AgentRole(str, Enum):
     TRIAGE = "triage"
     HURRICANE_SPECIALIST = "hurricane_specialist"
     ALERT_MANAGER = "alert_manager"
+    DIRECT_RESPONSE = "direct_response"  # For simple queries and educational questions
 
     # Level 4b agents (Expansion)
     SUPERVISOR = "supervisor"

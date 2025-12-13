@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 from langchain_openai import ChatOpenAI
@@ -70,7 +70,7 @@ class TriageAgent:
     def __init__(
         self,
         model_name: str = "gpt-4o-mini",
-        memory_manager: Optional[Any] = None,
+        memory_manager: Any | None = None,
     ):
         """Initialize Triage Agent.
 

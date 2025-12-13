@@ -1,0 +1,25 @@
+# ============================================================================
+# Grafana Dashboard Provisioning - Weather AI Agent Service (Level 5c)
+# ============================================================================
+# Auto-provision dashboards from JSON files
+#
+# Dashboards:
+#   - MCP Health: MCP server metrics (latency, errors, data freshness)
+#   - Agent Performance: Query metrics, costs, accuracy
+#   - Cache Metrics: L1/L2/L3 hit rates, latency
+#   - System Health: Uptime, memory, CPU
+# ============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Weather AI Dashboards'
+    orgId: 1
+    folder: 'Weather AI'
+    folderUid: 'weather-ai'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

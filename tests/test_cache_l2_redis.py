@@ -42,13 +42,23 @@ def mock_redis():
     return mock
 
 
+async def _mock_from_url_factory(mock_redis):
+    """Factory to create an async mock function that returns the mock Redis client."""
+    async def _mock_from_url(*args, **kwargs):
+        return mock_redis
+    return _mock_from_url
+
+
 class TestL2RedisCache:
     """Test L2: Redis distributed cache functionality."""
 
     @pytest.mark.asyncio
     async def test_redis_connection_success(self, mock_redis):
         """Test successful Redis connection."""
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache(redis_url="redis://localhost:6379/0")
             await cache.connect()
 
@@ -68,7 +78,10 @@ class TestL2RedisCache:
     @pytest.mark.asyncio
     async def test_redis_disconnect(self, mock_redis):
         """Test graceful Redis disconnection."""
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache()
             await cache.connect()
             await cache.close()
@@ -103,7 +116,10 @@ class TestL2RedisCache:
         # Mock Redis to return cached value
         mock_redis.get.return_value = "The weather in London is 15°C and rainy."
 
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache(ttl_seconds=1800)
             await cache.connect()
 
@@ -139,7 +155,10 @@ class TestL2RedisCache:
         # Mock Redis to return None (cache miss)
         mock_redis.get.return_value = None
 
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache()
             await cache.connect()
 
@@ -196,7 +215,10 @@ class TestL2RedisCache:
         # Mock Redis to raise error
         mock_redis.get.side_effect = Exception("Redis error")
 
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache()
             await cache.connect()
 
@@ -217,7 +239,10 @@ class TestL2RedisCache:
         # Mock Redis to raise error
         mock_redis.set.side_effect = Exception("Redis error")
 
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache()
             await cache.connect()
 
@@ -241,7 +266,10 @@ class TestL2RedisCache:
             (0, ["weather:cache:key3"]),  # Second scan (cursor 0 = done)
         ]
 
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache(key_prefix="weather:cache:")
             await cache.connect()
 
@@ -257,7 +285,10 @@ class TestL2RedisCache:
     @pytest.mark.asyncio
     async def test_cache_stats(self, mock_redis):
         """Test cache statistics calculation."""
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache(ttl_seconds=1800)
             await cache.connect()
 
@@ -289,7 +320,10 @@ class TestL2RedisCache:
     @pytest.mark.asyncio
     async def test_cache_stats_with_redis_memory_info(self, mock_redis):
         """Test cache statistics include Redis memory info."""
-        with patch("backend.src.cache.l2_redis_cache.redis.from_url", return_value=mock_redis):
+        async def mock_from_url(*args, **kwargs):
+            return mock_redis
+
+        with patch("backend.src.cache.l2_redis_cache.redis.from_url", side_effect=mock_from_url):
             cache = RedisQueryCache()
             await cache.connect()
 

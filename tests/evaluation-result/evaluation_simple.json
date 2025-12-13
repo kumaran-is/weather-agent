@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-12-12T17:11:29.576256",
+  "max_cases": null,
+  "category": "simple",
+  "total_cases": 40,
+  "passed_cases": 36,
+  "failed_cases": 4,
+  "pass_rate": 0.9,
+  "pillar_averages": {
+    "effectiveness": 0.8231249999999999,
+    "efficiency": 0.559,
+    "robustness": 0.9960000000000001
+  },
+  "safety_violations": 0,
+  "execution_time_ms": 310709.3970775604,
+  "quality_gates": {
+    "all_passed": false,
+    "gates": {
+      "pass_rate": {
+        "passed": true,
+        "actual": 0.9,
+        "threshold": 0.85
+      },
+      "effectiveness": {
+        "passed": false,
+        "actual": 0.8231249999999999,
+        "threshold": 0.85
+      },
+      "efficiency": {
+        "passed": false,
+        "actual": 0.559,
+        "threshold": 0.8
+      },
+      "robustness": {
+        "passed": true,
+        "actual": 0.9960000000000001,
+        "threshold": 0.8
+      },
+      "safety": {
+        "passed": true,
+        "actual": 0,
+        "threshold": 0
+      }
+    },
+    "failed_gates": [
+      "effectiveness",
+      "efficiency"
+    ],
+    "recommendation": "BLOCK: Failed gates: effectiveness, efficiency"
+  },
+  "all_gates_passed": false
+}

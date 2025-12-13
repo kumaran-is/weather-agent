@@ -25,13 +25,37 @@ import uuid
 class HurricaneAlertRequest(BaseModel):
     """Request model for creating hurricane alert.
 
-    Example:
-        {
-            "category": 4,
-            "message": "Category 4 Hurricane Ida approaching with 140 mph winds",
-            "thread_id": "alert-uuid"
-        }
+    HITL Workflow:
+    - Category 1-2: Auto-approved, sent immediately
+    - Category 3-5: Requires human approval before sending
+
+    Test Scenarios (from test guide):
+    - Scenario 28.1: Cat 1-2 (no HITL)
+    - Scenario 28.2: Cat 3-4 (HITL triggered)
+    - Scenario 28.3: Cat 5 (maximum alert)
     """
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "category": 2,
+                    "message": "Category 2 Hurricane Julia approaching Florida with 95 mph winds. Monitor conditions.",
+                    "thread_id": "alert-cat2-001"
+                },
+                {
+                    "category": 4,
+                    "message": "Category 4 Hurricane Milton approaching Tampa Bay with 140 mph winds. Evacuation recommended for zones A and B.",
+                    "thread_id": "alert-cat4-001"
+                },
+                {
+                    "category": 5,
+                    "message": "EXTREME DANGER: Category 5 Hurricane approaching with 165 mph winds. IMMEDIATE evacuation required for all coastal zones.",
+                    "thread_id": "alert-cat5-001"
+                }
+            ]
+        }
+    }
 
     category: int = Field(
         ...,
@@ -91,11 +115,25 @@ class HurricaneAlertResponse(BaseModel):
 class HurricaneApprovalRequest(BaseModel):
     """Request model for approving/rejecting hurricane alert.
 
-    Example:
-        {
-            "approved": true
-        }
+    Used to approve or reject Category 3+ hurricane alerts pending human review.
+
+    Test Scenarios (from test guide):
+    - Scenario 28.4: Approve (approved: true)
+    - Edge case: Reject (approved: false)
     """
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "approved": True
+                },
+                {
+                    "approved": False
+                }
+            ]
+        }
+    }
 
     approved: bool = Field(
         ...,

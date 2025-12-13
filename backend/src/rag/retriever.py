@@ -114,7 +114,7 @@ def retrieve_weather_knowledge(
         >>> for doc in docs:
         ...     print(f"Source: {doc.metadata.get('source', 'unknown')}")
         ...     print(f"Content: {doc.page_content[:100]}...")
-        Source: mock/saffir_simpson_scale.txt
+        Source: curated/saffir_simpson_scale.txt
         Content: Category 5 hurricanes have sustained winds of 157 mph or higher...
 
     Note:
