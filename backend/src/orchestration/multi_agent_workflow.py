@@ -326,9 +326,20 @@ def route_after_triage(state: WorkflowState) -> Literal["hurricane_specialist", 
         )
         return "hurricane_specialist"
 
-    # Check routing decision from triage
+    # Check routing decision from triage - DIRECT_RESPONSE with high confidence takes priority
     if routing_decision:
         next_agent_value = getattr(routing_decision, "next_agent", None)
+        # Respect DIRECT_RESPONSE decision for educational questions (high confidence)
+        if next_agent_value == AgentRole.DIRECT_RESPONSE and triage_confidence >= 0.8:
+            logger.info(
+                "routing_after_triage",
+                decision="direct_response",
+                reason="triage_direct_response_high_confidence",
+                next_agent=str(next_agent_value),
+                confidence=triage_confidence,
+            )
+            return "direct_response"
+        # Hurricane specialist and alert manager still get routed
         if next_agent_value in [AgentRole.HURRICANE_SPECIALIST, AgentRole.ALERT_MANAGER]:
             logger.info(
                 "routing_after_triage",
@@ -338,8 +349,17 @@ def route_after_triage(state: WorkflowState) -> Literal["hurricane_specialist", 
             )
             return "hurricane_specialist"
 
-    # Check next_agent from state
+    # Check next_agent from state - respect DIRECT_RESPONSE with high confidence
     if next_agent:
+        if next_agent == AgentRole.DIRECT_RESPONSE and triage_confidence >= 0.8:
+            logger.info(
+                "routing_after_triage",
+                decision="direct_response",
+                reason="state_direct_response_high_confidence",
+                next_agent=str(next_agent),
+                confidence=triage_confidence,
+            )
+            return "direct_response"
         if next_agent in [AgentRole.HURRICANE_SPECIALIST, AgentRole.ALERT_MANAGER]:
             logger.info(
                 "routing_after_triage",
@@ -524,18 +544,61 @@ def create_multi_agent_workflow() -> StateGraph:
 
     # Add direct response node (for simple queries that don't need specialist)
     async def direct_response_node(state: WorkflowState) -> WorkflowState:
-        """Handle direct responses for simple queries."""
-        logger.info("direct_response_node_invoked")
+        """Handle direct responses for simple queries and educational questions."""
+        logger.info("direct_response_node_invoked", query=state.get("query", "")[:100])
 
-        # Get the last triage response as the final response
+        query = state.get("query", "")
+        query_complexity = state.get("query_complexity", "simple")
+
+        # Check if this is an educational question by examining triage metadata
         agent_responses = state.get("agent_responses", [])
-        final_response = "I can help you with that. Could you please provide more details?"
+        is_educational = False
 
         for response in agent_responses:
             if response.agent_role == AgentRole.TRIAGE:
-                # Use triage's content or metadata
-                if response.content:
-                    final_response = response.content
+                metadata = response.metadata or {}
+                if "educational" in metadata.get("complexity", "").lower():
+                    is_educational = True
+                    break
+
+        # For educational questions, invoke LLM with general knowledge
+        if is_educational or any(keyword in query.lower() for keyword in [
+            "what category", "saffir-simpson", "how do hurricanes",
+            "what is storm surge", "how strong", "mph winds"
+        ]):
+            from langchain_openai import ChatOpenAI
+            from langchain_core.messages import SystemMessage, HumanMessage
+
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+
+            educational_prompt = """You are a meteorology educator. Answer weather and hurricane science questions clearly and accurately.
+
+For Saffir-Simpson hurricane scale questions, provide the exact category based on wind speed:
+- Category 1: 74-95 mph
+- Category 2: 96-110 mph
+- Category 3: 111-129 mph (Major Hurricane)
+- Category 4: 130-156 mph (Major Hurricane)
+- Category 5: 157+ mph (Major Hurricane)
+
+Provide factual, educational answers. Do NOT check current weather conditions."""
+
+            messages = [
+                SystemMessage(content=educational_prompt),
+                HumanMessage(content=query)
+            ]
+
+            response = await llm.ainvoke(messages)
+            final_response = response.content
+
+            logger.info("educational_response_generated", response_length=len(final_response))
+        else:
+            # For simple weather queries, use triage response
+            final_response = "I can help you with that. Could you please provide more details?"
+
+            for response in agent_responses:
+                if response.agent_role == AgentRole.TRIAGE:
+                    if response.content:
+                        final_response = response.content
 
         return {
             **state,
@@ -1100,16 +1163,63 @@ def create_level4b_workflow() -> StateGraph:
     workflow.add_node("research", research_node)
     workflow.add_node("reflection", reflection_node)
 
-    # Direct response node (for simple queries)
+    # Direct response node (for simple queries and educational questions)
     async def direct_response_node(state: WorkflowState) -> WorkflowState:
-        """Handle direct responses for simple queries."""
-        logger.info("direct_response_node_invoked")
+        """Handle direct responses for simple queries and educational questions."""
+        logger.info("direct_response_node_invoked", query=state.get("query", "")[:100])
+
+        query = state.get("query", "")
+        query_complexity = state.get("query_complexity", "simple")
+
+        # Check if this is an educational question by examining triage metadata
         agent_responses = state.get("agent_responses", [])
-        final_response = "I can help you with that. Could you please provide more details?"
+        is_educational = False
+
         for response in agent_responses:
-            if response.content:
-                final_response = response.content
-                break
+            if response.agent_role == AgentRole.TRIAGE:
+                metadata = response.metadata or {}
+                if "educational" in metadata.get("complexity", "").lower():
+                    is_educational = True
+                    break
+
+        # For educational questions, invoke LLM with general knowledge
+        if is_educational or any(keyword in query.lower() for keyword in [
+            "what category", "saffir-simpson", "how do hurricanes",
+            "what is storm surge", "how strong", "mph winds"
+        ]):
+            from langchain_openai import ChatOpenAI
+            from langchain_core.messages import SystemMessage, HumanMessage
+
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+
+            educational_prompt = """You are a meteorology educator. Answer weather and hurricane science questions clearly and accurately.
+
+For Saffir-Simpson hurricane scale questions, provide the exact category based on wind speed:
+- Category 1: 74-95 mph
+- Category 2: 96-110 mph
+- Category 3: 111-129 mph (Major Hurricane)
+- Category 4: 130-156 mph (Major Hurricane)
+- Category 5: 157+ mph (Major Hurricane)
+
+Provide factual, educational answers. Do NOT check current weather conditions."""
+
+            messages = [
+                SystemMessage(content=educational_prompt),
+                HumanMessage(content=query)
+            ]
+
+            response = await llm.ainvoke(messages)
+            final_response = response.content
+
+            logger.info("educational_response_generated", response_length=len(final_response))
+        else:
+            # For simple weather queries, use agent responses
+            final_response = "I can help you with that. Could you please provide more details?"
+            for response in agent_responses:
+                if response.content:
+                    final_response = response.content
+                    break
+
         return {
             **state,
             "workflow_complete": True,

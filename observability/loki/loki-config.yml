@@ -1,0 +1,72 @@
+# ============================================================================
+# Loki Configuration - Weather AI Agent Service (Level 5c)
+# ============================================================================
+# Log aggregation for all services
+#
+# Features:
+#   - Centralized log collection from Docker containers
+#   - Log querying via Grafana
+#   - Label-based log filtering (service, level, etc.)
+#
+# Storage: Local filesystem (production should use S3/GCS)
+# ============================================================================
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+ruler:
+  alertmanager_url: http://localhost:9093
+
+# Limits configuration
+limits_config:
+  # Ingestion limits
+  ingestion_rate_mb: 4
+  ingestion_burst_size_mb: 6
+  max_label_name_length: 1024
+  max_label_value_length: 2048
+  max_label_names_per_series: 30
+
+  # Query limits
+  max_entries_limit_per_query: 5000
+  max_query_length: 721h  # 30 days
+  max_query_parallelism: 32
+
+  # Retention (7 days for dev, increase for prod)
+  retention_period: 168h
+
+# Analytics (disabled)
+analytics:
+  reporting_enabled: false

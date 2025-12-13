@@ -1,0 +1,99 @@
+# ============================================================================
+# Prometheus Configuration - Weather AI Agent Service (Level 5c)
+# ============================================================================
+# Scrape configuration for all Weather AI services
+#
+# Services monitored:
+#   - Weather AI API (FastAPI + MCP metrics)
+#   - Redis Exporter (cache metrics)
+#   - Neo4j (graph database)
+#   - Node Exporter (system metrics) - optional
+#
+# Alert rules: See alert_rules.yml
+# ============================================================================
+
+global:
+  scrape_interval: 15s          # How often to scrape targets
+  evaluation_interval: 15s      # How often to evaluate rules
+  scrape_timeout: 10s           # Timeout for scrape requests
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager)
+  external_labels:
+    environment: 'production'
+    project: 'weather-ai-agent'
+
+# Alertmanager configuration (optional - can be added later)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load and evaluate rules from alert_rules.yml
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # =========================================================================
+  # Prometheus self-monitoring
+  # =========================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # =========================================================================
+  # Weather AI API (FastAPI + MCP metrics)
+  # =========================================================================
+  - job_name: 'weather-ai-api'
+    static_configs:
+      - targets: ['weather-ai-api:8000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'weather-ai-api'
+
+  # =========================================================================
+  # Redis metrics (via redis_exporter if enabled)
+  # =========================================================================
+  # Note: Requires redis_exporter sidecar container
+  # Uncomment when redis_exporter is added
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #   metrics_path: /metrics
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+  #       replacement: 'redis'
+
+  # =========================================================================
+  # Grafana self-monitoring
+  # =========================================================================
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: /metrics
+
+  # =========================================================================
+  # Docker container metrics (via cAdvisor if enabled)
+  # =========================================================================
+  # Note: Requires cAdvisor container
+  # Uncomment when cAdvisor is added for container-level metrics
+  # - job_name: 'cadvisor'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
+  #   metrics_path: /metrics
+
+  # =========================================================================
+  # Loki metrics (log aggregation)
+  # =========================================================================
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    metrics_path: /metrics

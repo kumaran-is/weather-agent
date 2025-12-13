@@ -41,10 +41,17 @@ Level 5a Caching Enhancements:
 - Target: 60-75% overall cost reduction ($0.051 → $0.01-0.05 per query)
 - Expected savings: $3,805/month at 100K queries
 
+Level 5c Observability Enhancements:
+- Prometheus metrics endpoint (/metrics)
+- Request counters by tier and status
+- Request duration histograms
+- Cache hit/miss counters by layer
+- Agent invocation counters
+- Active request gauge
+
 Still Deferred:
-- NO authentication (deferred to L5c)
-- NO rate limiting (deferred to L5c)
-- NO metrics tracking (deferred to L5c)
+- NO authentication (future enhancement)
+- NO rate limiting (future enhancement)
 
 API Endpoints:
 - POST /weather/query - Flexible weather queries (supports multi-agent, RAG, CoT, memory)
@@ -52,10 +59,12 @@ API Endpoints:
 - POST /weather/hurricane/approve/{thread_id} - Approve or reject pending alert
 - GET /health - Health check
 - GET /cache/stats - Cache statistics (L1 + L2 + L3)
+- GET /metrics - Prometheus metrics endpoint (Level 5c)
 """
 
 import asyncio
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -74,14 +83,26 @@ from backend.src.cache import (  # 🆕 L5a: Cache imports
 )
 from backend.src.memory.manager import MemoryManager  # Level 3a: Memory support
 from backend.src.models import (
+    EvaluationScores,  # 🆕 L5b: Evaluation scores
     HealthCheckResponse,
     HurricaneAlertRequest,
     HurricaneAlertResponse,
     HurricaneApprovalRequest,
     HurricaneApprovalResponse,
+    ServiceHealth,
+    ServicesHealth,
     WeatherQuery,
     WeatherResponse,
 )
+# 🆕 Level 5c: Health check utilities for all services
+from backend.src.utils.health_checks import (
+    check_all_services,
+    calculate_overall_status,
+)
+# 🆕 L5b: Evaluation framework for trajectory-based evaluation
+from backend.src.evaluation import TrajectoryEvaluator
+# 🆕 L5c: MCP health monitoring
+from backend.src.mcp.health_monitor import MCPHealthMonitor
 # 🆕 v0.6.0: Auto-routing classifier (replaces explicit agent_level)
 from backend.src.routing import classify_query, QueryTier
 # 🆕 Level 4: Multi-agent workflow imports
@@ -92,13 +113,68 @@ from backend.src.orchestration.multi_agent_workflow import (
     invoke_workflow_v2,
 )
 from backend.src.workflows.weather_graph import get_weather_hitl_workflow
+from fastapi.responses import PlainTextResponse
+
+# 🆕 Level 5c: Prometheus metrics
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ========== Prometheus Metrics Definitions (Level 5c) ==========
+# Request metrics
+WEATHER_REQUESTS_TOTAL = Counter(
+    "weather_ai_requests_total",
+    "Total number of weather query requests",
+    ["tier", "status"]  # tier: simple/standard/complex/emergency, status: success/error
+)
+
+WEATHER_REQUEST_DURATION = Histogram(
+    "weather_ai_request_duration_seconds",
+    "Request duration in seconds",
+    ["tier"],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0]
+)
+
+# Cache metrics
+CACHE_HITS_TOTAL = Counter(
+    "weather_ai_cache_hits_total",
+    "Total cache hits",
+    ["layer"]  # L1, L2
+)
+
+CACHE_MISSES_TOTAL = Counter(
+    "weather_ai_cache_misses_total",
+    "Total cache misses"
+)
+
+# Multi-agent metrics
+AGENTS_INVOKED_TOTAL = Counter(
+    "weather_ai_agents_invoked_total",
+    "Total agents invoked",
+    ["agent"]  # triage, hurricane_specialist, forecaster, etc.
+)
+
+# Active connections gauge
+ACTIVE_REQUESTS = Gauge(
+    "weather_ai_active_requests",
+    "Number of requests currently being processed"
+)
+
 # Initialize workflow (module-level, safe to initialize once)
 workflow = get_weather_hitl_workflow()
+
+# 🆕 L5c: Global health monitors for MCP servers
+weather_health_monitor: MCPHealthMonitor | None = None
+hurricane_health_monitor: MCPHealthMonitor | None = None
 
 
 @asynccontextmanager
@@ -227,10 +303,80 @@ async def lifespan(app: FastAPI):
         app.state.workflow_l4a = None
         app.state.workflow_l4b = None
 
+    # 🆕 L5b: Initialize trajectory evaluator for response quality assessment
+    logger.info("📊 Initializing trajectory evaluator (L5b: 4-pillar evaluation)...")
+    try:
+        from langchain_openai import ChatOpenAI
+        from backend.config.settings import settings as config_settings
+
+        # Use GPT-4o-mini for LLM-as-Judge (cost-effective)
+        llm = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,  # Deterministic for evaluation
+            api_key=config_settings.OPENAI_API_KEY,
+        )
+        app.state.trajectory_evaluator = TrajectoryEvaluator(llm=llm)
+        logger.info("✅ Trajectory evaluator initialized (4-pillar: effectiveness, efficiency, robustness, safety)")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize trajectory evaluator: {e}")
+        logger.error("   Evaluation features will be disabled")
+        app.state.trajectory_evaluator = None
+
+    # 🆕 L5c: Initialize MCP health monitors
+    global weather_health_monitor, hurricane_health_monitor
+    from backend.config.settings import settings as config_settings
+
+    logger.info("🏥 Initializing MCP health monitors...")
+
+    if config_settings.MCP_WEATHER_SERVER_ENABLED:
+        try:
+            weather_health_monitor = MCPHealthMonitor(
+                server_name="weather",
+                server_url=config_settings.MCP_WEATHER_SERVER_URL,
+                health_check_timeout_ms=config_settings.MCP_WEATHER_HEALTH_CHECK_TIMEOUT,
+            )
+            await weather_health_monitor.start()
+            logger.info("✅ Weather MCP health monitor started")
+        except Exception as e:
+            logger.error(f"❌ Failed to start Weather MCP health monitor: {e}")
+            weather_health_monitor = None
+    else:
+        logger.info("⏭️  Weather MCP health monitor disabled (config)")
+
+    if config_settings.MCP_HURRICANE_SERVER_ENABLED:
+        try:
+            hurricane_health_monitor = MCPHealthMonitor(
+                server_name="hurricane",
+                server_url=config_settings.MCP_HURRICANE_SERVER_URL,
+                health_check_timeout_ms=config_settings.MCP_HURRICANE_HEALTH_CHECK_TIMEOUT,
+            )
+            await hurricane_health_monitor.start()
+            logger.info("✅ Hurricane MCP health monitor started")
+        except Exception as e:
+            logger.error(f"❌ Failed to start Hurricane MCP health monitor: {e}")
+            hurricane_health_monitor = None
+    else:
+        logger.info("⏭️  Hurricane MCP health monitor disabled (config)")
+
     yield  # Application runs here
 
     # ========== SHUTDOWN ==========
     logger.info("Weather AI Agent API shutting down...")
+
+    # 🆕 L5c: Stop MCP health monitors
+    if weather_health_monitor:
+        try:
+            await weather_health_monitor.stop()
+            logger.info("✅ Weather MCP health monitor stopped")
+        except Exception as e:
+            logger.error(f"❌ Error stopping Weather MCP health monitor: {e}")
+
+    if hurricane_health_monitor:
+        try:
+            await hurricane_health_monitor.stop()
+            logger.info("✅ Hurricane MCP health monitor stopped")
+        except Exception as e:
+            logger.error(f"❌ Error stopping Hurricane MCP health monitor: {e}")
 
     # 🆕 L5a: Close cache layers gracefully
     if hasattr(app.state, "l2_cache") and app.state.l2_cache:
@@ -276,7 +422,7 @@ app = FastAPI(
         "**HITL Approval:**\n"
         "- Emergency tier queries may trigger human approval"
     ),
-    version="0.6.0",  # 🆕 Auto-routing version
+    version="0.10.0",  # 🆕 Auto-routing version
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,  # ✅ Modern pattern (FastAPI 0.100+)
@@ -324,6 +470,12 @@ async def get_l2_cache(request: Request) -> RedisQueryCache | None:
 async def get_l3_metrics(request: Request) -> AnthropicCacheMetrics | None:
     """Dependency injection for L3 cache metrics."""
     return getattr(request.app.state, "l3_cache_metrics", None)
+
+
+# 🆕 L5b: Evaluation framework dependency injection
+async def get_evaluator(request: Request) -> TrajectoryEvaluator | None:
+    """Dependency injection for trajectory evaluator."""
+    return getattr(request.app.state, "trajectory_evaluator", None)
 
 
 # 🆕 Level 4: Workflow dependency injection
@@ -392,7 +544,8 @@ async def _invoke_basic_agent(
     description=(
         "Ask the weather agent about current conditions or forecasts. "
         "Uses AUTO-ROUTING (v0.6.0) to automatically select the optimal agent tier. "
-        "Supports RAG, CoT, Memory, and 3-layer caching."
+        "Supports RAG, CoT, Memory, and 3-layer caching. "
+        "Pass 'evaluate=true' to get 4-pillar evaluation scores (Effectiveness, Efficiency, Robustness, Safety)."
     ),
     tags=["Weather"]
 )
@@ -403,12 +556,14 @@ async def weather_query_endpoint(
     enable_tot: bool | None = None,  # Level 3b
     enable_got: bool | None = None,  # Level 3b
     use_memory: bool | None = None,  # Level 3a
+    evaluate: bool = False,  # 🆕 L5b: Enable 4-pillar evaluation (opt-in)
     # 🆕 v0.6.0: REMOVED use_multi_agent and agent_level
     # Routing is now automatic based on query intent
     memory_manager: MemoryManager | None = Depends(get_memory_manager),
     l1_cache: QueryCache | None = Depends(get_l1_cache),
     l2_cache: RedisQueryCache | None = Depends(get_l2_cache),
     l3_metrics: AnthropicCacheMetrics | None = Depends(get_l3_metrics),
+    evaluator: TrajectoryEvaluator | None = Depends(get_evaluator),  # 🆕 L5b
     workflow_l4a=Depends(get_workflow_l4a),
     workflow_l4b=Depends(get_workflow_l4b),
 ):
@@ -439,7 +594,7 @@ async def weather_query_endpoint(
             "session_id": "session456"
         }
 
-    Example Response:
+    Example Response (without evaluation):
         {
             "response": "Based on current NHC data...",
             "user_id": "user123",
@@ -449,7 +604,29 @@ async def weather_query_endpoint(
             "query_complexity": "standard",
             "execution_time_ms": 892.3,
             "cache_hit": false,
-            "cache_layer": null
+            "cache_layer": null,
+            "evaluation_scores": null
+        }
+
+    Example Response (with evaluate=true):
+        {
+            "response": "Based on current NHC data...",
+            "user_id": "user123",
+            "timestamp": "2025-12-03T16:20:00Z",
+            "agents_invoked": ["triage", "hurricane_specialist", "alert_manager"],
+            "agent_level": "l4a",
+            "query_complexity": "standard",
+            "execution_time_ms": 1247.8,
+            "cache_hit": false,
+            "cache_layer": null,
+            "evaluation_scores": {
+                "effectiveness": 0.85,
+                "efficiency": 0.92,
+                "robustness": 0.78,
+                "safety": 1.0,
+                "overall_score": 0.867,
+                "passed": true
+            }
         }
 
     Args:
@@ -459,9 +636,11 @@ async def weather_query_endpoint(
         enable_tot: Optional override for ToT (None = use default)
         enable_got: Optional override for GoT (None = use default)
         use_memory: Optional override for memory (None = use default)
+        evaluate: Enable 4-pillar evaluation (Effectiveness, Efficiency, Robustness, Safety).
+                  Default: False (opt-in to avoid latency and cost). Only evaluates non-cached responses.
 
     Returns:
-        WeatherResponse with agent's answer and metadata
+        WeatherResponse with agent's answer, metadata, and optional evaluation scores
 
     Raises:
         HTTPException: 500 if agent query fails
@@ -502,7 +681,13 @@ async def weather_query_endpoint(
     # Generate session_id if not provided
     session_id = query.session_id or f"session_{uuid.uuid4().hex[:8]}"
 
+    # 🆕 L5c: Track request start for duration metrics
+    request_start_time = time.time()
+
     try:
+        # 🆕 L5c: Track active requests
+        ACTIVE_REQUESTS.inc()
+
         logger.info(
             f"Weather query received | "
             f"user_id: {query.user_id} | "
@@ -530,6 +715,7 @@ async def weather_query_endpoint(
             if response_text:
                 cache_hit = True
                 cache_layer = "L1"
+                CACHE_HITS_TOTAL.labels(layer="L1").inc()  # 🆕 L5c: Prometheus cache metric
                 logger.info(f"💾 L1 cache HIT | user_id: {query.user_id}")
 
         # 🆕 L5a: Try L2 cache if L1 miss (Redis, <10ms)
@@ -543,6 +729,7 @@ async def weather_query_endpoint(
             if response_text:
                 cache_hit = True
                 cache_layer = "L2"
+                CACHE_HITS_TOTAL.labels(layer="L2").inc()  # 🆕 L5c: Prometheus cache metric
                 logger.info(f"💾 L2 cache HIT | user_id: {query.user_id}")
 
                 # 🆕 L5a: Backfill L1 cache on L2 hit
@@ -564,20 +751,26 @@ async def weather_query_endpoint(
 
         # 🆕 L5a: Cache miss - invoke agent (L3 Anthropic caching automatic)
         if not cache_hit:
+            CACHE_MISSES_TOTAL.inc()  # 🆕 L5c: Prometheus cache miss metric
             logger.info(f"❌ Cache MISS (L1+L2) | user_id: {query.user_id} | Invoking agent...")
 
-            import time
             start_time = time.time()
 
             # 🆕 Level 3a: Load memory context if enabled
             memory_context = None
             if effective_memory and query.user_id and memory_manager:
                 # Use injected memory manager (initialized at startup via DI)
-                memory_context = await memory_manager.get_context(
-                    user_id=query.user_id,
-                    session_id=session_id,
-                )
-                logger.info(f"🧠 Memory context loaded for user {query.user_id}")
+                try:
+                    memory_context = await memory_manager.get_context(
+                        user_id=query.user_id,
+                        session_id=session_id,
+                    )
+                    logger.info(f"🧠 Memory context loaded for user {query.user_id}")
+                except Exception as e:
+                    # Graceful degradation: If memory (Redis) fails, continue without memory context
+                    logger.warning(f"⚠️  Memory context failed (Redis unavailable?): {e}")
+                    logger.warning("⚠️  Continuing without memory context (graceful degradation)")
+                    memory_context = None
             elif effective_memory and not memory_manager:
                 logger.warning("⚠️  Memory requested but manager not initialized")
 
@@ -596,70 +789,123 @@ async def weather_query_endpoint(
             )
 
             # Route to appropriate workflow based on classification
+            # 🆕 L5: Apply workflow timeout to prevent hanging queries
             if routing_decision.tier == QueryTier.EMERGENCY:
                 # EMERGENCY: L4C 15-agent with HITL potential
                 final_agent_level = "l4c"
                 detected_complexity = "emergency"
-                workflow_result = await invoke_workflow_v2(
-                    query=query.query,
-                    user_id=query.user_id,
-                    session_id=session_id,
-                    memory_context=memory_context,
-                    use_supervisor=True,
-                )
-                response_text = workflow_result.get("final_response", "")
-                agents_invoked = workflow_result.get("agents_invoked", [])
+                try:
+                    workflow_result = await asyncio.wait_for(
+                        invoke_workflow_v2(
+                            query=query.query,
+                            user_id=query.user_id,
+                            session_id=session_id,
+                            memory_context=memory_context,
+                            use_supervisor=True,
+                        ),
+                        timeout=settings.WORKFLOW_TIMEOUT_EMERGENCY_SECONDS,
+                    )
+                    response_text = workflow_result.get("final_response", "")
+                    agents_invoked = workflow_result.get("agents_invoked", [])
+                except TimeoutError:
+                    logger.error(
+                        f"⏰ EMERGENCY workflow timeout after {settings.WORKFLOW_TIMEOUT_EMERGENCY_SECONDS}s | "
+                        f"user_id: {query.user_id}"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                        detail=f"Agent workflow timed out after {settings.WORKFLOW_TIMEOUT_EMERGENCY_SECONDS} seconds. Please try again or simplify your query."
+                    )
 
             elif routing_decision.tier == QueryTier.COMPLEX:
                 # COMPLEX: L4B 8-agent with supervisor
                 if workflow_l4b:
                     final_agent_level = "l4b"
                     detected_complexity = "complex"
-                    workflow_result = await workflow_l4b.ainvoke(
-                        {
-                            "query": query.query,
-                            "user_id": query.user_id,
-                            "session_id": session_id,
-                            "memory_context": memory_context,
-                            "agent_responses": [],
-                            "agents_invoked": [],
-                        },
-                        config={"configurable": {"thread_id": session_id}},
-                    )
-                    response_text = workflow_result.get("final_response", "")
-                    agents_invoked = workflow_result.get("agents_invoked", [])
+                    try:
+                        workflow_result = await asyncio.wait_for(
+                            workflow_l4b.ainvoke(
+                                {
+                                    "query": query.query,
+                                    "user_id": query.user_id,
+                                    "session_id": session_id,
+                                    "memory_context": memory_context,
+                                    "agent_responses": [],
+                                    "agents_invoked": [],
+                                },
+                                config={"configurable": {"thread_id": session_id}},
+                            ),
+                            timeout=settings.WORKFLOW_TIMEOUT_SECONDS,
+                        )
+                        response_text = workflow_result.get("final_response", "")
+                        agents_invoked = workflow_result.get("agents_invoked", [])
+                    except TimeoutError:
+                        logger.error(
+                            f"⏰ COMPLEX workflow timeout after {settings.WORKFLOW_TIMEOUT_SECONDS}s | "
+                            f"user_id: {query.user_id}"
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=f"Agent workflow timed out after {settings.WORKFLOW_TIMEOUT_SECONDS} seconds. Please try again or simplify your query."
+                        )
                 elif workflow_l4a:
                     # Fallback to L4A if L4B not available
                     logger.warning("⚠️  L4B workflow not available, using L4A")
                     final_agent_level = "l4a"
                     detected_complexity = "complex"
-                    workflow_result = await workflow_l4a.ainvoke(
-                        {
-                            "query": query.query,
-                            "user_id": query.user_id,
-                            "session_id": session_id,
-                            "memory_context": memory_context,
-                            "agent_responses": [],
-                            "agents_invoked": [],
-                        },
-                        config={"configurable": {"thread_id": session_id}},
-                    )
-                    response_text = workflow_result.get("final_response", "")
-                    agents_invoked = workflow_result.get("agents_invoked", [])
+                    try:
+                        workflow_result = await asyncio.wait_for(
+                            workflow_l4a.ainvoke(
+                                {
+                                    "query": query.query,
+                                    "user_id": query.user_id,
+                                    "session_id": session_id,
+                                    "memory_context": memory_context,
+                                    "agent_responses": [],
+                                    "agents_invoked": [],
+                                },
+                                config={"configurable": {"thread_id": session_id}},
+                            ),
+                            timeout=settings.WORKFLOW_TIMEOUT_SECONDS,
+                        )
+                        response_text = workflow_result.get("final_response", "")
+                        agents_invoked = workflow_result.get("agents_invoked", [])
+                    except TimeoutError:
+                        logger.error(
+                            f"⏰ COMPLEX (L4A fallback) workflow timeout after {settings.WORKFLOW_TIMEOUT_SECONDS}s | "
+                            f"user_id: {query.user_id}"
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=f"Agent workflow timed out after {settings.WORKFLOW_TIMEOUT_SECONDS} seconds. Please try again or simplify your query."
+                        )
                 else:
                     # Fallback to basic agent
                     logger.warning("⚠️  No multi-agent workflows available, using basic agent")
                     final_agent_level = "basic"
                     detected_complexity = "complex"
-                    response_text = await _invoke_basic_agent(
-                        query=query.query,
-                        effective_rag=effective_rag,
-                        effective_cot=effective_cot,
-                        effective_memory=effective_memory,
-                        effective_tot=effective_tot,
-                        effective_got=effective_got,
-                        memory_context=memory_context,
-                    )
+                    try:
+                        response_text = await asyncio.wait_for(
+                            _invoke_basic_agent(
+                                query=query.query,
+                                effective_rag=effective_rag,
+                                effective_cot=effective_cot,
+                                effective_memory=effective_memory,
+                                effective_tot=effective_tot,
+                                effective_got=effective_got,
+                                memory_context=memory_context,
+                            ),
+                            timeout=settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS,
+                        )
+                    except TimeoutError:
+                        logger.error(
+                            f"⏰ Basic agent (COMPLEX fallback) timeout after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS}s | "
+                            f"user_id: {query.user_id}"
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=f"Agent timed out after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS} seconds. Please try again."
+                        )
                     agents_invoked = ["weather_agent"]
 
             elif routing_decision.tier == QueryTier.STANDARD:
@@ -667,33 +913,59 @@ async def weather_query_endpoint(
                 if workflow_l4a:
                     final_agent_level = "l4a"
                     detected_complexity = "standard"
-                    workflow_result = await workflow_l4a.ainvoke(
-                        {
-                            "query": query.query,
-                            "user_id": query.user_id,
-                            "session_id": session_id,
-                            "memory_context": memory_context,
-                            "agent_responses": [],
-                            "agents_invoked": [],
-                        },
-                        config={"configurable": {"thread_id": session_id}},
-                    )
-                    response_text = workflow_result.get("final_response", "")
-                    agents_invoked = workflow_result.get("agents_invoked", [])
+                    try:
+                        workflow_result = await asyncio.wait_for(
+                            workflow_l4a.ainvoke(
+                                {
+                                    "query": query.query,
+                                    "user_id": query.user_id,
+                                    "session_id": session_id,
+                                    "memory_context": memory_context,
+                                    "agent_responses": [],
+                                    "agents_invoked": [],
+                                },
+                                config={"configurable": {"thread_id": session_id}},
+                            ),
+                            timeout=settings.WORKFLOW_TIMEOUT_SECONDS,
+                        )
+                        response_text = workflow_result.get("final_response", "")
+                        agents_invoked = workflow_result.get("agents_invoked", [])
+                    except TimeoutError:
+                        logger.error(
+                            f"⏰ STANDARD workflow timeout after {settings.WORKFLOW_TIMEOUT_SECONDS}s | "
+                            f"user_id: {query.user_id}"
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=f"Agent workflow timed out after {settings.WORKFLOW_TIMEOUT_SECONDS} seconds. Please try again or simplify your query."
+                        )
                 else:
                     # Fallback to basic agent
                     logger.warning("⚠️  L4A workflow not available, using basic agent")
                     final_agent_level = "basic"
                     detected_complexity = "standard"
-                    response_text = await _invoke_basic_agent(
-                        query=query.query,
-                        effective_rag=effective_rag,
-                        effective_cot=effective_cot,
-                        effective_memory=effective_memory,
-                        effective_tot=effective_tot,
-                        effective_got=effective_got,
-                        memory_context=memory_context,
-                    )
+                    try:
+                        response_text = await asyncio.wait_for(
+                            _invoke_basic_agent(
+                                query=query.query,
+                                effective_rag=effective_rag,
+                                effective_cot=effective_cot,
+                                effective_memory=effective_memory,
+                                effective_tot=effective_tot,
+                                effective_got=effective_got,
+                                memory_context=memory_context,
+                            ),
+                            timeout=settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS,
+                        )
+                    except TimeoutError:
+                        logger.error(
+                            f"⏰ Basic agent timeout after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS}s | "
+                            f"user_id: {query.user_id}"
+                        )
+                        raise HTTPException(
+                            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                            detail=f"Agent timed out after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS} seconds. Please try again."
+                        )
                     agents_invoked = ["weather_agent"]
 
             else:
@@ -701,15 +973,28 @@ async def weather_query_endpoint(
                 logger.info("🤖 Using BASIC single-agent mode (SIMPLE tier)")
                 final_agent_level = "basic"
                 detected_complexity = "simple"
-                response_text = await _invoke_basic_agent(
-                    query=query.query,
-                    effective_rag=effective_rag,
-                    effective_cot=effective_cot,
-                    effective_memory=effective_memory,
-                    effective_tot=effective_tot,
-                    effective_got=effective_got,
-                    memory_context=memory_context,
-                )
+                try:
+                    response_text = await asyncio.wait_for(
+                        _invoke_basic_agent(
+                            query=query.query,
+                            effective_rag=effective_rag,
+                            effective_cot=effective_cot,
+                            effective_memory=effective_memory,
+                            effective_tot=effective_tot,
+                            effective_got=effective_got,
+                            memory_context=memory_context,
+                        ),
+                        timeout=settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS,
+                    )
+                except TimeoutError:
+                    logger.error(
+                        f"⏰ SIMPLE workflow timeout after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS}s | "
+                        f"user_id: {query.user_id}"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                        detail=f"Agent timed out after {settings.WORKFLOW_TIMEOUT_SIMPLE_SECONDS} seconds. Please try again."
+                    )
                 agents_invoked = ["weather_agent"]
 
             # Calculate execution time
@@ -743,15 +1028,19 @@ async def weather_query_endpoint(
                 )
                 logger.debug(f"💾 L2 cache WRITE")
 
-            # 🆕 Level 3a: Save interaction to memory if enabled
+            # 🆕 Level 3a: Save interaction to memory if enabled (ASYNC - non-blocking)
+            # 🆕 P1 FIX: Memory save runs in background (fire-and-forget) to prevent blocking response
             if effective_memory and query.user_id and memory_manager:
-                await memory_manager.save_interaction(
-                    user_id=query.user_id,
-                    session_id=session_id,
-                    query=query.query,
-                    response=response_text,
+                # Save to memory in background (non-blocking) - returns response immediately
+                asyncio.create_task(
+                    memory_manager.save_interaction(
+                        user_id=query.user_id,
+                        session_id=session_id,
+                        query=query.query,
+                        response=response_text,
+                    )
                 )
-                logger.info(f"🧠 Interaction saved to memory for user {query.user_id}")
+                logger.info(f"🧠 Memory save started in background for user {query.user_id}")
 
         logger.info(
             f"Weather query successful | "
@@ -767,6 +1056,69 @@ async def weather_query_endpoint(
         if cache_layer is None:
             cache_layer = "MISS"
 
+        # 🆕 L5c: Record Prometheus success metrics
+        tier_label = detected_complexity or "unknown"
+        WEATHER_REQUESTS_TOTAL.labels(tier=tier_label, status="success").inc()
+        request_duration = time.time() - request_start_time
+        WEATHER_REQUEST_DURATION.labels(tier=tier_label).observe(request_duration)
+
+        # Record agent invocations
+        for agent in agents_invoked:
+            AGENTS_INVOKED_TOTAL.labels(agent=agent).inc()
+
+        # Decrement active requests
+        ACTIVE_REQUESTS.dec()
+
+        # 🆕 L5b: Run 4-pillar evaluation if requested (opt-in)
+        evaluation_scores = None
+        if evaluate and evaluator and not cache_hit:
+            # Only evaluate non-cached responses (evaluation is expensive)
+            logger.info("📊 Running 4-pillar evaluation...")
+            try:
+                # Construct minimal trajectory from available metadata
+                # TODO: Enhance with full trajectory capture from LangGraph execution
+                trajectory = [
+                    {
+                        "tool": agent,
+                        "latency_ms": (execution_time_ms or 0) / max(len(agents_invoked), 1),
+                    }
+                    for agent in agents_invoked
+                ]
+
+                # Run evaluation
+                eval_result = await evaluator.evaluate(
+                    query=query.query,
+                    trajectory=trajectory,
+                    final_answer=response_text,
+                    expected_answer=None,  # No golden answer in production
+                    expected_tools=None,  # No expected tools in production
+                    test_case_id="",
+                    latency_budget_ms=5000.0,
+                    token_budget=4000,
+                    is_edge_case=False,
+                    is_safety_critical=(detected_complexity == "emergency"),
+                )
+
+                # Convert to API response format
+                evaluation_scores = EvaluationScores(
+                    effectiveness=eval_result.effectiveness,
+                    efficiency=eval_result.efficiency,
+                    robustness=eval_result.robustness,
+                    safety=eval_result.safety,
+                    overall_score=eval_result.overall_score,
+                    passed=eval_result.passed,
+                )
+
+                logger.info(
+                    f"✅ Evaluation complete: overall={eval_result.overall_score:.3f}, "
+                    f"passed={eval_result.passed}"
+                )
+            except Exception as e:
+                logger.error(f"❌ Evaluation failed: {e}")
+                # Graceful degradation - continue without evaluation scores
+        elif evaluate and cache_hit:
+            logger.info("⏭️  Evaluation skipped (response served from cache)")
+
         return WeatherResponse(
             response=response_text,
             user_id=query.user_id,
@@ -779,9 +1131,17 @@ async def weather_query_endpoint(
             # L5a: Cache metadata
             cache_hit=cache_hit,
             cache_layer=cache_layer,
+            # 🆕 L5b: Evaluation scores (4-pillar quality assessment)
+            evaluation_scores=evaluation_scores,
         )
 
     except Exception as e:
+        # 🆕 L5c: Record Prometheus error metrics
+        WEATHER_REQUESTS_TOTAL.labels(tier="unknown", status="error").inc()
+        request_duration = time.time() - request_start_time
+        WEATHER_REQUEST_DURATION.labels(tier="unknown").observe(request_duration)
+        ACTIVE_REQUESTS.dec()
+
         logger.error(
             f"Weather query failed | "
             f"user_id: {query.user_id} | "
@@ -1018,31 +1378,164 @@ async def approve_hurricane_alert(
     response_model=HealthCheckResponse,
     status_code=status.HTTP_200_OK,
     summary="Health check",
-    description="Check if the Weather AI Agent service is healthy and operational",
+    description=(
+        "Check health of the Weather AI Agent service and all dependent services. "
+        "Returns detailed status for: Redis, Neo4j, Qdrant, PostgreSQL, MCP servers, "
+        "Prometheus, Grafana, and Loki."
+    ),
     tags=["System"]
 )
 async def health_check():
-    """Health check endpoint.
+    """Health check endpoint with comprehensive service monitoring.
 
-    Returns service health status and current implementation level.
+    Returns service health status, current implementation level, and detailed
+    health information for all dependent services.
+
+    **Services Monitored:**
+    - Redis: Short-term memory and L2 cache
+    - Neo4j: Long-term memory via Graphiti
+    - Qdrant: Vector database for RAG
+    - PostgreSQL: Procedural memory (if configured)
+    - Weather MCP: Weather data service
+    - Hurricane MCP: Hurricane tracking service
+    - Prometheus: Metrics collection
+    - Grafana: Dashboards (optional)
+    - Loki: Log aggregation (optional)
+
+    **Status Values:**
+    - healthy: All critical services operational
+    - degraded: Some non-critical services unavailable
+    - unhealthy: Critical services unavailable
 
     Example Response:
         {
             "status": "healthy",
-            "level": "3a+L5a",
-            "timestamp": "2025-12-03T16:20:00Z"
+            "level": "L4+L5a",
+            "timestamp": "2025-12-11T20:00:00Z",
+            "healthy_services": 7,
+            "total_services": 9,
+            "services": {
+                "redis": {"status": "healthy", "latency_ms": 1.2, "message": "Connected"},
+                "neo4j": {"status": "healthy", "latency_ms": 15.3, "message": "Connected"},
+                ...
+            }
         }
 
     Returns:
-        HealthCheckResponse with status, level, and timestamp
+        HealthCheckResponse with overall status, level, and per-service health details
     """
-    logger.debug("Health check requested")
+    from backend.config.settings import settings
+
+    logger.debug("Health check requested - checking all services...")
+
+    # Check all services concurrently
+    service_health = await check_all_services(
+        redis_url=settings.REDIS_URL,
+        neo4j_bolt_url=settings.NEO4J_BOLT_URL,
+        qdrant_url=settings.QDRANT_URL,
+        postgres_url=settings.POSTGRES_URL,
+        weather_mcp_url=settings.MCP_WEATHER_SERVER_URL,
+        hurricane_mcp_url=settings.MCP_HURRICANE_SERVER_URL,
+        prometheus_url=settings.PROMETHEUS_URL,
+        grafana_url=settings.GRAFANA_URL,
+        loki_url=settings.LOKI_URL,
+        neo4j_username=settings.NEO4J_USER,
+        neo4j_password=settings.NEO4J_PASSWORD,
+    )
+
+    # Count healthy services (excluding disabled)
+    healthy_count = sum(
+        1 for h in service_health.values()
+        if h.status == "healthy"
+    )
+    total_count = len(service_health)
+
+    # Calculate overall status
+    overall_status = calculate_overall_status(
+        service_health,
+        critical_services=["redis", "neo4j", "weather_mcp"],
+    )
+
+    logger.info(
+        f"Health check complete | "
+        f"status: {overall_status} | "
+        f"healthy: {healthy_count}/{total_count}"
+    )
 
     return HealthCheckResponse(
-        status="healthy",
-        level="L4+L5a",  # Updated to Level 4 Multi-Agent + L5a Caching
-        timestamp=datetime.now(timezone.utc).isoformat()
+        status=overall_status,
+        level="L4+L5a",  # Level 4 Multi-Agent + L5a Caching
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        healthy_services=healthy_count,
+        total_services=total_count,
+        services=ServicesHealth(**service_health),
     )
+
+
+# 🆕 L5c: MCP server health status endpoint
+@app.get(
+    "/mcp/health",
+    status_code=status.HTTP_200_OK,
+    summary="MCP server health status",
+    description="Get health status of Weather and Hurricane MCP servers",
+    tags=["System"]
+)
+async def get_mcp_health() -> dict:
+    """Get health status of MCP servers.
+
+    Returns current health status for Weather and Hurricane MCP servers
+    including status (UP/DOWN/DEGRADED), latency, and error information.
+
+    **Health Status States:**
+    - UP: Server responding with latency <200ms
+    - DEGRADED: Server responding with latency 200-1000ms
+    - DOWN: Server not responding or latency >1000ms
+    - DISABLED: Server not enabled in configuration
+
+    **Background Monitoring:**
+    Health checks run automatically every 30 seconds in the background.
+    This endpoint returns the most recent health check result.
+
+    Example Response:
+        {
+            "weather_mcp": {
+                "server_name": "weather",
+                "status": "UP",
+                "last_check": "2025-12-13T10:30:15",
+                "last_success": "2025-12-13T10:30:15",
+                "consecutive_failures": 0,
+                "last_latency_ms": 123.4,
+                "last_error": null
+            },
+            "hurricane_mcp": {
+                "server_name": "hurricane",
+                "status": "DOWN",
+                "last_check": "2025-12-13T10:30:15",
+                "last_success": "2025-12-13T10:29:45",
+                "consecutive_failures": 2,
+                "last_latency_ms": null,
+                "last_error": "Connection error: Connection refused"
+            }
+        }
+
+    Returns:
+        dict with health status for each MCP server
+    """
+    global weather_health_monitor, hurricane_health_monitor
+
+    result = {}
+
+    if weather_health_monitor:
+        result["weather_mcp"] = weather_health_monitor.get_status()
+    else:
+        result["weather_mcp"] = {"status": "DISABLED"}
+
+    if hurricane_health_monitor:
+        result["hurricane_mcp"] = hurricane_health_monitor.get_status()
+    else:
+        result["hurricane_mcp"] = {"status": "DISABLED"}
+
+    return result
 
 
 @app.get(
@@ -1186,22 +1679,33 @@ async def cache_stats(
 @app.post(
     "/cache/clear",
     status_code=status.HTTP_200_OK,
-    summary="Clear all cache layers",
-    description="Flush L1 (in-process memory) and L2 (Redis) caches. Useful for testing and development. L3 (Anthropic) cache cannot be cleared programmatically.",
+    summary="Clear cache layers (all or specific)",
+    description="Flush L1 (in-process memory) and/or L2 (Redis) caches. Use 'layer' param for selective clearing. L3 (Anthropic) cache cannot be cleared programmatically.",
     tags=["System"]
 )
 async def cache_clear(
+    layer: str | None = None,
     l1_cache: QueryCache | None = Depends(get_l1_cache),
     l2_cache: RedisQueryCache | None = Depends(get_l2_cache),
 ):
-    """Clear all cache layers (L1 and L2).
+    """Clear cache layers (all or specific).
 
     Clears:
-    - L1: In-process LRU cache (Python dict)
-    - L2: Redis distributed cache (FLUSHDB)
+    - layer=None (default): Clear both L1 and L2
+    - layer="l1": Clear only L1 (in-process LRU cache)
+    - layer="l2": Clear only L2 (Redis distributed cache)
 
     Note: L3 (Anthropic prompt cache) cannot be cleared programmatically.
     It expires automatically based on cache_control parameters (5 minutes).
+
+    Example Request (clear all):
+        POST /cache/clear
+
+    Example Request (clear L1 only):
+        POST /cache/clear?layer=l1
+
+    Example Request (clear L2 only):
+        POST /cache/clear?layer=l2
 
     Example Response:
         {
@@ -1218,10 +1722,21 @@ async def cache_clear(
             "timestamp": "2025-12-09T20:30:00Z"
         }
 
+    Args:
+        layer: Optional layer to clear ("l1", "l2", or None for all)
+
     Returns:
         dict with status and details of cleared caches
     """
-    logger.info("🗑️  Cache clear requested")
+    # Normalize layer parameter
+    layer_lower = layer.lower() if layer else None
+    if layer_lower and layer_lower not in ["l1", "l2"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid layer '{layer}'. Must be 'l1', 'l2', or omit for all."
+        )
+
+    logger.info(f"🗑️  Cache clear requested | layer: {layer_lower or 'all'}")
 
     result = {
         "status": "success",
@@ -1231,54 +1746,70 @@ async def cache_clear(
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
-    # Clear L1 cache
-    if l1_cache:
-        previous_size = len(l1_cache.cache)
-        l1_cache.cache.clear()  # Python dict.clear()
-        result["cleared_layers"].append("L1")
-        result["l1"] = {
-            "cleared": True,
-            "previous_size": previous_size
-        }
-        logger.info(f"✅ L1 cache cleared (was: {previous_size} entries)")
+    # Clear L1 cache (if layer is None or "l1")
+    if layer_lower is None or layer_lower == "l1":
+        if l1_cache:
+            previous_size = len(l1_cache.cache)
+            l1_cache.cache.clear()  # Python dict.clear()
+            result["cleared_layers"].append("L1")
+            result["l1"] = {
+                "cleared": True,
+                "previous_size": previous_size
+            }
+            logger.info(f"✅ L1 cache cleared (was: {previous_size} entries)")
+        else:
+            result["l1"] = {
+                "cleared": False,
+                "reason": "L1 cache not enabled"
+            }
+            logger.warning("⚠️  L1 cache not available")
     else:
+        # Layer is "l2", skip L1
         result["l1"] = {
             "cleared": False,
-            "reason": "L1 cache not enabled"
+            "reason": "Layer not requested (requested: l2)"
         }
-        logger.warning("⚠️  L1 cache not available")
+        logger.info("⏭️  L1 cache skipped (layer=l2)")
 
-    # Clear L2 Redis cache
-    if l2_cache:
-        try:
-            # Get count before clearing
-            keys_pattern = f"{l2_cache.key_prefix}*"
-            keys = await l2_cache.client.keys(keys_pattern)
-            previous_keys = len(keys) if keys else 0
+    # Clear L2 Redis cache (if layer is None or "l2")
+    if layer_lower is None or layer_lower == "l2":
+        if l2_cache:
+            try:
+                # Get count before clearing
+                keys_pattern = f"{l2_cache.key_prefix}*"
+                keys = await l2_cache.client.keys(keys_pattern)
+                previous_keys = len(keys) if keys else 0
 
-            # Clear only weather cache keys (not entire Redis DB)
-            if keys:
-                await l2_cache.client.delete(*keys)
+                # Clear only weather cache keys (not entire Redis DB)
+                if keys:
+                    await l2_cache.client.delete(*keys)
 
-            result["cleared_layers"].append("L2")
-            result["l2"] = {
-                "cleared": True,
-                "previous_keys": previous_keys
-            }
-            logger.info(f"✅ L2 cache cleared (was: {previous_keys} keys)")
-        except Exception as e:
+                result["cleared_layers"].append("L2")
+                result["l2"] = {
+                    "cleared": True,
+                    "previous_keys": previous_keys
+                }
+                logger.info(f"✅ L2 cache cleared (was: {previous_keys} keys)")
+            except Exception as e:
+                result["l2"] = {
+                    "cleared": False,
+                    "error": str(e)
+                }
+                logger.error(f"❌ L2 cache clear failed: {e}")
+                # Don't fail the whole request, just log the error
+        else:
             result["l2"] = {
                 "cleared": False,
-                "error": str(e)
+                "reason": "L2 cache not enabled"
             }
-            logger.error(f"❌ L2 cache clear failed: {e}")
-            # Don't fail the whole request, just log the error
+            logger.warning("⚠️  L2 cache not available")
     else:
+        # Layer is "l1", skip L2
         result["l2"] = {
             "cleared": False,
-            "reason": "L2 cache not enabled"
+            "reason": "Layer not requested (requested: l1)"
         }
-        logger.warning("⚠️  L2 cache not available")
+        logger.info("⏭️  L2 cache skipped (layer=l1)")
 
     # Update status based on results
     if not result["cleared_layers"]:
@@ -1288,6 +1819,190 @@ async def cache_clear(
 
     logger.info(f"🗑️  Cache clear complete: {result['cleared_layers']}")
     return result
+
+
+@app.post(
+    "/cache/invalidate",
+    status_code=status.HTTP_200_OK,
+    summary="Invalidate specific cache entry",
+    description="Invalidate a specific query cache entry at L1 and L2. Useful for refreshing stale data without clearing entire cache.",
+    tags=["System"]
+)
+async def cache_invalidate(
+    query: str,
+    user_id: str,
+    enable_rag: bool = True,
+    enable_cot: bool = False,
+    l1_cache: QueryCache | None = Depends(get_l1_cache),
+    l2_cache: RedisQueryCache | None = Depends(get_l2_cache),
+):
+    """Invalidate specific cache entry for a query.
+
+    Removes the cache entry for the specified query parameters from both L1 and L2.
+    Useful when:
+    - Weather data has been updated
+    - User preferences have changed
+    - Query response was incorrect
+
+    Note: L3 (Anthropic prompt cache) cannot be invalidated programmatically.
+    It expires automatically after 5 minutes.
+
+    Example Request:
+        POST /cache/invalidate?query=weather%20in%20miami&user_id=user123
+
+    Example Response:
+        {
+            "status": "success",
+            "query": "weather in miami",
+            "user_id": "user123",
+            "invalidated": {
+                "l1": true,
+                "l2": true
+            },
+            "timestamp": "2025-12-09T20:30:00Z"
+        }
+
+    Args:
+        query: The query text to invalidate
+        user_id: User identifier
+        enable_rag: RAG setting used in cache key
+        enable_cot: CoT setting used in cache key
+
+    Returns:
+        dict with invalidation status per tier
+    """
+    logger.info(f"🗑️  Cache invalidation requested | query: {query[:50]}... | user: {user_id}")
+
+    result = {
+        "status": "success",
+        "query": query,
+        "user_id": user_id,
+        "invalidated": {"l1": False, "l2": False},
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Invalidate L1
+    if l1_cache:
+        cache_key = l1_cache._generate_cache_key(query, user_id, enable_rag, enable_cot)
+        if cache_key in l1_cache.cache:
+            del l1_cache.cache[cache_key]
+            result["invalidated"]["l1"] = True
+            logger.info(f"✅ L1 cache INVALIDATED | key: {cache_key[:12]}...")
+
+    # Invalidate L2
+    if l2_cache and l2_cache.client:
+        try:
+            cache_key = l2_cache._generate_cache_key(query, user_id, enable_rag, enable_cot)
+            deleted = await l2_cache.client.delete(cache_key)
+            result["invalidated"]["l2"] = deleted > 0
+            if result["invalidated"]["l2"]:
+                logger.info(f"✅ L2 cache INVALIDATED | key: {cache_key[:20]}...")
+        except Exception as e:
+            logger.error(f"❌ L2 invalidation failed: {e}")
+            result["status"] = "partial"
+
+    # Update status
+    if not result["invalidated"]["l1"] and not result["invalidated"]["l2"]:
+        result["status"] = "not_found"
+
+    return result
+
+
+@app.get(
+    "/cache/config",
+    status_code=status.HTTP_200_OK,
+    summary="Get cache configuration",
+    description="Return current cache configuration settings",
+    tags=["System"]
+)
+async def get_cache_config():
+    """Get current cache configuration.
+
+    Returns the current cache configuration including:
+    - Global enable/disable status
+    - L1 settings (TTL, max size)
+    - L2 settings (Redis URL, TTL)
+    - L3 settings (Anthropic prompt caching)
+
+    Example Response:
+        {
+            "global_enabled": true,
+            "l1": {
+                "enabled": true,
+                "max_size": 1000,
+                "ttl_seconds": 300
+            },
+            "l2": {
+                "enabled": true,
+                "ttl_seconds": 1800
+            },
+            "l3": {
+                "enabled": true,
+                "description": "Anthropic prompt caching (automatic)"
+            }
+        }
+
+    Returns:
+        dict with cache configuration
+    """
+    return {
+        "global_enabled": cache_config.CACHE_ENABLED,
+        "l1": {
+            "enabled": cache_config.L1_CACHE_ENABLED,
+            "max_size": cache_config.L1_CACHE_MAX_SIZE,
+            "ttl_seconds": cache_config.L1_CACHE_TTL_SECONDS,
+        },
+        "l2": {
+            "enabled": cache_config.L2_CACHE_ENABLED,
+            "ttl_seconds": cache_config.L2_CACHE_TTL_SECONDS,
+            "key_prefix": cache_config.L2_CACHE_KEY_PREFIX,
+        },
+        "l3": {
+            "enabled": cache_config.L3_CACHE_ENABLED,
+            "description": "Anthropic prompt caching (automatic, 5-min TTL)",
+            "pricing": {
+                "cache_write": "1.25x base token cost",
+                "cache_read": "0.1x base token cost (90% savings)",
+            },
+        },
+    }
+
+
+@app.get(
+    "/metrics",
+    status_code=status.HTTP_200_OK,
+    summary="Prometheus metrics",
+    description="Expose Prometheus-format metrics for scraping by Prometheus server",
+    tags=["System"],
+    response_class=PlainTextResponse,
+)
+async def metrics():
+    """Prometheus metrics endpoint for observability.
+
+    Exposes metrics in Prometheus text format including:
+    - weather_ai_requests_total: Total requests by tier and status
+    - weather_ai_request_duration_seconds: Request latency histogram
+    - weather_ai_cache_hits_total: Cache hits by layer (L1, L2)
+    - weather_ai_cache_misses_total: Total cache misses
+    - weather_ai_agents_invoked_total: Agents invoked count
+    - weather_ai_active_requests: Currently processing requests
+
+    This endpoint is scraped by Prometheus every 10-15 seconds.
+
+    Example Response (text/plain):
+        # HELP weather_ai_requests_total Total number of weather query requests
+        # TYPE weather_ai_requests_total counter
+        weather_ai_requests_total{tier="simple",status="success"} 150.0
+        weather_ai_requests_total{tier="standard",status="success"} 89.0
+        ...
+
+    Returns:
+        Prometheus text-format metrics
+    """
+    return PlainTextResponse(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 # For running with uvicorn directly

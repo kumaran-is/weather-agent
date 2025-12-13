@@ -1,6 +1,6 @@
 [project]
 name = "weather-ai-agent-service"
-version = "0.7.0"  # Level 4: Multi-Agent Orchestration + Auto-Routing (IN PROGRESS)
+version = "0.10.0"  # Level 5c: Full Production + Observability Stack
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
@@ -23,7 +23,7 @@ dependencies = [
     "langgraph-sdk>=0.2.10,<1.0.0",
     # LangGraph checkpointers (production databases)
     "langgraph-checkpoint-postgres>=3.0.1,<4.0.0",
-    "psycopg>=3.2.0,<4.0.0",
+    "psycopg[binary]>=3.2.0,<4.0.0",  # Binary version includes pre-compiled extensions
     "psycopg-pool>=3.2.0,<4.0.0",
     "langgraph-checkpoint-sqlite>=2.0.6,<3.0.0",
     # Vector stores & embeddings (Qdrant for RAG)
@@ -39,23 +39,24 @@ dependencies = [
     "pydantic>=2.12.5,<3.0.0",
     "pydantic-settings>=2.7.0,<3.0.0",
     "httpx>=0.28.1,<1.0.0",
-    "pandas>=2.0.0,<3.0.0",  # Level 2: RAG data processing
-    "numpy>=2.1.0,<3.0.0",  # Level 2: Required by pandas and langchain-community
+    "pandas>=2.0.0,<3.0.0", # Level 2: RAG data processing
+    "numpy>=2.1.0,<3.0.0", # Level 2: Required by pandas and langchain-community
     # Logging & observability
     "structlog>=25.5.0",
     "langsmith>=0.4.49,<1.0.0",
+    "prometheus-client>=0.21.0,<1.0.0",  # Level 5c: Prometheus metrics
     # Production API (FastAPI)
     "fastapi>=0.123.0,<1.0.0",
     "uvicorn[standard]>=0.38.0,<1.0.0",
     # Level 3a: Memory System (deployed as Docker containers)
-    "redis>=5.0.0,<6.0.0",  # Short-term memory (session context, 30min TTL) - Python client v5.x
-    "graphiti-core",  # Long-term memory (temporal knowledge graphs) - Latest from PyPI
-    "neo4j>=5.26.0,<6.0.0",  # Graph database driver for Graphiti - Latest: 5.26.0
+    "redis>=5.0.0,<6.0.0", # Short-term memory (session context, 30min TTL) - Python client v5.x
+    "graphiti-core", # Long-term memory (temporal knowledge graphs) - Latest from PyPI
+    "neo4j>=5.26.0,<6.0.0", # Graph database driver for Graphiti - Latest: 5.26.0
     "langgraph-cli[inmem]>=0.4.7",
     # Level 3c: Full 7-Layer Memory System
     # NOTE: Using Qdrant (already installed) for semantic memory instead of ChromaDB
     # ChromaDB has onnxruntime dependency incompatible with macOS <13
-    "textblob>=0.18.0,<1.0.0",  # Sentiment analysis (Layer 6 - emotional memory)
+    "textblob>=0.18.0,<1.0.0", # Sentiment analysis (Layer 6 - emotional memory)
 ]
 
 [project.optional-dependencies]

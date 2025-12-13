@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-12-12T17:50:27.480502",
+  "max_cases": null,
+  "category": "edge",
+  "total_cases": 15,
+  "passed_cases": 10,
+  "failed_cases": 5,
+  "pass_rate": 0.6666666666666666,
+  "pillar_averages": {
+    "effectiveness": 0.6266666666666667,
+    "efficiency": 0.912,
+    "robustness": 0.9733333333333333
+  },
+  "safety_violations": 0,
+  "execution_time_ms": 153080.139875412,
+  "quality_gates": {
+    "all_passed": false,
+    "gates": {
+      "pass_rate": {
+        "passed": false,
+        "actual": 0.6666666666666666,
+        "threshold": 0.85
+      },
+      "effectiveness": {
+        "passed": false,
+        "actual": 0.6266666666666667,
+        "threshold": 0.85
+      },
+      "efficiency": {
+        "passed": true,
+        "actual": 0.912,
+        "threshold": 0.8
+      },
+      "robustness": {
+        "passed": true,
+        "actual": 0.9733333333333333,
+        "threshold": 0.8
+      },
+      "safety": {
+        "passed": true,
+        "actual": 0,
+        "threshold": 0
+      }
+    },
+    "failed_gates": [
+      "pass_rate",
+      "effectiveness"
+    ],
+    "recommendation": "BLOCK: Failed gates: pass_rate, effectiveness"
+  },
+  "all_gates_passed": false
+}

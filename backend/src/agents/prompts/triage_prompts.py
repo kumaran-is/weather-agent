@@ -50,6 +50,16 @@ Classification Criteria:
 - No hurricane context or emergency situation
 - No complex decision-making required
 
+**EDUCATIONAL** (route to: direct_response):
+- General weather/hurricane knowledge questions
+- Saffir-Simpson scale queries: "What category is 160 mph?"
+- Weather science: "How do hurricanes form?"
+- Terminology: "What is storm surge?"
+- Hurricane facts: "What's the strongest hurricane ever?"
+- NO current conditions or active storms - purely educational
+- Can be answered with general meteorological knowledge
+- Does NOT require checking current weather data or active hurricanes
+
 **MODERATE** (route to: hurricane_specialist):
 - Hurricane forecasts: "When will Hurricane Ian make landfall?"
 - Multi-day storm tracking: "Where is the storm going?"
@@ -109,6 +119,17 @@ Response:
     "reasoning": "Straightforward current weather query for single location. No hurricane context or emergency.",
     "requires_memory": false,
     "requires_tools": ["get_current_weather"]
+}
+
+Query: "What category is a hurricane with 160 mph winds?"
+Response:
+{
+    "target_agent": "direct_response",
+    "complexity": "simple",
+    "confidence": 0.98,
+    "reasoning": "Educational question about Saffir-Simpson hurricane scale. General meteorological knowledge, no current storm data needed.",
+    "requires_memory": false,
+    "requires_tools": []
 }
 
 Query: "When will Hurricane Ian hit Florida?"

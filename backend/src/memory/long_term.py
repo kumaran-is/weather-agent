@@ -594,7 +594,7 @@ class LongTermMemory:
         session_id: str,
         query: str,
         response: str,
-        timeout_seconds: float = 10.0,
+        timeout_seconds: float | None = None,
     ) -> None:
         """Save query-response episode to Graphiti for cross-session recall.
 
@@ -605,14 +605,14 @@ class LongTermMemory:
         - Temporal validity
 
         ⚠️ CRITICAL FIX: Added timeout to prevent hangs during episode saving.
-        If save takes >10s, logs warning and continues (non-blocking).
+        If save takes longer than configured timeout, logs warning and continues (non-blocking).
 
         Args:
             user_id: User identifier
             session_id: Session identifier
             query: User's query
             response: Agent's response
-            timeout_seconds: Maximum time to wait for save (default: 10.0s)
+            timeout_seconds: Maximum time to wait for save (default: from GRAPHITI_SAVE_TIMEOUT env var, 10.0s)
 
         Raises:
             GraphitiMemoryError: If episode saving fails
@@ -627,6 +627,10 @@ class LongTermMemory:
         """
         await self._ensure_initialized()
 
+        # Use configured timeout if not specified
+        from backend.config.memory_config import memory_config
+        effective_timeout = timeout_seconds if timeout_seconds is not None else memory_config.GRAPHITI_SAVE_TIMEOUT
+
         try:
             # Construct episode content from query-response pair
             episode_content = f"""User query: {query}
@@ -638,7 +642,7 @@ Context: User '{user_id}' in session '{session_id}'"""
             # ✅ REAL FIX: Use group_id to isolate user data (prevents cross-user contamination)
             # This is the ROOT CAUSE fix - missing group_id caused all episodes to go into global graph!
             user_group_id = f"user_profile_{user_id}"
-            logger.debug(f"Saving episode for user={user_id} in group={user_group_id} with {timeout_seconds}s timeout")
+            logger.debug(f"Saving episode for user={user_id} in group={user_group_id} with {effective_timeout}s timeout")
 
             await asyncio.wait_for(
                 self.graphiti.add_episode(
@@ -648,7 +652,7 @@ Context: User '{user_id}' in session '{session_id}'"""
                     source_description=f"Weather AI conversation with user {user_id}",
                     group_id=user_group_id,  # ✅ CRITICAL FIX: Isolate user's episodes in dedicated group
                 ),
-                timeout=timeout_seconds
+                timeout=effective_timeout
             )
 
             logger.info(
@@ -657,8 +661,9 @@ Context: User '{user_id}' in session '{session_id}'"""
 
         except asyncio.TimeoutError:
             logger.warning(
-                f"⚠️ Episode save timed out after {timeout_seconds}s for user={user_id}. "
-                f"Episode NOT saved. Continuing without blocking query."
+                f"⚠️ Episode save timed out after {effective_timeout}s for user={user_id}. "
+                f"Episode NOT saved. Continuing without blocking query. "
+                f"Consider increasing GRAPHITI_SAVE_TIMEOUT if this occurs frequently."
             )
             # Don't raise - episode saving is non-critical, continue operation
 

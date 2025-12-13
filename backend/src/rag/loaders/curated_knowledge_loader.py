@@ -1,10 +1,10 @@
-"""Mock data loader for curated weather knowledge text files.
+"""Curated knowledge loader for weather knowledge text files.
 
-Loads text documents from backend/data/raw/mock/ directory into LangChain
+Loads text documents from backend/data/raw/curated/ directory into LangChain
 Document objects for RAG indexing.
 
 Directory structure:
-    backend/data/raw/mock/
+    backend/data/raw/curated/
     ├── hurricanes/
     │   ├── saffir_simpson_scale.txt
     │   ├── evacuation_zones.txt
@@ -24,13 +24,13 @@ Directory structure:
         └── ...
 
 Usage:
-    >>> from backend.src.rag.loaders.mock_loader import load_all_mock_documents
-    >>> docs = load_all_mock_documents()
-    >>> print(f"Loaded {len(docs)} mock documents")
-    Loaded 23 mock documents
+    >>> from backend.src.rag.loaders.curated_knowledge_loader import load_all_curated_documents
+    >>> docs = load_all_curated_documents()
+    >>> print(f"Loaded {len(docs)} curated documents")
+    Loaded 23 curated documents
 
     >>> # Load specific category
-    >>> hurricane_docs = load_mock_category("hurricanes")
+    >>> hurricane_docs = load_curated_category("hurricanes")
     >>> print(hurricane_docs[0].page_content[:100])
     Saffir-Simpson Hurricane Wind Scale...
 """
@@ -41,8 +41,8 @@ from pathlib import Path
 import os
 
 
-def load_mock_category(category: str) -> list[Document]:
-    """Load all text documents from a specific mock data category.
+def load_curated_category(category: str) -> list[Document]:
+    """Load all text documents from a specific curated knowledge category.
 
     Args:
         category: Category directory name
@@ -55,13 +55,13 @@ def load_mock_category(category: str) -> list[Document]:
         list[Document]: Loaded documents with metadata
 
     Example:
-        >>> docs = load_mock_category("hurricanes")
+        >>> docs = load_curated_category("hurricanes")
         >>> print(docs[0].metadata)
-        {'source': 'backend/data/raw/mock/hurricanes/saffir_simpson_scale.txt',
+        {'source': 'backend/data/raw/curated/hurricanes/saffir_simpson_scale.txt',
          'category': 'hurricanes'}
     """
     # Get category directory path
-    base_path = Path("backend/data/raw/mock")
+    base_path = Path("backend/data/raw/curated")
     category_path = base_path / category
 
     if not category_path.exists():
@@ -93,8 +93,8 @@ def load_mock_category(category: str) -> list[Document]:
         return []
 
 
-def load_all_mock_documents() -> list[Document]:
-    """Load all mock data documents from all categories.
+def load_all_curated_documents() -> list[Document]:
+    """Load all curated knowledge documents from all categories.
 
     Loads from:
         - hurricanes/
@@ -103,10 +103,10 @@ def load_all_mock_documents() -> list[Document]:
         - climate_patterns/
 
     Returns:
-        list[Document]: All mock documents with category metadata
+        list[Document]: All curated documents with category metadata
 
     Example:
-        >>> docs = load_all_mock_documents()
+        >>> docs = load_all_curated_documents()
         >>> print(f"Total documents: {len(docs)}")
         Total documents: 23
 
@@ -118,7 +118,7 @@ def load_all_mock_documents() -> list[Document]:
                  'weather_terminology': 5, 'climate_patterns': 7})
     """
     print("=" * 70)
-    print("Loading Mock Weather Knowledge Documents")
+    print("Loading Curated Weather Knowledge Documents")
     print("=" * 70)
 
     all_documents = []
@@ -130,11 +130,11 @@ def load_all_mock_documents() -> list[Document]:
     ]
 
     for category in categories:
-        docs = load_mock_category(category)
+        docs = load_curated_category(category)
         all_documents.extend(docs)
 
     print("\n" + "=" * 70)
-    print(f"✅ Total mock documents loaded: {len(all_documents)}")
+    print(f"✅ Total curated documents loaded: {len(all_documents)}")
     print("=" * 70)
 
     # Print summary by category
@@ -147,8 +147,8 @@ def load_all_mock_documents() -> list[Document]:
     return all_documents
 
 
-def load_mock_document(filepath: str) -> Document:
-    """Load a single mock document by filepath.
+def load_curated_document(filepath: str) -> Document:
+    """Load a single curated document by filepath.
 
     Args:
         filepath: Path to .txt file (relative or absolute)
@@ -157,7 +157,7 @@ def load_mock_document(filepath: str) -> Document:
         Document: Loaded document with metadata
 
     Example:
-        >>> doc = load_mock_document("backend/data/raw/mock/hurricanes/saffir_simpson_scale.txt")
+        >>> doc = load_curated_document("backend/data/raw/curated/hurricanes/saffir_simpson_scale.txt")
         >>> print(len(doc.page_content))
         5432
     """
@@ -167,13 +167,13 @@ def load_mock_document(filepath: str) -> Document:
 
         if docs:
             doc = docs[0]
-            # Add category metadata if in mock directory
-            if "mock/" in filepath:
+            # Add category metadata if in curated directory
+            if "curated/" in filepath:
                 parts = Path(filepath).parts
-                if "mock" in parts:
-                    mock_idx = parts.index("mock")
-                    if mock_idx + 1 < len(parts):
-                        doc.metadata["category"] = parts[mock_idx + 1]
+                if "curated" in parts:
+                    curated_idx = parts.index("curated")
+                    if curated_idx + 1 < len(parts):
+                        doc.metadata["category"] = parts[curated_idx + 1]
 
             return doc
         else:
@@ -185,7 +185,7 @@ def load_mock_document(filepath: str) -> Document:
 
 if __name__ == "__main__":
     # Test loading
-    docs = load_all_mock_documents()
+    docs = load_all_curated_documents()
 
     # Show sample
     if docs:

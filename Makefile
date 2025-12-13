@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync verify clean test test-dev lint format type-check security compliance-check run-verify run-agent all-checks quickstart dev update lock version rag-validate rag-load rag-load-mock-only rag-load-skip-validation rag-test memory-test memory-redis-cli memory-neo4j-browser memory-clear memory-stats docker-up docker-up-dev docker-down docker-down-dev docker-restart docker-restart-dev docker-logs docker-logs-dev docker-ps docker-ps-dev docker-health docker-clean docker-clean-dev
+.PHONY: help install install-dev sync verify clean test test-dev lint format type-check security compliance-check run-verify run-agent all-checks quickstart dev update lock version rag-validate rag-load rag-load-curated-only rag-load-skip-validation rag-test memory-test memory-redis-cli memory-neo4j-browser memory-clear memory-stats eval-upload-dataset eval-run-batch eval-check-gates eval-quick eval-category eval-full docker-up docker-up-dev docker-down docker-down-dev docker-restart docker-restart-dev docker-logs docker-logs-dev docker-ps docker-ps-dev docker-health docker-clean docker-clean-dev observability-status observability-logs grafana-open prometheus-open prometheus-reload loki-logs
 
 # Default Python version
 PYTHON_VERSION := 3.13
@@ -54,22 +54,26 @@ test:  ## Run all tests with pytest
 	uv run pytest
 	@echo "$(GREEN)✓ All tests passed$(NC)"
 
-test-dev:  ## Restart dev environment and run complete test suite (progressive: currently Level 3 complete)
+test-dev:  ## Restart dev environment and run complete test suite (progressive: currently Level 5c complete)
 	@echo "$(BLUE)========================================$(NC)"
 	@echo "$(BLUE)Weather AI Agent - Development Test Suite$(NC)"
 	@echo "$(BLUE)========================================$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Current Level: Level 3 COMPLETE (v0.6.0)$(NC)"
-	@echo "  ✅ Level 1: ReAct Agent + HITL"
-	@echo "  ✅ Level 2: RAG + Chain-of-Thought"
-	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + Multi-Layer Caching"
+	@echo "$(YELLOW)Current Level: Level 5c COMPLETE (v0.10.0)$(NC)"
+	@echo "  ✅ Level 1: ReAct Agent + HITL (7 tests)"
+	@echo "  ✅ Level 2: RAG + Chain-of-Thought (4 tests)"
+	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + 3-Layer Caching (15 tests)"
+	@echo "  ✅ Level 4: 15-Agent Multi-Agent Orchestration (20 tests)"
+	@echo "  ✅ Level 5: Production + Guardrails + Evaluation + Observability (3 tests)"
+	@echo "  $(GREEN)Total: 49 test files$(NC)"
 	@echo ""
-	@echo "$(BLUE)[1/3] Restarting development environment...$(NC)"
+	@echo "$(BLUE)[1/3] Restarting development environment (10 services)...$(NC)"
 	@docker-compose -f docker-compose.dev.yml restart
 	@echo "$(GREEN)✓ Development environment restarted$(NC)"
 	@echo ""
-	@echo "$(BLUE)[2/3] Running complete test suite...$(NC)"
-	@echo "$(YELLOW)Testing: MCP, RAG, HITL, Memory (L3a+L3c), Reasoning (ToT+GoT), Cache (L1+L2+L3)$(NC)"
+	@echo "$(BLUE)[2/3] Running complete test suite (49 tests)...$(NC)"
+	@echo "$(YELLOW)Testing: MCP, RAG, HITL, Memory (L3a+L3c), Reasoning (ToT+GoT),$(NC)"
+	@echo "$(YELLOW)         Cache (L1+L2+L3), Multi-Agent, Guardrails, Evaluation$(NC)"
 	@uv run pytest -v
 	@echo "$(GREEN)✓ All tests passed$(NC)"
 	@echo ""
@@ -80,7 +84,10 @@ test-dev:  ## Restart dev environment and run complete test suite (progressive: 
 	@echo "$(GREEN)✓ Development test suite COMPLETE$(NC)"
 	@echo "$(GREEN)========================================$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Next: View logs with 'make docker-logs-dev'$(NC)"
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "  - View logs:        make docker-logs-dev"
+	@echo "  - Observability:    make observability-status"
+	@echo "  - Open Grafana:     make grafana-open"
 
 lint:  ## Run ruff linter
 	@echo "$(BLUE)Running ruff linter...$(NC)"
@@ -160,17 +167,22 @@ run-verify:  ## Run Level 0 verification script (alias for 'verify')
 	@echo "$(BLUE)Running Level 0 setup verification...$(NC)"
 	uv run python verify_setup.py
 
-run-agent:  ## Run Weather AI Agent Service (when implemented in Level 1+)
+run-agent:  ## Run Weather AI Agent Service (use docker-up-dev instead)
 	@echo "$(BLUE)Starting Weather AI Agent Service...$(NC)"
-	@echo "$(YELLOW)⚠️  Agent implementation starts in Level 1$(NC)"
-	@echo "$(YELLOW)   Current: Level 0 (Setup Complete)$(NC)"
+	@echo "$(YELLOW)⚠️  Use 'make docker-up-dev' to run the service$(NC)"
+	@echo "$(YELLOW)   Current: Level 5c COMPLETE (v0.10.0)$(NC)"
+	@echo ""
+	@echo "$(GREEN)Quick start:$(NC)"
+	@echo "  1. make docker-up-dev   # Start all 10 services"
+	@echo "  2. make test-dev        # Run 49 tests"
+	@echo "  3. Visit http://localhost:8000/docs"
 
 # Version info
-version:  ## Show installed versions (Level 1+2+3 dependencies)
-	@echo "$(BLUE)Installed Versions:$(NC)"
+version:  ## Show installed versions (Level 5c: all dependencies)
+	@echo "$(BLUE)Installed Versions (Level 5c v0.10.0):$(NC)"
 	@uv run python --version
 	@echo ""
-	@echo "$(YELLOW)LangChain Ecosystem (Level 1+2):$(NC)"
+	@echo "$(YELLOW)LangChain Ecosystem (Level 1+2+3+4):$(NC)"
 	@uv run python -c "import langchain; print(f'  langchain:           {langchain.__version__}')" 2>/dev/null || echo "  langchain: not installed"
 	@uv run python -c "import langchain_core; print(f'  langchain-core:      {langchain_core.__version__}')" 2>/dev/null || echo "  langchain-core: not installed"
 	@uv run python -c "import langgraph; print(f'  langgraph:           {langgraph.__version__}')" 2>/dev/null || echo "  langgraph: not installed"
@@ -185,6 +197,9 @@ version:  ## Show installed versions (Level 1+2+3 dependencies)
 	@echo ""
 	@echo "$(YELLOW)Vector Store (Level 2):$(NC)"
 	@uv run python -c "import qdrant_client; print(f'  qdrant-client:       {qdrant_client.__version__}')" 2>/dev/null || echo "  qdrant-client: not installed"
+	@echo ""
+	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@uv run python -c "import prometheus_client; print(f'  prometheus-client:   {prometheus_client.__version__}')" 2>/dev/null || echo "  prometheus-client: not installed"
 
 # Quick start
 quickstart: install-dev version verify  ## Quick start - install everything, show versions, and verify setup
@@ -193,24 +208,27 @@ quickstart: install-dev version verify  ## Quick start - install everything, sho
 	@echo "$(YELLOW)Next steps:$(NC)"
 	@echo "  1. If verification failed, copy .env.template to .env and add your API keys"
 	@echo "  2. Run 'make verify' again to confirm setup"
-	@echo "  3. Run 'make docker-up-dev' to start all services in dev mode"
-	@echo "  4. Run 'make test-dev' to test all features (Level 1+2+3)"
+	@echo "  3. Run 'make docker-up-dev' to start all 10 services in dev mode"
+	@echo "  4. Run 'make test-dev' to test all features (Level 1-5c, 49 tests)"
 	@echo "  5. Run 'make help' to see all available commands"
 
 # Development workflow
-dev: install-dev  ## Setup development environment (progressive: currently Level 3 complete)
+dev: install-dev  ## Setup development environment (progressive: currently Level 5c complete)
 	@echo "$(GREEN)✓ Development environment ready!$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Current Level: Level 3 COMPLETE (v0.6.0)$(NC)"
+	@echo "$(YELLOW)Current Level: Level 5c COMPLETE (v0.10.0)$(NC)"
 	@echo "  ✅ Level 1: ReAct Agent + HITL"
 	@echo "  ✅ Level 2: RAG + Chain-of-Thought"
-	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + Multi-Layer Caching"
+	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + 3-Layer Caching"
+	@echo "  ✅ Level 4: 15-Agent Multi-Agent Orchestration"
+	@echo "  ✅ Level 5: Production + Guardrails + Evaluation + Observability"
 	@echo ""
 	@echo "$(YELLOW)Next steps:$(NC)"
 	@echo "  1. Copy .env.template to .env and add your API keys"
-	@echo "  2. Run 'make docker-up-dev' to start all services in dev mode"
-	@echo "  3. Run 'make test-dev' to run complete test suite"
+	@echo "  2. Run 'make docker-up-dev' to start all 10 services in dev mode"
+	@echo "  3. Run 'make test-dev' to run complete test suite (49 tests)"
 	@echo "  4. Run 'make all-checks' before committing code"
+	@echo "  5. Run 'make observability-status' to check monitoring stack"
 
 # Update dependencies
 update:  ## Update all dependencies to latest compatible versions
@@ -236,11 +254,11 @@ rag-validate:  ## Validate Kaggle datasets before loading
 	@echo ""
 	@echo "$(YELLOW)Next step: make rag-load$(NC)"
 
-rag-load:  ## Load weather knowledge base into Qdrant (mock + Kaggle data)
+rag-load:  ## Load weather knowledge base into Qdrant (curated + Kaggle data)
 	@echo "$(BLUE)Building and loading RAG knowledge base...$(NC)"
 	@echo "$(YELLOW)This will:$(NC)"
 	@echo "  1. Validate Kaggle datasets"
-	@echo "  2. Load mock weather documents (~20-30 files)"
+	@echo "  2. Load curated knowledge documents (~20-30 files)"
 	@echo "  3. Load Kaggle datasets (~500-600 documents)"
 	@echo "  4. Generate embeddings (OpenAI text-embedding-3-small)"
 	@echo "  5. Load into Qdrant vector store"
@@ -252,20 +270,20 @@ rag-load:  ## Load weather knowledge base into Qdrant (mock + Kaggle data)
 	@echo "$(YELLOW)Test similarity search:$(NC)"
 	@echo "  uv run python -c \"from backend.src.rag import get_vector_store; vs = get_vector_store(); print(vs.similarity_search('Category 5 hurricane'))\""
 
-rag-load-mock-only:  ## Load only mock data (skip Kaggle datasets)
-	@echo "$(BLUE)Loading mock data only...$(NC)"
-	@uv run python -m backend.src.rag.build_knowledge_base --mock-only
-	@echo "$(GREEN)✓ Mock data loaded$(NC)"
+rag-load-curated-only:  ## Load only curated knowledge (skip Kaggle datasets)
+	@echo "$(BLUE)Loading curated knowledge only...$(NC)"
+	@uv run python -m backend.src.rag.build_knowledge_base --curated-only
+	@echo "$(GREEN)✓ Curated knowledge loaded$(NC)"
 
 rag-load-skip-validation:  ## Load knowledge base without validating datasets first
 	@echo "$(BLUE)Loading knowledge base (skipping validation)...$(NC)"
 	@uv run python -m backend.src.rag.build_knowledge_base --skip-validation
 	@echo "$(GREEN)✓ Knowledge base loaded$(NC)"
 
-rag-test:  ## Test RAG retrieval (verify both mock and Kaggle data)
+rag-test:  ## Test RAG retrieval (verify both curated and Kaggle data)
 	@echo "$(BLUE)Testing RAG knowledge base retrieval...$(NC)"
 	@echo ""
-	@echo "$(YELLOW)[Test 1/3] Testing Mock Data - Hurricane Information$(NC)"
+	@echo "$(YELLOW)[Test 1/3] Testing Curated Knowledge - Hurricane Information$(NC)"
 	@uv run python -c "from backend.src.rag import get_vector_store; vs = get_vector_store(); results = vs.similarity_search('What is a Category 5 hurricane?', k=2); print('\n'.join([f'  ✓ {r.page_content[:100]}...' for r in results]))"
 	@echo ""
 	@echo "$(YELLOW)[Test 2/3] Testing Kaggle Data - City Climate$(NC)"
@@ -383,50 +401,151 @@ memory-stats:  ## Show memory system statistics - auto-detects prod/dev
 	docker exec -it $$NEO4J_CONTAINER cypher-shell -u neo4j -p weatherai2025 "MATCH ()-[r]->() RETURN count(r) as total_relationships" || echo "$(RED)Neo4j relationship count failed$(NC)"
 
 # ============================================================================
-# Docker Compose Commands (Level 3a: 6 Services)
-# Services: weather-mcp:8080, hurricane-mcp:8081, qdrant:6333,
-#           redis:6379, neo4j:7474/7687, weather-ai-api:8000
+# Evaluation & Testing Commands (Level 5b: LangSmith + Golden Dataset)
 # ============================================================================
 
-docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 3a: 6 services)
-	@echo "$(BLUE)Starting all Docker containers (PRODUCTION MODE)...$(NC)"
-	@echo "$(YELLOW)Services:$(NC)"
+eval-upload-dataset:  ## Upload golden dataset to LangSmith (105 test cases)
+	@echo "$(BLUE)Uploading golden dataset to LangSmith...$(NC)"
+	@echo "$(YELLOW)Dataset:$(NC) tests/evaluation/golden_dataset.yaml"
+	@echo "$(YELLOW)Categories:$(NC)"
+	@echo "  - Simple:    40 test cases (basic weather queries)"
+	@echo "  - Complex:   30 test cases (multi-location comparisons)"
+	@echo "  - Hurricane: 20 test cases (safety-critical)"
+	@echo "  - Edge:      15 test cases (error handling)"
+	@echo ""
+	uv run python scripts/upload_golden_dataset.py
+	@echo ""
+	@echo "$(GREEN)✓ Dataset uploaded to LangSmith$(NC)"
+	@echo "$(YELLOW)View at: https://smith.langchain.com/datasets$(NC)"
+
+eval-run-batch:  ## Run batch evaluation on full golden dataset (105 cases)
+	@echo "$(BLUE)Running batch evaluation (105 test cases)...$(NC)"
+	@echo "$(YELLOW)This will:$(NC)"
+	@echo "  1. Run all 105 test cases through the agent"
+	@echo "  2. Evaluate using 4-pillar framework (effectiveness, efficiency, robustness, safety)"
+	@echo "  3. Generate evaluation report"
+	@echo "  4. Check quality gates (pass_rate ≥85%, safety=0)"
+	@echo ""
+	@PYTHONPATH=$(PWD) uv run python scripts/run_batch_evaluation.py
+	@echo ""
+	@echo "$(GREEN)✓ Batch evaluation complete$(NC)"
+	@echo "$(YELLOW)Results saved to: evaluation_results.json$(NC)"
+
+eval-check-gates:  ## Check quality gates from evaluation results
+	@echo "$(BLUE)Checking quality gates...$(NC)"
+	@echo "$(YELLOW)Thresholds:$(NC)"
+	@echo "  - Pass Rate:        ≥85%"
+	@echo "  - Effectiveness:    ≥85%"
+	@echo "  - Efficiency:       ≥80%"
+	@echo "  - Robustness:       ≥80%"
+	@echo "  - Safety Violations: 0 (zero tolerance)"
+	@echo ""
+	@uv run python scripts/check_quality_gates.py
+	@echo ""
+
+eval-quick:  ## Quick smoke test (10 random test cases)
+	@echo "$(BLUE)Running quick smoke test (10 cases)...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_batch_evaluation.py --max-cases=10 --output=evaluation_quick.json
+	@echo ""
+	@echo "$(GREEN)✓ Quick test complete$(NC)"
+	@echo "$(YELLOW)Results: evaluation_quick.json$(NC)"
+
+eval-category:  ## Run evaluation for specific category (use: make eval-category CATEGORY=hurricane)
+	@if [ -z "$(CATEGORY)" ]; then \
+		echo "$(RED)Error: CATEGORY not specified$(NC)"; \
+		echo "$(YELLOW)Usage: make eval-category CATEGORY=<simple|complex|hurricane|edge>$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Running evaluation for category: $(CATEGORY)$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_batch_evaluation.py --category=$(CATEGORY) --output=evaluation_$(CATEGORY).json
+	@echo ""
+	@echo "$(GREEN)✓ Category evaluation complete$(NC)"
+	@echo "$(YELLOW)Results: evaluation_$(CATEGORY).json$(NC)"
+
+eval-full:  ## Full evaluation pipeline (upload → run → check gates)
+	@echo "$(BLUE)========================================$(NC)"
+	@echo "$(BLUE)Full Evaluation Pipeline (Level 5b)$(NC)"
+	@echo "$(BLUE)========================================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)[1/3] Uploading golden dataset to LangSmith...$(NC)"
+	@$(MAKE) eval-upload-dataset
+	@echo ""
+	@echo "$(YELLOW)[2/3] Running batch evaluation (105 cases)...$(NC)"
+	@$(MAKE) eval-run-batch
+	@echo ""
+	@echo "$(YELLOW)[3/3] Checking quality gates...$(NC)"
+	@$(MAKE) eval-check-gates
+	@echo ""
+	@echo "$(GREEN)========================================$(NC)"
+	@echo "$(GREEN)✓ Full evaluation pipeline COMPLETE$(NC)"
+	@echo "$(GREEN)========================================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "  - View results: cat evaluation_results.json"
+	@echo "  - View traces:  https://smith.langchain.com"
+	@echo "  - Run category: make eval-category CATEGORY=hurricane"
+
+# ============================================================================
+# Docker Compose Commands (Level 5c: 10 Services)
+# Core Services: weather-mcp:8080, hurricane-mcp:8081, weather-ai-api:8000
+# Databases: qdrant:6333, redis:6379, neo4j:7474/7687, postgres:5432
+# Observability: prometheus:9090, grafana:3001, loki:3100
+# ============================================================================
+
+docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 5c: 10 services)
+	@echo "$(BLUE)Starting all Docker containers (PRODUCTION MODE - Level 5c)...$(NC)"
+	@echo "$(YELLOW)Core Services:$(NC)"
 	@echo "  - weather-mcp:      http://localhost:8080"
 	@echo "  - hurricane-mcp:    http://localhost:8081"
-	@echo "  - qdrant:           http://localhost:6333  (Level 2 - RAG)"
-	@echo "  - redis:            redis://localhost:6379 (Level 3a - Short-term memory)"
-	@echo "  - neo4j:            http://localhost:7474  (Level 3a - Long-term memory)"
 	@echo "  - weather-ai-api:   http://localhost:8000"
+	@echo "$(YELLOW)Databases:$(NC)"
+	@echo "  - qdrant:           http://localhost:6333  (Level 2 - RAG)"
+	@echo "  - redis:            redis://localhost:6379 (Level 3a - Memory + Cache)"
+	@echo "  - neo4j:            http://localhost:7474  (Level 3a - Long-term memory)"
+	@echo "  - postgres:         localhost:5432         (Level 3c - Procedural memory)"
+	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@echo "  - prometheus:       http://localhost:9090  (Metrics)"
+	@echo "  - grafana:          http://localhost:3001  (Dashboards)"
+	@echo "  - loki:             http://localhost:3100  (Logs)"
 	docker-compose up -d
 	@echo "$(GREEN)✓ All containers started$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Check status:  make docker-ps$(NC)"
-	@echo "$(YELLOW)View logs:     make docker-logs$(NC)"
-	@echo "$(YELLOW)Load RAG:      make rag-load$(NC)"
-	@echo "$(YELLOW)Run tests:     make test-dev$(NC)"
+	@echo "$(YELLOW)Check status:        make docker-ps$(NC)"
+	@echo "$(YELLOW)View logs:           make docker-logs$(NC)"
+	@echo "$(YELLOW)Observability:       make observability-status$(NC)"
+	@echo "$(YELLOW)Open Grafana:        make grafana-open$(NC)"
 
-docker-up-dev:  ## Start all Docker containers in DEVELOPMENT mode (hot reload enabled)
-	@echo "$(BLUE)Starting all Docker containers (DEVELOPMENT MODE)...$(NC)"
+docker-up-dev:  ## Start all Docker containers in DEVELOPMENT mode (Level 5c: 10 services + hot reload)
+	@echo "$(BLUE)Starting all Docker containers (DEVELOPMENT MODE - Level 5c)...$(NC)"
 	@echo "$(YELLOW)Dev Features:$(NC)"
 	@echo "  ✅ Hot reload enabled (code changes reflect immediately)"
 	@echo "  ✅ Source code mounted as volume (no rebuild needed)"
 	@echo "  ✅ Debug logging enabled"
 	@echo "  ✅ LangSmith tracing enabled"
 	@echo "  ✅ Memory system enabled (Redis + Neo4j)"
+	@echo "  ✅ Observability stack (Prometheus + Grafana + Loki)"
 	@echo ""
-	@echo "$(YELLOW)Services:$(NC)"
+	@echo "$(YELLOW)Core Services:$(NC)"
 	@echo "  - weather-mcp:      http://localhost:8080"
 	@echo "  - hurricane-mcp:    http://localhost:8081"
-	@echo "  - qdrant:           http://localhost:6333"
-	@echo "  - redis:            redis://localhost:6379 (Level 3a)"
-	@echo "  - neo4j:            http://localhost:7474  (Level 3a)"
 	@echo "  - weather-ai-api:   http://localhost:8000 (DEV MODE)"
+	@echo "$(YELLOW)Databases:$(NC)"
+	@echo "  - qdrant:           http://localhost:6333  (Level 2 - RAG)"
+	@echo "  - redis:            redis://localhost:6379 (Level 3a - Memory + Cache)"
+	@echo "  - neo4j:            http://localhost:7474  (Level 3a - Long-term memory)"
+	@echo "  - postgres:         localhost:5432         (Level 3c - Procedural memory)"
+	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@echo "  - prometheus:       http://localhost:9090  (Metrics)"
+	@echo "  - grafana:          http://localhost:3001  (Dashboards - admin/weatherai2025)"
+	@echo "  - loki:             http://localhost:3100  (Logs)"
 	docker-compose -f docker-compose.dev.yml up -d
 	@echo "$(GREEN)✓ All containers started in DEV mode$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Check status: make docker-ps-dev$(NC)"
-	@echo "$(YELLOW)View logs:    make docker-logs-dev$(NC)"
-	@echo "$(YELLOW)Stop:         make docker-down-dev$(NC)"
+	@echo "$(YELLOW)Check status:        make docker-ps-dev$(NC)"
+	@echo "$(YELLOW)View logs:           make docker-logs-dev$(NC)"
+	@echo "$(YELLOW)Observability:       make observability-status$(NC)"
+	@echo "$(YELLOW)Open Grafana:        make grafana-open$(NC)"
+	@echo "$(YELLOW)Stop:                make docker-down-dev$(NC)"
 
 docker-down:  ## Stop and remove all PRODUCTION Docker containers
 	@echo "$(BLUE)Stopping all Docker containers (PRODUCTION)...$(NC)"
@@ -437,6 +556,15 @@ docker-down-dev:  ## Stop and remove all DEVELOPMENT Docker containers
 	@echo "$(BLUE)Stopping all Docker containers (DEVELOPMENT)...$(NC)"
 	docker-compose -f docker-compose.dev.yml down
 	@echo "$(GREEN)✓ All dev containers stopped and removed$(NC)"
+
+docker-rebuild-dev:  ## Rebuild and restart DEVELOPMENT containers (use after Dockerfile/docker-compose changes)
+	@echo "$(BLUE)Rebuilding all Docker containers (DEVELOPMENT)...$(NC)"
+	@echo "$(YELLOW)This will rebuild images and restart all containers$(NC)"
+	docker-compose -f docker-compose.dev.yml up -d --build
+	@echo "$(GREEN)✓ All dev containers rebuilt and started$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Check status:        make docker-ps-dev$(NC)"
+	@echo "$(YELLOW)View logs:           make docker-logs-dev$(NC)"
 
 docker-restart:  ## Restart all PRODUCTION Docker containers
 	@echo "$(BLUE)Restarting all Docker containers (PRODUCTION)...$(NC)"
@@ -464,48 +592,41 @@ docker-ps-dev:  ## Show status of all DEVELOPMENT Docker containers
 	@echo "$(BLUE)Docker container status (DEVELOPMENT):$(NC)"
 	@docker-compose -f docker-compose.dev.yml ps
 
-docker-health:  ## Check health status of all Docker containers - auto-detects prod/dev
-	@echo "$(BLUE)Checking health status of all containers...$(NC)"
+docker-health:  ## Check health status of all Docker containers (Level 5c: 10 services)
+	@echo "$(BLUE)Checking health status of all containers (Level 5c)...$(NC)"
 	@echo ""
-	@QDRANT_CONTAINER=$$(docker ps --format '{{.Names}}' | grep 'weather-ai-qdrant' | head -1); \
-	REDIS_CONTAINER=$$(docker ps --format '{{.Names}}' | grep 'weather-ai-redis' | head -1); \
-	NEO4J_CONTAINER=$$(docker ps --format '{{.Names}}' | grep 'weather-ai-neo4j' | head -1); \
-	API_CONTAINER=$$(docker ps --format '{{.Names}}' | grep 'weather-ai-api' | head -1); \
-	echo "$(YELLOW)Weather MCP Server (8080):$(NC)"; \
-	docker inspect --format='{{.State.Health.Status}}' weather-mcp-server 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	echo ""; \
-	echo "$(YELLOW)Hurricane Tracker MCP (8081):$(NC)"; \
-	docker inspect --format='{{.State.Health.Status}}' hurricane-tracker-mcp 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	echo ""; \
-	echo "$(YELLOW)Qdrant Vector DB (6333):$(NC)"; \
-	if [ -n "$$QDRANT_CONTAINER" ]; then \
-		docker inspect --format='{{.State.Status}}' $$QDRANT_CONTAINER 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	else \
-		echo "$(RED)Not running$(NC)"; \
-	fi; \
-	echo ""; \
-	echo "$(YELLOW)Redis Memory Store (6379):$(NC)"; \
-	if [ -n "$$REDIS_CONTAINER" ]; then \
-		docker inspect --format='{{.State.Health.Status}}' $$REDIS_CONTAINER 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	else \
-		echo "$(RED)Not running$(NC)"; \
-	fi; \
-	echo ""; \
-	echo "$(YELLOW)Neo4j Graph DB (7474/7687):$(NC)"; \
-	if [ -n "$$NEO4J_CONTAINER" ]; then \
-		docker inspect --format='{{.State.Health.Status}}' $$NEO4J_CONTAINER 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	else \
-		echo "$(RED)Not running$(NC)"; \
-	fi; \
-	echo ""; \
-	echo "$(YELLOW)Weather AI API (8000):$(NC)"; \
-	if [ -n "$$API_CONTAINER" ]; then \
-		docker inspect --format='{{.State.Health.Status}}' $$API_CONTAINER 2>/dev/null || echo "$(RED)Not running$(NC)"; \
-	else \
-		echo "$(RED)Not running$(NC)"; \
-	fi; \
-	echo ""; \
-	echo "$(GREEN)✓ Health check complete$(NC)"
+	@echo "$(YELLOW)=== Core Services ===$(NC)"
+	@echo "Weather MCP Server (8080):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-mcp-server 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Hurricane Tracker MCP (8081):"; \
+	docker inspect --format='  {{.State.Health.Status}}' hurricane-tracker-mcp 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Weather AI API (8000):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-api 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(YELLOW)=== Databases ===$(NC)"
+	@echo "Qdrant Vector DB (6333):"; \
+	docker inspect --format='  {{.State.Status}}' weather-ai-qdrant 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Redis Memory Store (6379):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-redis 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Neo4j Graph DB (7474/7687):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-neo4j 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "PostgreSQL (5432):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-postgres 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(YELLOW)=== Observability (Level 5c) ===$(NC)"
+	@echo "Prometheus (9090):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-prometheus 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Grafana (3001):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-grafana 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Loki (3100):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-loki 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo ""
+	@echo "$(GREEN)✓ Health check complete$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Quick Links:$(NC)"
+	@echo "  - API Docs:   http://localhost:8000/docs"
+	@echo "  - Grafana:    http://localhost:3001"
+	@echo "  - Prometheus: http://localhost:9090"
 
 docker-clean:  ## Stop PRODUCTION containers and remove volumes (WARNING: deletes all data)
 	@echo "$(RED)WARNING: This will remove all PRODUCTION Docker volumes and delete all data$(NC)"
@@ -520,3 +641,87 @@ docker-clean-dev:  ## Stop DEVELOPMENT containers and remove volumes (WARNING: d
 	@sleep 5
 	docker-compose -f docker-compose.dev.yml down -v
 	@echo "$(GREEN)✓ All dev containers and volumes removed$(NC)"
+
+# ============================================================================
+# Observability Commands (Level 5c: Prometheus + Grafana + Loki)
+# ============================================================================
+
+observability-status:  ## Show status of observability stack (Prometheus, Grafana, Loki)
+	@echo "$(BLUE)Observability Stack Status (Level 5c)$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Prometheus (Metrics):$(NC)"
+	@PROMETHEUS_STATUS=$$(docker inspect --format='{{.State.Health.Status}}' weather-ai-prometheus 2>/dev/null || echo "not running"); \
+	if [ "$$PROMETHEUS_STATUS" = "healthy" ]; then \
+		echo "  $(GREEN)✓ Status: $$PROMETHEUS_STATUS$(NC)"; \
+		echo "  $(GREEN)✓ URL: http://localhost:9090$(NC)"; \
+		curl -s http://localhost:9090/api/v1/targets 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'  ✓ Targets: {len(d.get(\"data\", {}).get(\"activeTargets\", []))} active')" 2>/dev/null || echo "  ⚠️ Cannot fetch targets"; \
+	else \
+		echo "  $(RED)✗ Status: $$PROMETHEUS_STATUS$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Grafana (Dashboards):$(NC)"
+	@GRAFANA_STATUS=$$(docker inspect --format='{{.State.Health.Status}}' weather-ai-grafana 2>/dev/null || echo "not running"); \
+	if [ "$$GRAFANA_STATUS" = "healthy" ]; then \
+		echo "  $(GREEN)✓ Status: $$GRAFANA_STATUS$(NC)"; \
+		echo "  $(GREEN)✓ URL: http://localhost:3001$(NC)"; \
+		echo "  $(GREEN)✓ Login: admin / weatherai2025$(NC)"; \
+	else \
+		echo "  $(RED)✗ Status: $$GRAFANA_STATUS$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Loki (Logs):$(NC)"
+	@LOKI_STATUS=$$(docker inspect --format='{{.State.Health.Status}}' weather-ai-loki 2>/dev/null || echo "not running"); \
+	if [ "$$LOKI_STATUS" = "healthy" ]; then \
+		echo "  $(GREEN)✓ Status: $$LOKI_STATUS$(NC)"; \
+		echo "  $(GREEN)✓ URL: http://localhost:3100 (via Grafana)$(NC)"; \
+	else \
+		echo "  $(RED)✗ Status: $$LOKI_STATUS$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)Quick Links:$(NC)"
+	@echo "  - Grafana:    http://localhost:3001"
+	@echo "  - Prometheus: http://localhost:9090"
+	@echo "  - LangSmith:  https://smith.langchain.com"
+
+observability-logs:  ## View logs from observability stack
+	@echo "$(BLUE)Observability Stack Logs$(NC)"
+	@docker-compose logs -f prometheus grafana loki 2>/dev/null || \
+	docker-compose -f docker-compose.dev.yml logs -f prometheus grafana loki
+
+grafana-open:  ## Open Grafana in browser
+	@echo "$(BLUE)Opening Grafana...$(NC)"
+	@echo "$(YELLOW)URL: http://localhost:3001$(NC)"
+	@echo "$(YELLOW)Login: admin / weatherai2025$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Dashboards:$(NC)"
+	@echo "  - MCP Health:        http://localhost:3001/d/mcp-health"
+	@echo "  - Agent Performance: http://localhost:3001/d/agent-performance"
+	@echo "  - Cache Metrics:     http://localhost:3001/d/cache-metrics"
+	@open http://localhost:3001 2>/dev/null || xdg-open http://localhost:3001 2>/dev/null || echo "$(YELLOW)Please open http://localhost:3001 in your browser$(NC)"
+
+prometheus-open:  ## Open Prometheus in browser
+	@echo "$(BLUE)Opening Prometheus...$(NC)"
+	@echo "$(YELLOW)URL: http://localhost:9090$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Useful queries:$(NC)"
+	@echo "  - MCP latency:    histogram_quantile(0.95, sum(rate(mcp_request_latency_seconds_bucket[5m])) by (le))"
+	@echo "  - Cache hit rate: sum(rate(cache_hits_total[5m])) / sum(rate(cache_requests_total[5m]))"
+	@echo "  - Agent cost:     sum(rate(agent_query_cost_dollars[1h]))"
+	@open http://localhost:9090 2>/dev/null || xdg-open http://localhost:9090 2>/dev/null || echo "$(YELLOW)Please open http://localhost:9090 in your browser$(NC)"
+
+prometheus-reload:  ## Reload Prometheus configuration (hot reload)
+	@echo "$(BLUE)Reloading Prometheus configuration...$(NC)"
+	@curl -X POST http://localhost:9090/-/reload 2>/dev/null && \
+		echo "$(GREEN)✓ Prometheus configuration reloaded$(NC)" || \
+		echo "$(RED)✗ Failed to reload Prometheus (is it running?)$(NC)"
+
+loki-logs:  ## Query recent logs from Loki
+	@echo "$(BLUE)Querying recent logs from Loki...$(NC)"
+	@echo "$(YELLOW)Last 100 log entries from weather-ai-api:$(NC)"
+	@curl -s "http://localhost:3100/loki/api/v1/query_range" \
+		--data-urlencode 'query={container_name="weather-ai-api"}' \
+		--data-urlencode 'limit=100' 2>/dev/null | \
+		python3 -c "import json,sys; d=json.load(sys.stdin); [print(r['values'][0][1]) for r in d.get('data', {}).get('result', []) if r.get('values')]" 2>/dev/null || \
+		echo "$(YELLOW)Note: Loki log query requires promtail or docker logging driver.$(NC)"
+	@echo ""
+	@echo "$(YELLOW)View logs in Grafana: http://localhost:3001/explore?datasource=Loki$(NC)"

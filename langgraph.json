@@ -8,6 +8,14 @@
     "weather_hitl_workflow": {
       "path": "./backend/src/workflows/weather_graph.py:get_weather_hitl_workflow",
       "description": "Level 1: HITL workflow with hurricane approval for Category 3+ storms"
+    },
+    "multi_agent_workflow": {
+      "path": "./backend/src/orchestration/multi_agent_workflow.py:create_multi_agent_workflow",
+      "description": "Level 4a: 3-agent system with triage, hurricane specialist, and alert manager. Routes queries through conditional logic based on query type and risk level."
+    },
+    "level4b_workflow": {
+      "path": "./backend/src/orchestration/multi_agent_workflow.py:create_level4b_workflow",
+      "description": "Level 4b: 8-agent orchestration with supervisor, triage, hurricane specialist, forecaster, historical analyst, research, reflection, and alert manager. Supports parallel execution and quality reflection loops."
     }
   },
   "env": ".env",

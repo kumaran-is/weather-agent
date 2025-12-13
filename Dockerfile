@@ -92,4 +92,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run with uvicorn (production settings)
-CMD ["uvicorn", "backend.src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# 🆕 P1 FIX: Increased timeout-keep-alive from 5s (default) to 60s for Graphiti performance
+CMD ["uvicorn", "backend.src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--timeout-keep-alive", "60"]

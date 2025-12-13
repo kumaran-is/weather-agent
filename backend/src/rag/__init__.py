@@ -12,20 +12,33 @@ Level 2 Implementation:
 - 500+ document knowledge base
 - Cosine distance similarity
 
-Future Enhancements:
-- L3a: Hybrid search (dense + sparse)
-- L3a: Query rewriting and multi-perspective retrieval
-- L5a: Reranking and multi-vector retrieval
-- L5a: Agentic RAG with LangGraph
+Level 5a Enhancements:
+- Query decomposition for complex multi-part queries
+- Better cache hit rates through focused sub-queries
+- Parallel execution of decomposed queries
 """
 
 from backend.src.rag.embeddings import create_embeddings
 from backend.src.rag.vector_store import get_vector_store
 from backend.src.rag.retriever import get_retriever, retrieve_weather_knowledge
 
+# L5a: Query decomposition
+from backend.src.rag.query_decomposer import (
+    QueryDecomposer,
+    DecomposedQuery,
+    decompose_query,
+    get_query_decomposer,
+)
+
 __all__ = [
+    # Core RAG
     "create_embeddings",
     "get_vector_store",
     "get_retriever",
     "retrieve_weather_knowledge",
+    # L5a: Query decomposition
+    "QueryDecomposer",
+    "DecomposedQuery",
+    "decompose_query",
+    "get_query_decomposer",
 ]

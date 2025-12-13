@@ -3,18 +3,24 @@
 This module provides an async HTTP client that communicates with the Weather MCP
 Server using the Model Context Protocol (MCP) over HTTP transport with JSON-RPC 2.0.
 
-Level 1 Implementation:
-- Simple HTTP MCP client with session management
-- 2 weather methods: get_current_weather, get_forecast
-- Basic try/except error handling
-- SSE (Server-Sent Events) response parsing
-- NO health monitoring, failover, or structured logging (deferred to L5c)
+✅ Level 5c Production Features:
+- Retry logic with exponential backoff (1s, 2s, 4s delays)
+- Circuit breaker integration for failover
+- Structured logging with correlation IDs
+- Health monitoring support
+- Configurable timeouts from settings
 """
 
+import asyncio
 import httpx
+import logging
 from datetime import datetime, timezone
 from backend.config.settings import settings
+from backend.src.mcp.logger import MCPLogger
+from backend.src.mcp.failover import MCPFailoverHandler
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class WeatherMCPClient:
@@ -34,17 +40,26 @@ class WeatherMCPClient:
         >>> print(weather)
     """
 
-    def __init__(self, base_url: str | None = None):
+    def __init__(self, base_url: str | None = None, enable_failover: bool | None = None):
         """Initialize Weather MCP client.
 
         Args:
             base_url: Base URL of the MCP server. If None, uses MCP_WEATHER_SERVER_URL
                      from environment or defaults to http://localhost:8080
+            enable_failover: Enable failover to direct NHC API. If None, uses MCP_ENABLE_FAILOVER
         """
         self.base_url = base_url or settings.MCP_WEATHER_SERVER_URL
         self.client: httpx.AsyncClient | None = None
         self._initialized: bool = False
         self._session_id: str | None = None
+
+        # MCP Integration (Level 5c)
+        self.mcp_logger = MCPLogger(server_name="weather")
+        self.failover_handler = MCPFailoverHandler(
+            server_name="weather",
+            mcp_logger=self.mcp_logger,
+            enable_failover=enable_failover if enable_failover is not None else settings.MCP_ENABLE_FAILOVER
+        )
 
     def _get_client(self) -> httpx.AsyncClient:
         """Get or create the persistent HTTP client with connection pooling.
@@ -54,8 +69,10 @@ class WeatherMCPClient:
                 and optimized connection pooling
         """
         if self.client is None:
+            # Use configurable timeout from settings (default: 30s)
+            timeout_seconds = float(settings.MCP_WEATHER_REQUEST_TIMEOUT)
             self.client = httpx.AsyncClient(
-                timeout=httpx.Timeout(30.0, connect=10.0),
+                timeout=httpx.Timeout(timeout_seconds, connect=10.0),
                 limits=httpx.Limits(
                     max_keepalive_connections=20,
                     max_connections=100
@@ -68,6 +85,151 @@ class WeatherMCPClient:
         if self.client is not None:
             await self.client.aclose()
             self.client = None
+
+    async def _call_with_retry(
+        self,
+        tool_name: str,
+        request_func,
+        correlation_id: str | None = None,
+    ) -> dict[str, any]:
+        """Call MCP tool with retry logic and exponential backoff.
+
+        Args:
+            tool_name: Name of the MCP tool being called
+            request_func: Async function that makes the HTTP request
+            correlation_id: Optional correlation ID (generated if None)
+
+        Returns:
+            Parsed MCP response
+
+        Raises:
+            httpx.HTTPError: If all retries fail
+
+        Retry Strategy:
+            - Max retries: 3 (from settings.MCP_WEATHER_MAX_RETRIES)
+            - Exponential backoff: 1s, 2s, 4s (from settings.MCP_WEATHER_RETRY_DELAY)
+            - Retry on: TimeoutError, ConnectError, 5xx errors
+            - Don't retry on: 4xx errors (client errors)
+        """
+        if correlation_id is None:
+            correlation_id = self.mcp_logger.generate_correlation_id()
+
+        max_retries = settings.MCP_WEATHER_MAX_RETRIES
+        base_delay_ms = settings.MCP_WEATHER_RETRY_DELAY
+
+        # Log call start
+        self.mcp_logger.log_mcp_call_start(
+            tool=tool_name,
+            correlation_id=correlation_id,
+        )
+
+        # Check circuit breaker before attempting call
+        if self.failover_handler.should_failover(correlation_id):
+            # Circuit breaker OPEN - use failover
+            logger.warning(
+                f"Circuit breaker OPEN for weather MCP, failover triggered | "
+                f"correlation_id={correlation_id}"
+            )
+            raise NotImplementedError(
+                "MCP failover to direct NHC API not yet implemented. "
+                "Circuit breaker is OPEN - MCP server is unavailable."
+            )
+
+        # Retry loop
+        last_exception = None
+        for attempt in range(max_retries):
+            try:
+                # Make the request
+                response = await request_func()
+
+                # Check HTTP status
+                response.raise_for_status()
+
+                # Parse SSE response
+                result = self._parse_sse_response(response.text)
+
+                # Success - record and log
+                self.failover_handler.record_success()
+                self.mcp_logger.log_mcp_call_success(
+                    correlation_id=correlation_id,
+                    tool=tool_name,
+                    response_size=len(response.text),
+                )
+
+                return result
+
+            except httpx.TimeoutException as e:
+                last_exception = e
+                self.failover_handler.record_failure()
+
+                will_retry = (attempt < max_retries - 1)
+                self.mcp_logger.log_mcp_call_timeout(
+                    correlation_id=correlation_id,
+                    tool=tool_name,
+                    timeout_seconds=settings.MCP_WEATHER_REQUEST_TIMEOUT,
+                    will_retry=will_retry,
+                )
+
+                if will_retry:
+                    # Exponential backoff: 1s, 2s, 4s
+                    delay_ms = base_delay_ms * (2 ** attempt)
+                    await asyncio.sleep(delay_ms / 1000)
+                else:
+                    raise
+
+            except httpx.ConnectError as e:
+                last_exception = e
+                self.failover_handler.record_failure()
+
+                will_retry = (attempt < max_retries - 1)
+                self.mcp_logger.log_mcp_call_failure(
+                    correlation_id=correlation_id,
+                    tool=tool_name,
+                    error_type="ConnectError",
+                    error_message=str(e),
+                    will_retry=will_retry,
+                )
+
+                if will_retry:
+                    delay_ms = base_delay_ms * (2 ** attempt)
+                    await asyncio.sleep(delay_ms / 1000)
+                else:
+                    raise
+
+            except httpx.HTTPStatusError as e:
+                last_exception = e
+                self.failover_handler.record_failure()
+
+                # Don't retry on 4xx errors (client errors)
+                if 400 <= e.response.status_code < 500:
+                    self.mcp_logger.log_mcp_call_failure(
+                        correlation_id=correlation_id,
+                        tool=tool_name,
+                        error_type=f"HTTPError{e.response.status_code}",
+                        error_message=str(e),
+                        will_retry=False,
+                    )
+                    raise
+
+                # Retry on 5xx errors (server errors)
+                will_retry = (attempt < max_retries - 1)
+                self.mcp_logger.log_mcp_call_failure(
+                    correlation_id=correlation_id,
+                    tool=tool_name,
+                    error_type=f"HTTPError{e.response.status_code}",
+                    error_message=str(e),
+                    will_retry=will_retry,
+                )
+
+                if will_retry:
+                    delay_ms = base_delay_ms * (2 ** attempt)
+                    await asyncio.sleep(delay_ms / 1000)
+                else:
+                    raise
+
+        # All retries exhausted
+        if last_exception:
+            raise last_exception
 
     def _parse_sse_response(self, sse_text: str) -> dict[str, any]:
         """Parse Server-Sent Events (SSE) response from MCP server.
@@ -144,6 +306,8 @@ class WeatherMCPClient:
     async def get_current_weather(self, location: str) -> dict[str, any]:
         """Get current weather conditions for a location.
 
+        ✅ With retry logic, circuit breaker, and structured logging.
+
         Args:
             location: City name or coordinates (e.g., 'Seattle' or '47.6062,-122.3321')
 
@@ -155,7 +319,7 @@ class WeatherMCPClient:
                 - wind_speed: Wind speed
 
         Raises:
-            httpx.HTTPError: If the HTTP request fails
+            httpx.HTTPError: If the HTTP request fails after retries
             ValueError: If location is empty or invalid
 
         Example:
@@ -178,25 +342,32 @@ class WeatherMCPClient:
         if self._session_id:
             headers["mcp-session-id"] = self._session_id
 
-        response = await client.post(
-            f"{self.base_url}/mcp",
-            headers=headers,
-            json={
-                "jsonrpc": "2.0",
-                "id": str(datetime.now(timezone.utc).timestamp()),
-                "method": "tools/call",
-                "params": {
-                    "name": "get_current_weather",
-                    "arguments": {"city": location}
+        # Define request function
+        async def make_request():
+            return await client.post(
+                f"{self.base_url}/mcp",
+                headers=headers,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "method": "tools/call",
+                    "params": {
+                        "name": "get_current_weather",
+                        "arguments": {"city": location}
+                    }
                 }
-            }
+            )
+
+        # Call with retry logic
+        return await self._call_with_retry(
+            tool_name="get_current_weather",
+            request_func=make_request,
         )
-        response.raise_for_status()
-        # Parse SSE response
-        return self._parse_sse_response(response.text)
 
     async def get_forecast(self, location: str, days: int = 5) -> dict[str, any]:
         """Get weather forecast for a location.
+
+        ✅ With retry logic, circuit breaker, and structured logging.
 
         Args:
             location: City name or coordinates (e.g., 'Seattle' or '47.6062,-122.3321')
@@ -208,7 +379,7 @@ class WeatherMCPClient:
                 - Each forecast includes: day, high, low, condition
 
         Raises:
-            httpx.HTTPError: If the HTTP request fails
+            httpx.HTTPError: If the HTTP request fails after retries
             ValueError: If location is empty or days is out of range
 
         Example:
@@ -234,28 +405,35 @@ class WeatherMCPClient:
         if self._session_id:
             headers["mcp-session-id"] = self._session_id
 
-        response = await client.post(
-            f"{self.base_url}/mcp",
-            headers=headers,
-            json={
-                "jsonrpc": "2.0",
-                "id": str(datetime.now(timezone.utc).timestamp()),
-                "method": "tools/call",
-                "params": {
-                    "name": "get_weather_forecast",
-                    "arguments": {
-                        "city": location,
-                        "days": days
+        # Define request function
+        async def make_request():
+            return await client.post(
+                f"{self.base_url}/mcp",
+                headers=headers,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "method": "tools/call",
+                    "params": {
+                        "name": "get_weather_forecast",
+                        "arguments": {
+                            "city": location,
+                            "days": days
+                        }
                     }
                 }
-            }
+            )
+
+        # Call with retry logic
+        return await self._call_with_retry(
+            tool_name="get_weather_forecast",
+            request_func=make_request,
         )
-        response.raise_for_status()
-        # Parse SSE response
-        return self._parse_sse_response(response.text)
 
     async def retrieve_weather_context(self, query: str) -> dict[str, any]:
         """Retrieve weather context for AI agent queries.
+
+        ✅ With retry logic, circuit breaker, and structured logging.
 
         This method extracts weather information from natural language queries
         and returns relevant context for the AI agent. Useful when the query
@@ -269,7 +447,7 @@ class WeatherMCPClient:
             dict containing weather context extracted from the query
 
         Raises:
-            httpx.HTTPError: If the HTTP request fails
+            httpx.HTTPError: If the HTTP request fails after retries
             ValueError: If query is empty
 
         Example:
@@ -292,21 +470,26 @@ class WeatherMCPClient:
         if self._session_id:
             headers["mcp-session-id"] = self._session_id
 
-        response = await client.post(
-            f"{self.base_url}/mcp",
-            headers=headers,
-            json={
-                "jsonrpc": "2.0",
-                "id": str(datetime.now(timezone.utc).timestamp()),
-                "method": "tools/call",
-                "params": {
-                    "name": "retrieve_weather_context",
-                    "arguments": {
-                        "query": query
+        # Define request function
+        async def make_request():
+            return await client.post(
+                f"{self.base_url}/mcp",
+                headers=headers,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "method": "tools/call",
+                    "params": {
+                        "name": "retrieve_weather_context",
+                        "arguments": {
+                            "query": query
+                        }
                     }
                 }
-            }
+            )
+
+        # Call with retry logic
+        return await self._call_with_retry(
+            tool_name="retrieve_weather_context",
+            request_func=make_request,
         )
-        response.raise_for_status()
-        # Parse SSE response
-        return self._parse_sse_response(response.text)

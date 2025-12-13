@@ -2,14 +2,14 @@
 
 Main orchestrator for RAG knowledge base construction:
 1. Validate Kaggle datasets
-2. Load mock weather documents
+2. Load curated weather knowledge documents
 3. Load Kaggle CSV documents (with narrative conversion)
 4. Generate embeddings
 5. Load into Qdrant vector database
 
 Level 2 Target:
 - ~500-600 documents total
-- Mock data: ~20-30 curated text files
+- Curated knowledge: ~20-30 curated text files
 - Kaggle data: ~500-600 narrative documents (sampled)
 
 Usage:
@@ -21,7 +21,7 @@ Usage:
 
 from backend.src.rag.vector_store import get_vector_store
 from backend.src.rag.embeddings import create_embeddings
-from backend.src.rag.loaders.mock_loader import load_all_mock_documents
+from backend.src.rag.loaders.curated_knowledge_loader import load_all_curated_documents
 from backend.src.rag.loaders.kaggle_loader import load_all_kaggle_documents
 from backend.src.rag.loaders.validate_kaggle_datasets import (
     validate_all_kaggle_datasets,
@@ -70,7 +70,7 @@ def chunk_documents(
 
 def build_and_load_knowledge_base(
     skip_validation: bool = False,
-    mock_only: bool = False,
+    curated_only: bool = False,
     kaggle_sample_size: int = 500,
     chunk_size: int = 800,
 ) -> dict:
@@ -78,7 +78,7 @@ def build_and_load_knowledge_base(
 
     Complete pipeline:
     1. Validate Kaggle datasets (unless skipped)
-    2. Load mock documents
+    2. Load curated knowledge documents
     3. Load Kaggle documents (if enabled)
     4. Chunk documents
     5. Generate embeddings
@@ -86,7 +86,7 @@ def build_and_load_knowledge_base(
 
     Args:
         skip_validation: Skip Kaggle dataset validation (default: False)
-        mock_only: Load only mock data, skip Kaggle (default: False)
+        curated_only: Load only curated knowledge, skip Kaggle (default: False)
         kaggle_sample_size: Number of Kaggle rows to sample (default: 500)
         chunk_size: Chunk size for text splitting (default: 800)
 
@@ -104,7 +104,7 @@ def build_and_load_knowledge_base(
     print("=" * 70)
 
     # Step 0: Validate Kaggle datasets (unless skipped)
-    if not skip_validation and not mock_only:
+    if not skip_validation and not curated_only:
         print("\n[Step 0/5] Validating Kaggle Datasets")
         print("-" * 70)
         try:
@@ -116,29 +116,29 @@ def build_and_load_knowledge_base(
             return {"error": str(e)}
     else:
         print("\n[Step 0/5] Skipping validation")
-        if mock_only:
-            print("   Reason: mock_only=True")
+        if curated_only:
+            print("   Reason: curated_only=True")
         else:
             print("   Reason: skip_validation=True")
 
-    # Step 1: Load mock documents
-    print("\n[Step 1/5] Loading Mock Weather Documents")
+    # Step 1: Load curated knowledge documents
+    print("\n[Step 1/5] Loading Curated Weather Knowledge Documents")
     print("-" * 70)
-    mock_docs = load_all_mock_documents()
+    curated_docs = load_all_curated_documents()
 
     # Step 2: Load Kaggle documents (if enabled)
     kaggle_docs = []
-    if not mock_only:
+    if not curated_only:
         print("\n[Step 2/5] Loading Kaggle Weather Datasets")
         print("-" * 70)
         kaggle_docs = load_all_kaggle_documents(
             daily_temp_sample_size=kaggle_sample_size, city_profile_count=100
         )
     else:
-        print("\n[Step 2/5] Skipping Kaggle datasets (mock_only=True)")
+        print("\n[Step 2/5] Skipping Kaggle datasets (curated_only=True)")
 
     # Combine all documents
-    all_documents = mock_docs + kaggle_docs
+    all_documents = curated_docs + kaggle_docs
 
     if len(all_documents) == 0:
         print("\n❌ No documents loaded! Aborting.")
@@ -194,7 +194,7 @@ def build_and_load_knowledge_base(
     # Final statistics
     stats = {
         "total_documents": len(all_documents),
-        "mock_documents": len(mock_docs),
+        "curated_documents": len(curated_docs),
         "kaggle_documents": len(kaggle_docs),
         "total_chunks": len(chunked_docs),
         "avg_chunk_size": sum(len(c.page_content) for c in chunked_docs)
@@ -209,7 +209,7 @@ def build_and_load_knowledge_base(
     print("=" * 70)
     print(f"📊 Statistics:")
     print(f"   Total source documents: {stats['total_documents']}")
-    print(f"   - Mock documents: {stats['mock_documents']}")
+    print(f"   - Curated knowledge documents: {stats['curated_documents']}")
     print(f"   - Kaggle documents: {stats['kaggle_documents']}")
     print(f"   Total chunks loaded: {stats['total_chunks']}")
     print(f"   Average chunk size: {stats['avg_chunk_size']} characters")
@@ -228,11 +228,11 @@ if __name__ == "__main__":
     import sys
 
     # Parse command line args (simple version for Level 2)
-    mock_only = "--mock-only" in sys.argv
+    curated_only = "--curated-only" in sys.argv
     skip_validation = "--skip-validation" in sys.argv
 
     stats = build_and_load_knowledge_base(
-        skip_validation=skip_validation, mock_only=mock_only
+        skip_validation=skip_validation, curated_only=curated_only
     )
 
     # Exit with error code if build failed

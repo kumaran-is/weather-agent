@@ -2,12 +2,12 @@
 
 This module provides loaders for different data sources:
 - Kaggle CSV datasets (numerical weather data → narrative documents)
-- Mock text files (curated weather knowledge)
+- Curated text files (expert weather knowledge)
 - Validation scripts (ensure data quality before loading)
 
 Level 2 Loaders:
 - kaggle_loader.py: Convert CSV rows to narrative documents
-- mock_loader.py: Load curated text documents
+- curated_knowledge_loader.py: Load curated text documents
 - validate_kaggle_datasets.py: Schema and quality validation
 - csv_to_narrative.py: CSV row → narrative text conversion
 

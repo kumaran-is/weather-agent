@@ -8,27 +8,26 @@ Cache Layers:
 - L3: Anthropic prompt cache (API-level, automatic)
 
 Usage:
-    from backend.src.cache import QueryCache, RedisQueryCache, AnthropicCacheMetrics
-    from backend.src.cache import prepare_cached_system_prompt, prepare_cached_tools
-
-    # L1 cache
-    l1_cache = QueryCache(max_size=1000)
-    response = l1_cache.get(query, user_id, enable_rag, enable_cot)
-
-    # L2 cache
-    l2_cache = RedisQueryCache()
-    await l2_cache.connect()
-    response = await l2_cache.get(query, user_id, enable_rag, enable_cot)
-
-    # L3 cache (Anthropic prompt caching)
-    system = prepare_cached_system_prompt(base_prompt, memory_context)
-    tools = prepare_cached_tools(tool_definitions)
-    response = await anthropic_client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        system=system,
-        tools=tools,
-        messages=messages,
+    from backend.src.cache import (
+        QueryCache, RedisQueryCache, AnthropicCacheMetrics,
+        CacheOrchestrator, CacheResult, CacheStats,
+        prepare_cached_system_prompt, prepare_cached_tools,
     )
+
+    # L5a: Use CacheOrchestrator for unified L1+L2 cache management
+    orchestrator = CacheOrchestrator(l1_cache, l2_cache)
+    cached = await orchestrator.get(query, user_id, enable_rag, enable_cot)
+    if cached:
+        return cached.response  # L1 or L2 hit
+
+    # Cache miss - execute agent with L3 Anthropic caching
+    response = await execute_agent(...)
+
+    # Cache the response at L1+L2
+    await orchestrator.set(query, user_id, enable_rag, enable_cot, response)
+
+    # L3 cache (Anthropic prompt caching) - automatic with ChatAnthropic
+    # Just enable via create_tuned_llm(enable_cache=True)
 """
 
 from backend.src.cache.l1_memory_cache import QueryCache
@@ -48,13 +47,26 @@ from backend.src.cache.l3_anthropic_cache import (
     prepare_cached_tools,
 )
 
+# L5a: Cache orchestrator for unified cache management
+from backend.src.cache.orchestrator import (
+    CacheOrchestrator,
+    CacheResult,
+    CacheStats,
+)
+
 __all__ = [
+    # L1/L2 caches
     "QueryCache",
     "RedisQueryCache",
+    # L3 Anthropic cache utilities
     "AnthropicCacheMetrics",
     "add_cache_control",
     "prepare_cached_system_prompt",
     "prepare_cached_tools",
     "prepare_cached_messages",
     "extract_cache_stats",
+    # L5a: Cache orchestrator
+    "CacheOrchestrator",
+    "CacheResult",
+    "CacheStats",
 ]

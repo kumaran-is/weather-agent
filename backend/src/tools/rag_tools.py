@@ -9,7 +9,7 @@ This module provides advanced weather analysis tools powered by RAG:
 Level 2 Implementation:
 - Integration with Qdrant vector store
 - OpenAI embeddings for semantic search
-- 600+ historical documents (Kaggle + mock data)
+- 600+ historical documents (Kaggle + curated knowledge)
 - LangChain tool interface for agent use
 
 Usage:
@@ -132,7 +132,7 @@ async def identify_patterns(
 
         1. Category 5 hurricanes are rare but devastating events with sustained
            winds of 157+ mph. Historical examples include Katrina (2005), Michael (2018)...
-           (Source: mock/saffir_simpson_scale.txt)
+           (Source: curated/saffir_simpson_scale.txt)
 
         **Pattern Analysis:** These patterns indicate rare but high-impact events
         requiring special attention and preparation.
@@ -298,18 +298,18 @@ async def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> s
 
         1. Category 5 hurricanes have sustained winds of 157 mph or higher.
            Catastrophic damage expected. Most structures will be destroyed...
-           (Source: mock/saffir_simpson_scale.txt)
+           (Source: curated/saffir_simpson_scale.txt)
 
         2. Historical Category 5 hurricanes include Katrina (2005), Michael (2018),
            and Milton (recent). Storm surge can exceed 18 feet...
-           (Source: mock/saffir_simpson_scale.txt)
+           (Source: curated/saffir_simpson_scale.txt)
 
         3. Evacuation for Category 5 storms should begin 24-48 hours before landfall...
-           (Source: mock/evacuation_zones.txt)
+           (Source: curated/evacuation_zones.txt)
 
     Note:
         - Searches 632 chunks across 603 documents
-        - Includes mock data (hurricanes, safety) and Kaggle data (historical temps)
+        - Includes curated knowledge (hurricanes, safety) and Kaggle data (historical temps)
         - Uses OpenAI text-embedding-3-small for semantic search
         - Qdrant cosine similarity for relevance ranking
     """

@@ -39,11 +39,14 @@ class RedisQueryCache:
     multiple server instances. It provides higher hit rates than L1 by
     serving common queries from a shared pool.
 
+    DESIGN DISTINCTION (L1 vs L2):
+    - L1 (in-memory): User-specific cache - includes user_id for personalized responses
+    - L2 (Redis): Query-level cache - EXCLUDES user_id for cross-user sharing
+
     Cache Key Generation:
     - Query text (normalized: lowercase, whitespace trimmed)
-    - User ID (for personalized responses)
     - Feature flags (RAG/CoT affect output)
-    - NOT included: session_id, timestamp (too variable)
+    - NOT included: user_id (enables cross-user sharing), session_id, timestamp
 
     Cache Entry Structure:
     Redis Key: "weather:cache:{cache_key_hash}"
@@ -108,24 +111,27 @@ class RedisQueryCache:
     def _generate_cache_key(
         self,
         query: str,
-        user_id: str,
+        user_id: str,  # kept for API compatibility, but NOT used in key
         enable_rag: bool,
         enable_cot: bool,
     ) -> str:
         """Generate cache key from query parameters.
 
+        IMPORTANT: L2 cache is query-level (shared across users).
+        Unlike L1, user_id is NOT included in the cache key.
+
         Cache key includes:
         - Query text (normalized: lowercase, whitespace trimmed)
-        - User ID (for personalized responses)
         - Feature flags (RAG/CoT affect output)
 
         NOT included:
+        - user_id (enables cross-user sharing for same queries)
         - session_id (same user can have multiple sessions)
         - timestamp (changes every request)
 
         Args:
             query: User query text
-            user_id: User identifier
+            user_id: User identifier (ignored - kept for API compatibility)
             enable_rag: Whether RAG is enabled
             enable_cot: Whether CoT is enabled
 
@@ -135,10 +141,11 @@ class RedisQueryCache:
         # Normalize query (case-insensitive, whitespace trimmed)
         normalized_query = query.strip().lower()
 
-        # Build cache key data
+        # Build cache key data - NOTE: user_id intentionally excluded
+        # L2 is query-level (shared), L1 is user-level (personalized)
         key_data = {
             "query": normalized_query,
-            "user_id": user_id,
+            # user_id excluded - enables cross-user cache sharing
             "enable_rag": enable_rag,
             "enable_cot": enable_cot,
         }

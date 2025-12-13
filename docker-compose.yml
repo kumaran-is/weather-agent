@@ -1,22 +1,19 @@
 # ============================================================================
-# Weather AI Agent Service - Docker Compose
+# Weather AI Agent Service - Docker Compose (PRODUCTION)
 # ============================================================================
 # This file orchestrates all services required for the Weather AI Agent.
 #
-# LEVEL 3a (Current): MCP Servers + Backend Agent + Qdrant + Memory System
+# LEVEL 5c (Current): Full Production Platform with Observability
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
 #   - Weather AI Agent API (port 8000)
 #   - Qdrant Vector Database (port 6333) - Level 2
-#   - Redis (port 6379) - NEW in L3a (short-term memory)
-#   - Neo4j (ports 7474, 7687) - NEW in L3a (long-term memory via Graphiti)
-#
-# FUTURE LEVELS (Incremental):
-#   - Level 3b: Advanced reasoning (ToT, GoT, Step-Back)
-#   - Level 3c: Full 7-layer memory consolidation
-#   - Level 4: Multi-agent system (no new services)
-#   - Level 5: Production optimization (monitoring, etc.)
-#   - Level 6: Self-evolving (no new services)
+#   - Redis (port 6379) - Level 3a (short-term memory + L2 cache)
+#   - Neo4j (ports 7474, 7687) - Level 3a (long-term memory via Graphiti)
+#   - PostgreSQL (port 5432) - Level 3c (procedural memory)
+#   - Prometheus (port 9090) - Level 5c (metrics collection)
+#   - Grafana (port 3001) - Level 5c (dashboards & visualization)
+#   - Loki (port 3100) - Level 5c (log aggregation)
 #
 # Run with: docker-compose up -d
 # Stop with: docker-compose down
@@ -195,7 +192,7 @@ services:
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${GRAPHITI_PASSWORD:-weatherai2025}", "RETURN 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 5
       start_period: 60s
     deploy:
@@ -251,6 +248,8 @@ services:
       target: production
     container_name: weather-ai-api
     restart: unless-stopped
+    env_file:
+      - .env  # Explicitly load .env file for LangSmith and API keys
     ports:
       - "8000:8000"
     environment:
@@ -278,6 +277,10 @@ services:
       - GRAPHITI_USER=${GRAPHITI_USER:-neo4j}
       - GRAPHITI_PASSWORD=${GRAPHITI_PASSWORD:-weatherai2025}
       - GRAPHITI_DATABASE=${GRAPHITI_DATABASE:-weather_ai}
+      # Neo4j health check (used by settings.py)
+      - NEO4J_BOLT_URL=bolt://neo4j:7687
+      - NEO4J_USER=${GRAPHITI_USER:-neo4j}
+      - NEO4J_PASSWORD=${GRAPHITI_PASSWORD:-weatherai2025}
       # PostgreSQL (Level 3c - Procedural & Reflective Memory)
       - POSTGRES_URL=postgresql://weather_ai:${POSTGRES_PASSWORD:-weatherai2025}@postgres:5432/weather_ai
       - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-20}
@@ -289,6 +292,10 @@ services:
       # Application settings
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - LOG_LEVEL=${LOG_LEVEL:-debug}
+      # Observability (Level 5c - Prometheus, Grafana, Loki)
+      - PROMETHEUS_URL=http://prometheus:9090
+      - GRAFANA_URL=http://grafana:3000
+      - LOKI_URL=http://loki:3100
       # LangSmith tracing
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
@@ -323,6 +330,113 @@ services:
           cpus: '0.5'
           memory: 256M
 
+# ==========================================================================
+  # Prometheus (Port 9090) - Level 5c: Metrics Collection
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: weather-ai-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # ==========================================================================
+  # Grafana (Port 3001) - Level 5c: Dashboards & Visualization
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: weather-ai-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"  # Map to 3001 to avoid conflicts with common dev servers
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-weatherai2025}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_LOG_LEVEL=info
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - mcp-network
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ==========================================================================
+  # Loki (Port 3100) - Level 5c: Log Aggregation
+  # ==========================================================================
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: weather-ai-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/tmp/loki
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
 # ============================================================================
 # Networks
 # ============================================================================
@@ -332,7 +446,7 @@ networks:
     name: weather-ai-mcp-network
 
 # ============================================================================
-# Volumes (Current: Level 3a)
+# Volumes (Level 5c: Full Production Platform)
 # ============================================================================
 volumes:
   weather-logs:
@@ -342,13 +456,19 @@ volumes:
   qdrant-data:
     name: weather-ai-qdrant-data  # Level 2 - Qdrant vector storage
   redis-data:
-    name: weather-ai-redis-data  # Level 3a - Redis short-term memory
+    name: weather-ai-redis-data  # Level 3a - Redis short-term memory + L2 cache
   neo4j-data:
     name: weather-ai-neo4j-data  # Level 3a - Neo4j graph database
   neo4j-logs:
     name: weather-ai-neo4j-logs  # Level 3a - Neo4j logs
   postgres-data:
     name: weather-ai-postgres-data  # Level 3c - PostgreSQL procedural/reflective memory
+  prometheus-data:
+    name: weather-ai-prometheus-data  # Level 5c - Prometheus metrics storage
+  grafana-data:
+    name: weather-ai-grafana-data  # Level 5c - Grafana dashboards & settings
+  loki-data:
+    name: weather-ai-loki-data  # Level 5c - Loki log storage
 
 # ============================================================================
 # Future Services (Commented - Added Progressively by Level)
@@ -386,22 +506,30 @@ volumes:
 #     - mcp-network
 
 # ============================================================================
-# Service Access URLs (Level 3c)
+# Service Access URLs (Level 5c - Full Production Platform)
 # ============================================================================
 # After starting with `docker-compose up -d`:
 #
+# Core Services:
 # - Weather AI API:      http://localhost:8000/docs (Swagger UI)
 # - Weather MCP:         http://localhost:8080/health
 # - Hurricane MCP:       http://localhost:8081/health
+#
+# Databases:
 # - Qdrant Dashboard:    http://localhost:6333/dashboard
 # - Neo4j Browser:       http://localhost:7474 (user: neo4j, pass: weatherai2025)
 # - PostgreSQL:          postgresql://weather_ai:weatherai2025@localhost:5432/weather_ai
 # - Redis CLI:           docker exec -it weather-ai-redis redis-cli
+#
+# Observability (Level 5c):
+# - Grafana:             http://localhost:3001 (user: admin, pass: weatherai2025)
+# - Prometheus:          http://localhost:9090
+# - Loki:                http://localhost:3100 (accessed via Grafana)
 #
 # Quick Commands:
 # - Start all:           make docker-up
 # - Stop all:            make docker-down
 # - View logs:           make docker-logs
 # - Check health:        make docker-health
-# - Load RAG:            make rag-load
-# - Test memory:         make memory-test
+# - View metrics:        make observability-status
+# - Open Grafana:        make grafana-open

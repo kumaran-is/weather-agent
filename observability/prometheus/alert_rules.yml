@@ -1,0 +1,257 @@
+# ============================================================================
+# Prometheus Alert Rules - Weather AI Agent Service (Level 5c)
+# ============================================================================
+# Alert rules for production monitoring
+#
+# Alert Severity Levels:
+#   - critical: Immediate action required (pager-duty worthy)
+#   - warning:  Investigate soon, not urgent
+#   - info:     For awareness only
+#
+# Categories:
+#   - API Health (availability, latency)
+#   - MCP Health (weather/hurricane data freshness)
+#   - Cache Performance (hit rates, latency)
+#   - Resource Usage (memory, CPU)
+#   - Safety (hurricane validation, PII detection)
+# ============================================================================
+
+groups:
+  # =========================================================================
+  # API Health Alerts
+  # =========================================================================
+  - name: api_health
+    rules:
+      # API down for more than 1 minute
+      - alert: WeatherAPIDown
+        expr: up{job="weather-ai-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: weather-ai-api
+        annotations:
+          summary: "Weather AI API is down"
+          description: "Weather AI API has been unreachable for more than 1 minute."
+
+      # High error rate (>5% of requests failing)
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="weather-ai-api", status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="weather-ai-api"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: weather-ai-api
+        annotations:
+          summary: "High error rate on Weather AI API"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # High latency (P95 > 2 seconds)
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="weather-ai-api"}[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: weather-ai-api
+        annotations:
+          summary: "High latency on Weather AI API"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 2s)"
+
+  # =========================================================================
+  # MCP Health Alerts
+  # =========================================================================
+  - name: mcp_health
+    rules:
+      # MCP request failures
+      - alert: MCPRequestFailures
+        expr: |
+          sum(rate(mcp_request_total{status="error"}[5m])) by (operation)
+          /
+          sum(rate(mcp_request_total[5m])) by (operation) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          service: mcp
+        annotations:
+          summary: "High MCP failure rate for {{ $labels.operation }}"
+          description: "MCP {{ $labels.operation }} failure rate is {{ $value | humanizePercentage }}"
+
+      # MCP data freshness (weather data >5 minutes old)
+      - alert: MCPDataStale
+        expr: mcp_data_freshness_seconds{data_type="weather"} > 300
+        for: 2m
+        labels:
+          severity: warning
+          service: mcp
+        annotations:
+          summary: "MCP weather data is stale"
+          description: "Weather data is {{ $value | humanizeDuration }} old (threshold: 5m)"
+
+      # MCP hurricane data stale (critical during hurricane season)
+      - alert: MCPHurricaneDataStale
+        expr: mcp_data_freshness_seconds{data_type="hurricane"} > 180
+        for: 1m
+        labels:
+          severity: critical
+          service: mcp
+        annotations:
+          summary: "MCP hurricane data is stale - CRITICAL"
+          description: "Hurricane data is {{ $value | humanizeDuration }} old (threshold: 3m)"
+
+      # MCP latency high
+      - alert: MCPHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(mcp_request_latency_seconds_bucket[5m])) by (le, operation)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: mcp
+        annotations:
+          summary: "High MCP latency for {{ $labels.operation }}"
+          description: "P95 MCP latency is {{ $value | humanizeDuration }}"
+
+  # =========================================================================
+  # Cache Performance Alerts
+  # =========================================================================
+  - name: cache_performance
+    rules:
+      # Cache hit rate too low (L1 + L2 combined)
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(cache_hits_total{tier=~"L1|L2"})
+            /
+            sum(cache_requests_total{tier=~"L1|L2"})
+          ) < 0.30
+        for: 10m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 30%)"
+
+      # L3 Anthropic cache not providing savings
+      - alert: L3CacheLowSavings
+        expr: |
+          (
+            sum(rate(anthropic_cache_read_tokens_total[1h]))
+            /
+            sum(rate(anthropic_total_tokens_total[1h]))
+          ) < 0.30
+        for: 30m
+        labels:
+          severity: info
+          service: cache
+        annotations:
+          summary: "L3 Anthropic cache providing low savings"
+          description: "L3 cache read ratio is {{ $value | humanizePercentage }} (expected: >30%)"
+
+  # =========================================================================
+  # Agent Performance Alerts
+  # =========================================================================
+  - name: agent_performance
+    rules:
+      # High query cost
+      - alert: HighQueryCost
+        expr: |
+          sum(rate(agent_query_cost_dollars[1h])) > 0.10
+        for: 15m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "High query cost"
+          description: "Average query cost is ${{ $value | printf \"%.4f\" }} (threshold: $0.10)"
+
+      # Too many agent retries
+      - alert: HighAgentRetries
+        expr: |
+          sum(rate(agent_retries_total[5m]))
+          /
+          sum(rate(agent_queries_total[5m])) > 0.20
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "High agent retry rate"
+          description: "Agent retry rate is {{ $value | humanizePercentage }}"
+
+  # =========================================================================
+  # Safety Alerts (CRITICAL - Zero Tolerance)
+  # =========================================================================
+  - name: safety
+    rules:
+      # PII detection (any PII leak is critical)
+      - alert: PIILeakDetected
+        expr: guardrail_violations_total{layer="L2_PII"} > 0
+        for: 0s  # Immediate alert
+        labels:
+          severity: critical
+          service: guardrails
+        annotations:
+          summary: "PII LEAK DETECTED - CRITICAL"
+          description: "PII detection guardrail triggered. Immediate investigation required."
+
+      # Hurricane validation failure
+      - alert: HurricaneValidationFailure
+        expr: guardrail_violations_total{layer="L8_Hurricane"} > 0
+        for: 0s  # Immediate alert
+        labels:
+          severity: critical
+          service: guardrails
+        annotations:
+          summary: "HURRICANE VALIDATION FAILURE - CRITICAL"
+          description: "Hurricane Saffir-Simpson validation failed. Life-safety risk."
+
+      # Prompt injection attempt
+      - alert: PromptInjectionAttempt
+        expr: increase(guardrail_violations_total{layer="L4_PromptInjection"}[5m]) > 5
+        for: 0s
+        labels:
+          severity: warning
+          service: guardrails
+        annotations:
+          summary: "Multiple prompt injection attempts detected"
+          description: "{{ $value }} prompt injection attempts in last 5 minutes"
+
+  # =========================================================================
+  # Resource Usage Alerts
+  # =========================================================================
+  - name: resources
+    rules:
+      # High memory usage (>85%)
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="weather-ai-api"}
+            /
+            (1024 * 1024 * 1024)
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: weather-ai-api
+        annotations:
+          summary: "High memory usage on Weather AI API"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # Redis memory high
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory is {{ $value | humanizePercentage }} of max"

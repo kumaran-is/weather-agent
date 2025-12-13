@@ -147,6 +147,10 @@ class Settings(BaseSettings):
     # MCP SERVER CONFIGURATION
     # ============================================================================
 
+    # ============================================================================
+    # WEATHER MCP SERVER CONFIGURATION
+    # ============================================================================
+
     MCP_WEATHER_SERVER_URL: str = Field(
         default="http://localhost:8080",
         description="Weather MCP server URL"
@@ -157,20 +161,31 @@ class Settings(BaseSettings):
         description="Enable Weather MCP server"
     )
 
+    MCP_WEATHER_REQUEST_TIMEOUT: int = Field(
+        default=30,
+        description="Weather MCP request timeout in seconds (default: 30s)",
+        ge=5,
+        le=120
+    )
+
     MCP_WEATHER_HEALTH_CHECK_TIMEOUT: int = Field(
         default=500,
-        description="MCP health check timeout in milliseconds"
+        description="Weather MCP health check timeout in milliseconds"
     )
 
     MCP_WEATHER_MAX_RETRIES: int = Field(
         default=3,
-        description="Maximum retries for MCP requests"
+        description="Maximum retries for Weather MCP requests"
     )
 
     MCP_WEATHER_RETRY_DELAY: int = Field(
         default=1000,
-        description="Delay between retries in milliseconds"
+        description="Delay between Weather MCP retries in milliseconds (base delay for exponential backoff)"
     )
+
+    # ============================================================================
+    # HURRICANE MCP SERVER CONFIGURATION
+    # ============================================================================
 
     MCP_HURRICANE_SERVER_URL: str = Field(
         default="http://localhost:8081",
@@ -180,6 +195,37 @@ class Settings(BaseSettings):
     MCP_HURRICANE_SERVER_ENABLED: bool = Field(
         default=True,
         description="Enable Hurricane Tracker MCP server"
+    )
+
+    MCP_HURRICANE_REQUEST_TIMEOUT: int = Field(
+        default=30,
+        description="Hurricane MCP request timeout in seconds (default: 30s)",
+        ge=5,
+        le=120
+    )
+
+    MCP_HURRICANE_HEALTH_CHECK_TIMEOUT: int = Field(
+        default=500,
+        description="Hurricane MCP health check timeout in milliseconds"
+    )
+
+    MCP_HURRICANE_MAX_RETRIES: int = Field(
+        default=3,
+        description="Maximum retries for Hurricane MCP requests"
+    )
+
+    MCP_HURRICANE_RETRY_DELAY: int = Field(
+        default=1000,
+        description="Delay between Hurricane MCP retries in milliseconds (base delay for exponential backoff)"
+    )
+
+    # ============================================================================
+    # MCP GLOBAL CONFIGURATION
+    # ============================================================================
+
+    MCP_ENABLE_FAILOVER: bool = Field(
+        default=True,
+        description="Enable MCP failover to direct NHC API calls if MCP server is down"
     )
 
     # ============================================================================
@@ -194,6 +240,25 @@ class Settings(BaseSettings):
     ENABLE_COT: bool = Field(
         default=False,  # Changed from True to False for explicit Studio control
         description="Enable Chain-of-Thought reasoning (5-step framework). Can be overridden at runtime."
+    )
+
+    # ============================================================================
+    # WORKFLOW TIMEOUT CONFIGURATION (Level 4+)
+    # ============================================================================
+
+    WORKFLOW_TIMEOUT_SECONDS: float = Field(
+        default=45.0,
+        description="Maximum time (seconds) for agent workflow execution. Prevents hanging queries. Default: 45s (reasonable for multi-agent with LLM calls)."
+    )
+
+    WORKFLOW_TIMEOUT_SIMPLE_SECONDS: float = Field(
+        default=30.0,
+        description="Maximum time (seconds) for SIMPLE tier queries (basic single-agent). Default: 30s (increased from 15s to support CoT reasoning)."
+    )
+
+    WORKFLOW_TIMEOUT_EMERGENCY_SECONDS: float = Field(
+        default=60.0,
+        description="Maximum time (seconds) for EMERGENCY tier queries (critical safety queries). Default: 60s (more time for thorough analysis)."
     )
 
     # ============================================================================
@@ -318,6 +383,40 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = Field(
         default=100,
         description="Maximum requests per minute"
+    )
+
+    # ============================================================================
+    # OBSERVABILITY CONFIGURATION (Level 5c)
+    # ============================================================================
+
+    NEO4J_BOLT_URL: str = Field(
+        default="bolt://localhost:7687",
+        description="Neo4j Bolt protocol URL for Graphiti"
+    )
+
+    NEO4J_USER: str = Field(
+        default="neo4j",
+        description="Neo4j username"
+    )
+
+    NEO4J_PASSWORD: str = Field(
+        default="password",
+        description="Neo4j password"
+    )
+
+    PROMETHEUS_URL: str = Field(
+        default="http://localhost:9090",
+        description="Prometheus server URL"
+    )
+
+    GRAFANA_URL: str = Field(
+        default="http://localhost:3001",
+        description="Grafana dashboard URL"
+    )
+
+    LOKI_URL: str = Field(
+        default="http://localhost:3100",
+        description="Loki log aggregation URL"
     )
 
     # ============================================================================

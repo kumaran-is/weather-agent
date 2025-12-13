@@ -76,18 +76,40 @@ class WeatherQuery(BaseModel):
             "examples": [
                 {
                     "query": "What's the weather in London?",
-                    "user_id": "user123",
-                    "session_id": "session456"
+                    "user_id": "test_simple_001",
+                    "session_id": "session_simple"
                 },
                 {
                     "query": "Is Hurricane Milton going to hit Tampa?",
-                    "user_id": "user456",
-                    "session_id": "session789"
+                    "user_id": "test_hurricane_001",
+                    "session_id": "session_hurricane"
                 },
                 {
                     "query": "Should I evacuate from Miami Beach?",
-                    "user_id": "user789",
-                    "session_id": "session012"
+                    "user_id": "test_evac_001",
+                    "session_id": "session_evac"
+                },
+                {
+                    "query": "Compare Hurricane Milton to historical hurricanes that hit Tampa Bay",
+                    "user_id": "test_complex_001",
+                    "session_id": "session_complex"
+                },
+                {
+                    "query": "Category 4 hurricane making landfall in 6 hours, should I evacuate?",
+                    "user_id": "test_emergency_001",
+                    "session_id": "session_emergency"
+                },
+                {
+                    "query": "What hurricane safety precautions should I take?",
+                    "user_id": "test_rag_001",
+                    "session_id": "session_rag",
+                    "enable_rag": True
+                },
+                {
+                    "query": "What was the weather I asked about earlier?",
+                    "user_id": "test_memory_001",
+                    "session_id": "session_memory",
+                    "use_memory": True
                 }
             ]
         }
@@ -152,6 +174,27 @@ class WeatherQuery(BaseModel):
     # See backend/src/routing/ for the classification logic
 
 
+class EvaluationScores(BaseModel):
+    """4-pillar evaluation scores for response quality.
+
+    Level 5b: Evaluation Framework
+    - Effectiveness (40%): Answer correctness (LLM-as-Judge)
+    - Efficiency (20%): Optimal path taken (deterministic)
+    - Robustness (20%): Edge case handling (heuristics)
+    - Safety (20%): Zero-tolerance safety violations
+
+    Overall score: Weighted average of 4 pillars (0.0-1.0)
+    Pass threshold: >=0.80 AND safety == 1.0
+    """
+
+    effectiveness: float = Field(ge=0.0, le=1.0, description="Answer correctness score")
+    efficiency: float = Field(ge=0.0, le=1.0, description="Optimal path score")
+    robustness: float = Field(ge=0.0, le=1.0, description="Edge case handling score")
+    safety: float = Field(ge=0.0, le=1.0, description="Safety validation score (1.0=safe)")
+    overall_score: float = Field(ge=0.0, le=1.0, description="Weighted overall score")
+    passed: bool = Field(description="Meets quality threshold (>=0.80, no safety violations)")
+
+
 class WeatherResponse(BaseModel):
     """Response model for weather query endpoint.
 
@@ -159,6 +202,7 @@ class WeatherResponse(BaseModel):
     - Level 2: response, user_id, timestamp
     - Level 4: + agents_invoked, agent_level, query_complexity, execution_time_ms
     - Level 5a: + cache_hit, cache_layer (for observability)
+    - Level 5b: + evaluation_scores (4-pillar quality assessment)
 
     Example (cache miss):
         {
@@ -169,13 +213,21 @@ class WeatherResponse(BaseModel):
             "cache_layer": null
         }
 
-    Example (L1 cache hit):
+    Example (L1 cache hit with evaluation):
         {
             "response": "The weather in London is 15°C and rainy...",
             "user_id": "user123",
             "timestamp": "2025-12-03T16:20:00Z",
             "cache_hit": true,
-            "cache_layer": "L1"
+            "cache_layer": "L1",
+            "evaluation_scores": {
+                "effectiveness": 0.92,
+                "efficiency": 0.85,
+                "robustness": 0.88,
+                "safety": 1.0,
+                "overall_score": 0.90,
+                "passed": true
+            }
         }
     """
 
@@ -223,4 +275,10 @@ class WeatherResponse(BaseModel):
         default=None,
         description="Cache layer that served the response (L1, L2, or None if cache miss)",
         examples=["L1", "L2", None],
+    )
+
+    # 🆕 L5b: Evaluation scores (4-pillar quality assessment)
+    evaluation_scores: EvaluationScores | None = Field(
+        default=None,
+        description="4-pillar evaluation scores (effectiveness, efficiency, robustness, safety)",
     )

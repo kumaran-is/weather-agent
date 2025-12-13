@@ -47,6 +47,7 @@ from backend.src.agents.prompts.hurricane_prompts import (
     NHC_DATA_TEMPLATE,
 )
 from backend.config.settings import settings
+from backend.src.mcp.hurricane_client import HurricaneMCPClient
 
 logger = structlog.get_logger(__name__)
 
@@ -98,6 +99,10 @@ class HurricaneSpecialistAgent:
         self.mcp_server_url = settings.MCP_HURRICANE_SERVER_URL
         self.enable_tot = enable_tot
         self.enable_got = enable_got
+
+        # Initialize Hurricane MCP Client
+        self.hurricane_client = HurricaneMCPClient(base_url=self.mcp_server_url)
+        self._mcp_initialized = False
 
         # Initialize reasoning engines if enabled
         self.tot_engine = None
@@ -360,83 +365,288 @@ class HurricaneSpecialistAgent:
                 return updated_state
 
     async def _fetch_nhc_data(self) -> dict[str, Any] | None:
-        """Fetch NHC data from Hurricane MCP Server.
+        """Fetch NHC data from Hurricane MCP Server using MCP protocol.
 
-        Makes HTTP requests to the Hurricane MCP Server to retrieve:
-        - Active storms list
-        - Storm details
-        - Forecast cones
-        - Evacuation zones
+        CRITICAL: Uses HurricaneMCPClient to call MCP tools (NOT REST endpoints).
+        The Hurricane MCP Server exposes 5 MCP tools via the /mcp endpoint:
+        - get_active_storms: Get currently active storms
+        - get_storm_cone: Get forecast cone for specific storm
+        - get_storm_track: Get historical and forecast track
+        - get_local_hurricane_alerts: Get alerts for specific location
+        - search_historical_tracks: Search historical hurricane data
+
+        Implements 3-tier failover (Gap #2):
+        1. Primary: Hurricane MCP Server (MCP protocol)
+        2. Fallback: Direct NHC API calls (TODO: implement in future)
+        3. Last resort: Cached data (TODO: implement in future)
 
         Returns:
-            Dictionary containing NHC data, or None if fetch fails
+            Dictionary containing NHC data, or None if all tiers fail
+
+        Structured Logging (Gap #3):
+            Logs all MCP operations with correlation IDs and performance metrics
         """
         if not settings.MCP_HURRICANE_SERVER_ENABLED:
-            logger.info("hurricane_mcp_disabled")
+            logger.info("hurricane_mcp_disabled", tier="disabled")
             return None
+
+        # Generate correlation ID for structured logging (Gap #3)
+        correlation_id = f"nhc-{datetime.now(timezone.utc).timestamp()}"
+        start_time = datetime.now(timezone.utc)
+
+        logger.info(
+            "nhc_data_fetch_started",
+            correlation_id=correlation_id,
+            tier="mcp_primary",
+            mcp_server_url=self.mcp_server_url,
+        )
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                # Fetch active storms
-                active_storms_response = await client.get(
-                    f"{self.mcp_server_url}/api/storms/active"
-                )
-
-                if active_storms_response.status_code == 200:
-                    active_storms = active_storms_response.json()
-                else:
-                    logger.warning(
-                        "active_storms_fetch_failed",
-                        status_code=active_storms_response.status_code,
+            # Tier 1: Hurricane MCP Server (PRIMARY)
+            # Initialize MCP session if needed
+            if not self._mcp_initialized:
+                try:
+                    await self.hurricane_client.initialize()
+                    self._mcp_initialized = True
+                    logger.info(
+                        "mcp_session_initialized",
+                        correlation_id=correlation_id,
+                        mcp_server_url=self.mcp_server_url,
                     )
-                    active_storms = {"storms": []}
-
-                # Fetch forecast data if storms are active
-                forecast_data = {}
-                if active_storms.get("storms"):
-                    first_storm_id = active_storms["storms"][0].get("id", "")
-                    if first_storm_id:
-                        forecast_response = await client.get(
-                            f"{self.mcp_server_url}/api/storms/{first_storm_id}/forecast"
+                except Exception as init_error:
+                    logger.error(
+                        "mcp_session_init_failed",
+                        correlation_id=correlation_id,
+                        error=str(init_error),
+                        error_type=type(init_error).__name__,
+                    )
+                    # If failover is enabled, try Tier 2 (future implementation)
+                    if settings.MCP_ENABLE_FAILOVER:
+                        logger.info(
+                            "failover_to_tier2",
+                            correlation_id=correlation_id,
+                            tier="nhc_api_direct",
                         )
-                        if forecast_response.status_code == 200:
-                            forecast_data = forecast_response.json()
+                        # TODO: Implement direct NHC API fallback
+                        return None
+                    return None
 
-                nhc_data = {
-                    "active_storms": active_storms.get("storms", []),
-                    "forecast_data": forecast_data,
-                    "fetched_at": datetime.now(timezone.utc).isoformat(),
-                    "source": "Hurricane MCP Server",
-                }
+            # Call get_active_storms MCP tool
+            mcp_start_time = datetime.now(timezone.utc)
+            active_storms_response = await self.hurricane_client.get_active_storms()
+            mcp_duration_ms = (datetime.now(timezone.utc) - mcp_start_time).total_seconds() * 1000
 
+            logger.info(
+                "mcp_tool_called",
+                correlation_id=correlation_id,
+                tool_name="get_active_storms",
+                duration_ms=round(mcp_duration_ms, 2),
+                success=True,
+            )
+
+            # Extract storm data from MCP response
+            # MCP response structure: {"result": {"content": [{"type": "text", "text": "..."}]}}
+            active_storms_data = self._parse_mcp_response(active_storms_response)
+
+            # If no storms, return early
+            if not active_storms_data or not active_storms_data.get("storms"):
                 logger.info(
                     "nhc_data_fetched",
-                    active_storms_count=len(nhc_data["active_storms"]),
-                    has_forecast=bool(forecast_data),
+                    correlation_id=correlation_id,
+                    active_storms_count=0,
+                    has_forecast=False,
+                    total_duration_ms=round(
+                        (datetime.now(timezone.utc) - start_time).total_seconds() * 1000, 2
+                    ),
                 )
+                return {
+                    "active_storms": [],
+                    "forecast_data": {},
+                    "fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "source": "Hurricane MCP Server (MCP Protocol)",
+                    "correlation_id": correlation_id,
+                }
 
-                return nhc_data
+            # Fetch storm track for first active storm (if available)
+            forecast_data = {}
+            active_storms = active_storms_data.get("storms", [])
+            if active_storms and len(active_storms) > 0:
+                first_storm_id = active_storms[0].get("id", "")
+                if first_storm_id:
+                    try:
+                        mcp_start_time = datetime.now(timezone.utc)
+                        storm_track_response = await self.hurricane_client.get_storm_track(
+                            storm_id=first_storm_id
+                        )
+                        mcp_duration_ms = (
+                            datetime.now(timezone.utc) - mcp_start_time
+                        ).total_seconds() * 1000
+
+                        logger.info(
+                            "mcp_tool_called",
+                            correlation_id=correlation_id,
+                            tool_name="get_storm_track",
+                            storm_id=first_storm_id,
+                            duration_ms=round(mcp_duration_ms, 2),
+                            success=True,
+                        )
+
+                        forecast_data = self._parse_mcp_response(storm_track_response)
+
+                    except Exception as track_error:
+                        logger.warning(
+                            "storm_track_fetch_failed",
+                            correlation_id=correlation_id,
+                            storm_id=first_storm_id,
+                            error=str(track_error),
+                            error_type=type(track_error).__name__,
+                        )
+
+            # Assemble NHC data
+            nhc_data = {
+                "active_storms": active_storms,
+                "forecast_data": forecast_data,
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
+                "source": "Hurricane MCP Server (MCP Protocol)",
+                "correlation_id": correlation_id,
+            }
+
+            total_duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            logger.info(
+                "nhc_data_fetched",
+                correlation_id=correlation_id,
+                active_storms_count=len(active_storms),
+                has_forecast=bool(forecast_data),
+                total_duration_ms=round(total_duration_ms, 2),
+                tier="mcp_primary",
+            )
+
+            return nhc_data
 
         except httpx.TimeoutException:
+            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_timeout",
+                correlation_id=correlation_id,
                 url=self.mcp_server_url,
-                timeout=10.0,
+                timeout=settings.MCP_REQUEST_TIMEOUT,
+                duration_ms=round(duration_ms, 2),
+                tier="mcp_primary",
             )
+
+            # Tier 2: Direct NHC API failover (if enabled)
+            if settings.MCP_ENABLE_FAILOVER:
+                logger.info(
+                    "failover_to_tier2",
+                    correlation_id=correlation_id,
+                    tier="nhc_api_direct",
+                )
+                # TODO: Implement direct NHC API fallback
+                # return await self._fetch_nhc_api_direct()
+
             return None
+
         except httpx.ConnectError:
+            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_connection_error",
+                correlation_id=correlation_id,
                 url=self.mcp_server_url,
+                duration_ms=round(duration_ms, 2),
+                tier="mcp_primary",
             )
+
+            # Tier 2: Direct NHC API failover (if enabled)
+            if settings.MCP_ENABLE_FAILOVER:
+                logger.info(
+                    "failover_to_tier2",
+                    correlation_id=correlation_id,
+                    tier="nhc_api_direct",
+                )
+                # TODO: Implement direct NHC API fallback
+
             return None
+
         except Exception as e:
+            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_error",
+                correlation_id=correlation_id,
+                error=str(e),
+                error_type=type(e).__name__,
+                duration_ms=round(duration_ms, 2),
+                tier="mcp_primary",
+            )
+
+            # Tier 2: Direct NHC API failover (if enabled)
+            if settings.MCP_ENABLE_FAILOVER:
+                logger.info(
+                    "failover_to_tier2",
+                    correlation_id=correlation_id,
+                    tier="nhc_api_direct",
+                )
+                # TODO: Implement direct NHC API fallback
+
+            return None
+
+    def _parse_mcp_response(self, mcp_response: dict[str, Any]) -> dict[str, Any]:
+        """Parse MCP tool response to extract actual data.
+
+        MCP responses have structure:
+        {
+            "result": {
+                "content": [
+                    {"type": "text", "text": "{...actual JSON data...}"}
+                ]
+            }
+        }
+
+        Args:
+            mcp_response: Raw MCP response dictionary
+
+        Returns:
+            Parsed data dictionary, or empty dict if parsing fails
+        """
+        try:
+            # Extract content from MCP response structure
+            result = mcp_response.get("result", {})
+            content = result.get("content", [])
+
+            if not content or not isinstance(content, list):
+                logger.warning("mcp_response_no_content", response_keys=list(mcp_response.keys()))
+                return {}
+
+            # Get first content item (usually the only one)
+            first_content = content[0]
+            if not isinstance(first_content, dict):
+                logger.warning("mcp_response_invalid_content_type", content_type=type(first_content).__name__)
+                return {}
+
+            # Extract text field which contains the JSON data
+            text_data = first_content.get("text", "")
+            if not text_data:
+                logger.warning("mcp_response_no_text_data")
+                return {}
+
+            # Parse JSON from text field
+            parsed_data = json.loads(text_data) if isinstance(text_data, str) else text_data
+
+            return parsed_data
+
+        except json.JSONDecodeError as e:
+            logger.error(
+                "mcp_response_json_parse_error",
+                error=str(e),
+                text_preview=text_data[:200] if text_data else None,
+            )
+            return {}
+        except Exception as e:
+            logger.error(
+                "mcp_response_parse_error",
                 error=str(e),
                 error_type=type(e).__name__,
             )
-            return None
+            return {}
 
     def _format_nhc_data(self, nhc_data: dict[str, Any] | None) -> str:
         """Format NHC data for LLM prompt.

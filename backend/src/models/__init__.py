@@ -63,6 +63,7 @@ Design Principles (STRICTLY ENFORCED):
 # Weather models (v0.6.0: AgentLevel kept for internal use, not in API)
 from backend.src.models.weather import (
     AgentLevel,  # Internal use only - API uses auto-routing now
+    EvaluationScores,  # Level 5b: 4-pillar evaluation scores
     WeatherQuery,
     WeatherResponse,
 )
@@ -75,8 +76,10 @@ from backend.src.models.hurricane import (
     HurricaneApprovalResponse,
 )
 
-# Health check models
+# Health check models (Level 5c: Comprehensive service health)
 from backend.src.models.health import (
+    ServiceHealth,
+    ServicesHealth,
     HealthCheckResponse,
 )
 
@@ -93,6 +96,7 @@ from backend.src.models.multi_agent import (
 __all__ = [
     # Weather (v0.6.0: AgentLevel for internal use, API uses auto-routing)
     "AgentLevel",  # Internal - not exposed in API
+    "EvaluationScores",  # Level 5b: 4-pillar evaluation scores
     "WeatherQuery",
     "WeatherResponse",
     # Hurricane
@@ -100,7 +104,9 @@ __all__ = [
     "HurricaneAlertResponse",
     "HurricaneApprovalRequest",
     "HurricaneApprovalResponse",
-    # Health
+    # Health (Level 5c: Comprehensive service health)
+    "ServiceHealth",
+    "ServicesHealth",
     "HealthCheckResponse",
     # Multi-Agent (Level 4a)
     "AgentRole",
