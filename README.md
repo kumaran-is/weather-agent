@@ -6,15 +6,15 @@
 [![LangGraph 1.0+](https://img.shields.io/badge/langgraph-1.0+-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-Dual%20Servers-orange)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.7-blue.svg)](./CHANGELOG.md)
 
-**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, and comprehensive observability.
+**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Evaluation, guardrails and comprehensive observability.
 
 **From zero to production** Progressive implementation showcasing enterprise AI patterns, multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction) and production deployment strategies.
 
-**How It Works:** This project follows a progressive complexity model—each module builds on the previous one, making it accessible to beginners while scaling toward advanced concepts.
+**How It Works:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), and full observability stack (Prometheus, Grafana, Loki
 
-**Current Stage**: ✅ **Level 4 Implementation Complete** — Multi-Agent Orchestration + Auto-Routing intelligence
+**Current Stage**: ✅ **Level 5 Complete** — Evaluation, Guardrail + Observability Stack 
 
 
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
@@ -53,37 +53,47 @@
 
 ## Technology Stack
 
+**Core Framework**:
+
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| [**Python**](https://www.python.org/) | `3.13.5` | Modern Python runtime with performance improvements |
-| [**LangChain**](https://github.com/langchain-ai/langchain) | `1.1.0` | **AI framework** for building LLM applications |
-| [**LangGraph**](https://github.com/langchain-ai/langgraph) | `1.0.4` | **Agent runtime** with StateGraph, checkpointing, HITL |
-| [**LangGraph CLI**](https://docs.langchain.com/langgraph/cli) | `0.4.7` | **Development server** for LangSmith Studio (local agent debugging) |
-| [**LangSmith**](https://smith.langchain.com/) | `0.4.49` | **Observability & tracing** for debugging LLM apps |
-| [**LangSmith Studio**](https://docs.langchain.com/langgraph/studio) | Web | **Visual debugger** for real-time agent execution (prompts, tools, states) |
-| [**FastAPI**](https://fastapi.tiangolo.com/) | `0.123.0` | High-performance async web framework |
-| [**Pydantic**](https://docs.pydantic.dev/) | `2.12.5` | **Runtime validation** & type-safe data models |
-| [**OpenAI GPT-4**](https://platform.openai.com/) | `2.8.1` | Primary LLM provider (GPT-4o, GPT-4o-mini) |
-| [**Anthropic Claude**](https://www.anthropic.com/claude) | `0.42.0` | Secondary LLM provider (Claude 3.5 Sonnet) |
-| [**Qdrant**](https://qdrant.tech/) | `1.16.1` | **Vector database** for RAG & semantic search |
-| [**PostgreSQL**](https://www.postgresql.org/) | `3.3.0` | Production checkpointer for agent state persistence |
-| [**SQLite**](https://www.sqlite.org/) | `2.0.10` | Development checkpointer for local testing |
-| [**Redis**](https://redis.io/) | `7.1.0` | In-memory cache for session & conversation memory |
-| [**Docker**](https://www.docker.com/) | `27.5.1` | Containerization for deployment |
-| [**uv**](https://github.com/astral-sh/uv) | `0.9.9` | **Ultra-fast package manager** (10-100x faster than pip) |
-| [**Structlog**](https://www.structlog.org/) | `25.5.0` | Structured logging for production observability |
-| [**MCP Protocol**](https://modelcontextprotocol.io/) | `1.0` | **Model Context Protocol** for tool integration |
-| [**Weather MCP Server**](https://github.com/kumaran-is/mcp-weather-server) | Custom | Real-time weather data via NWS API |
-| [**Hurricane Tracker MCP**](https://github.com/kumaran-is/hurricane-tracker-mcp) | Custom | Real-time hurricane data via NOAA/NHC APIs |
+| [**Python**](https://www.python.org/) | `3.13+` | Modern Python runtime |
+| [**LangChain**](https://github.com/langchain-ai/langchain) | `1.0+` | AI framework for LLM applications |
+| [**LangGraph**](https://github.com/langchain-ai/langgraph) | `1.0+` | Agent runtime with StateGraph, checkpointing, HITL |
+| [**FastAPI**](https://fastapi.tiangolo.com/) | `0.115+` | High-performance async web framework |
+| [**Pydantic**](https://docs.pydantic.dev/) | `2.0+` | Runtime validation & type-safe data models |
 
-**Data Sources**:
+**AI/ML & LLM**:
 
-*Real-Time Data (via MCP Servers)*:
-- [**NOAA/NHC**](https://www.nhc.noaa.gov/) - National Hurricane Center real-time data
+| Technology | Purpose |
+|------------|---------|
+| [**OpenAI GPT-4**](https://platform.openai.com/) | Primary LLM (GPT-4o, GPT-4o-mini) |
+| [**Anthropic Claude**](https://www.anthropic.com/claude) | Secondary LLM (Claude 3.5 Sonnet) + L3 prompt caching |
+| [**MCP Protocol**](https://modelcontextprotocol.io/) | Model Context Protocol for tool integration |
+
+**Databases & Storage**:
+
+| Technology | Purpose |
+|------------|---------|
+| [**Qdrant**](https://qdrant.tech/) | Vector database for RAG & semantic search |
+| [**Redis**](https://redis.io/) | L2 distributed cache + session memory |
+| [**Neo4j**](https://neo4j.com/) | Graph database for episodic/semantic memory |
+| [**PostgreSQL**](https://www.postgresql.org/) | Production checkpointer + procedural memory |
+
+**Observability**:
+
+| Technology | Purpose |
+|------------|---------|
+| [**Prometheus**](https://prometheus.io/) | Metrics collection |
+| [**Grafana**](https://grafana.com/) | Dashboards & visualization |
+| [**Loki**](https://grafana.com/oss/loki/) | Log aggregation |
+| [**LangSmith**](https://smith.langchain.com/) | LLM tracing & debugging |
+
+**Data Sources** (via MCP Servers):
+- [**NOAA/NHC**](https://www.nhc.noaa.gov/) - Hurricane tracking data
 - [**NWS API**](https://www.weather.gov/documentation/services-web-api) - Weather alerts & forecasts
-- [**IBTrACS**](https://www.ncei.noaa.gov/products/international-best-track-archive) - Historical hurricane tracks
 
-*Knowledge Base (Level 2 RAG)*:
+**Knowledge Base (Level 2 RAG)**:
 - **Mock Curated Data** (3 files) - Authoritative weather safety information
   - Saffir-Simpson hurricane scale
   - Evacuation zones (A-E)
@@ -99,44 +109,48 @@
 
 Quick reference for testing and debugging the Weather AI Agent:
 
-| Tool | URL | Description | Use Case |
-|------|-----|-------------|----------|
-| **Swagger UI** | http://localhost:8000/docs | Interactive API documentation with live testing | Test REST endpoints, view request/response schemas, execute queries via browser |
-| **ReDoc** | http://localhost:8000/redoc | Alternative API documentation (read-only) | Clean, searchable API reference for documentation review |
-| **LangSmith Studio** | https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024 | Visual agent debugger with graph execution | Debug agent workflows, inspect tool calls, trace multi-step reasoning, test HITL approval |
+| Tool | URL | Description |
+|------|-----|-------------|
+| **Swagger UI** | http://localhost:8000/docs | Interactive API testing with example data dropdowns |
+| **ReDoc** | http://localhost:8000/redoc | Read-only API documentation |
+| **LangSmith Dashboard** | https://smith.langchain.com/ | LLM tracing, agent debugging, cost analysis |
+| **LangSmith Tracing** | https://smith.langchain.com/o/{org_id}/projects/p/{project_id} | Detailed agent trace inspection & debugging |
+| **LangSmith Evaluation** | https://smith.langchain.com/o/{org_id}/datasets | Golden dataset management & batch evaluation (105 test cases) |
+| **LangGraph Studio** | https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024 | Visual agent debugger (4 graphs: weather_agent, weather_hitl_workflow, multi_agent_workflow, level4b_workflow) |
+| **Grafana Dashboards** | http://localhost:3001 | Observability dashboards (login: admin/weatherai2025) |
+| **Prometheus UI** | http://localhost:9090 | Metrics explorer and alerting |
 
-**Service Access URLs (All Services)**
+**Service Access URLs**
 
-| Service | URL | Description | Use Case |
-|---------|-----|-------------|----------|
-| **API Health** | http://localhost:8000/health | Health check endpoint | Verify API service is running and responsive |
-| **Weather MCP** | http://localhost:8080/health | Weather MCP server health | Verify weather data service connectivity |
-| **Hurricane MCP** | http://localhost:8081/health | Hurricane Tracker MCP health | Verify hurricane tracking service connectivity |
-| **Qdrant Dashboard** | http://localhost:6333/dashboard | Vector database web UI | Browse collections, view embeddings, inspect 603 documents |
-| **Neo4j Browser** | http://localhost:7474 | Graph database web UI | Visualize knowledge graph, query relationships (user: neo4j, pass: weatherai2025) |
-| **PostgreSQL (pgAdmin 4)** | `postgresql://weather_ai:weatherai2025@localhost:5432/weather_ai` | Relational database client | Layers 5 & 7 (Procedural & Reflective Memory) - Level 3c |
-| **Redis Insight** | `redis://localhost:6379/0` | Redis database client | Visual interface for inspecting short-term memory, session data, episodic events |
-| **Redis CLI** | `make memory-redis-cli` | Redis command-line interface | Command-line access to Redis for debugging and data inspection |
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Weather AI API** | http://localhost:8000 | Main API service |
+| **API Health** | http://localhost:8000/health | Service health check |
+| **Prometheus Metrics** | http://localhost:8000/metrics | Prometheus-format metrics endpoint |
+| **Weather MCP** | http://localhost:8080/health | Weather data MCP server |
+| **Hurricane MCP** | http://localhost:8081/health | Hurricane tracking MCP server |
+| **Qdrant Dashboard** | http://localhost:6333/dashboard | Vector database UI (603 documents) |
+| **Neo4j Browser** | http://localhost:7474 | Graph database UI (neo4j/weatherai2025) |
+
+**Observability Stack (Level 5c)**
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Grafana** | http://localhost:3001 | admin / weatherai2025 |
+| **Prometheus** | http://localhost:9090 | None |
+| **Loki** | http://localhost:3100 | API only |
 
 **Test Guides by Level**:
 
-| Level | Guide | Features Tested | Duration | Status |
-|-------|-------|-----------------|----------|--------|
-| **Level 0** | [Setup Verification](./verify_setup.py) | Python 3.13+, uv, Docker, API keys, MCP servers | ~5 min | ✅ Complete |
-| **Level 1** | [Test Suite](./tests/test_react_agent.py) | ReAct agent, HITL approval, MCP integration | ~10 min | ✅ Complete |
-| **Level 2** | [RAG + CoT + Hybrid Search](./docs/test-guide/LEVEL_2_TEST_GUIDE.md) | 603 docs, hybrid search (70/30), CoT reasoning, 8 tools | ~15 min | ✅ Complete |
-| **Level 3** | [Memory + Reasoning + Intelligence](./docs/test-guide/LEVEL_3_TEST_GUIDE.md) | 7-layer memory (99.7% compression), ToT/GoT reasoning, emotional intelligence, L1/L2/L3 caching | ~30 min | ✅ Complete |
-| **Level 3a** | [Level 3 Test Guide - Section 1](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3a-2-layer-memory-foundation) | 2-layer memory (Conversation + Session), Redis short-term memory, Graphiti episodic memory | Included | ✅ Complete |
-| **Level 3b** | [Level 3 Test Guide - Section 2](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3b-advanced-reasoning-totgot) | Advanced reasoning (ToT: 27 paths, GoT: network reasoning), beam search pruning | Included | ✅ Complete |
-| **Level 3c** | [Level 3 Test Guide - Section 3](./docs/test-guide/LEVEL_3_TEST_GUIDE.md#level-3c-full-7-layer-memory--personalization) | Full 7-layer memory, emotional intelligence, personalization, memory consolidation (ETL pipeline) | Included | ✅ Complete |
-| **Level 4** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | Auto-routing v0.6.0 (intent-based classification, 4 tiers) | ~15 min | ✅ Complete |
-| **Level 4a** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 3-agent system (Triage + Hurricane Specialist + Alert Manager) | ~20 min | ✅ Complete |
-| **Level 4b** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 8-agent orchestration (+ Supervisor + parallel execution) | ~25 min | ✅ Complete |
-| **Level 4c** | [Auto-Routing Test Guide](./docs/test-guide/AUTO_ROUTING_TEST_GUIDE.md) | 15-agent production (+ Debate + Reflection + Self-Healing) | ~30 min | ✅ Complete |
-| **Level 5a** | TBD) | Multi-layer caching (L1: in-process LRU, L2: Redis distributed, L3: Anthropic prompt cache) | ~5 min | ✅ Complete |
-| **Level 5b** | TBD | 6 critical guardrails (zero PII leaks) | ~20 min | 📋 Planned |
-| **Level 5c** | TBD | Full production (99.9% uptime, observability) | ~30 min | 📋 Planned |
-| **Level 6** | TBD | Self-evolving architecture (dual-loop) | ~35 min | 📋 Planned |
+| Level | Guide | Key Features | Status |
+|-------|-------|--------------|--------|
+| **Level 0** | [Setup Verification](./verify_setup.py) | Python 3.13+, uv, Docker, API keys | ✅ Complete |
+| **Level 1** | [Test Suite](./tests/test_react_agent.py) | ReAct agent, HITL approval, MCP integration | ✅ Complete |
+| **Level 2** | [RAG + CoT Guide](./docs/test-guide/LEVEL_2_TEST_GUIDE.md) | 603 docs, hybrid search, CoT reasoning | ✅ Complete |
+| **Level 3** | [Memory + Reasoning Guide](./docs/test-guide/LEVEL_3_TEST_GUIDE.md) | 7-layer memory, ToT/GoT, emotional intelligence | ✅ Complete |
+| **Level 4** | [Multi-Agent Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md) | 15-agent orchestration, auto-routing | ✅ Complete |
+| **Level 5** | [Evaluation + Guardrail Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md) | Caching (L1/L2/L3), Prometheus, Swagger UI (37 scenarios) | ✅ Complete |
+| **Level 6** | TBD | Self-evolving architecture | 📋 Planned |
 
 ---
 
@@ -537,165 +551,141 @@ make memory-neo4j-browser
 make docker-down-dev
 ```
 
+**Observability Commands (Level 5c: Prometheus + Grafana + Loki)**
+
+| Command | Description |
+|---------|-------------|
+| `make observability-status` | Check Prometheus/Grafana/Loki status |
+| `make grafana-open` | Open Grafana dashboard (http://localhost:3001) |
+| `make prometheus-open` | Open Prometheus UI (http://localhost:9090) |
+| `make prometheus-reload` | Reload Prometheus configuration (hot reload) |
+| `make loki-logs` | Query recent logs from Loki |
+| `make observability-logs` | Follow logs from observability stack |
+
+**Typical Observability Workflow:**
+```bash
+# 1. Start dev containers (includes observability stack)
+make docker-up-dev
+
+# 2. Check observability status
+make observability-status
+
+# 3. Open Grafana dashboards
+make grafana-open
+# Login: admin / weatherai2025
+
+# 4. View Prometheus metrics
+make prometheus-open
+
+# 5. Query logs via Loki (in Grafana)
+make loki-logs
+```
+
+**Evaluation Commands (Level 5b: Golden Dataset Testing & Quality Gates)**
+
+All 8 evaluation commands validated and working correctly:
+
+| # | Command | Description | Duration | Output File | Status |
+|---|---------|-------------|----------|-------------|--------|
+| 1 | `make eval-upload-dataset` | Upload golden dataset to LangSmith (105 test cases) | ~5 seconds | N/A (uploads to LangSmith) | ✅ Validated |
+| 2 | `make eval-quick` | Quick smoke test (10 random cases) | ~1-2 minutes | `evaluation_quick.json` | ✅ Validated |
+| 3 | `make eval-category CATEGORY=simple` | Test simple weather queries (40 cases) | ~5-6 minutes | `evaluation_simple.json` | ✅ Validated |
+| 4 | `make eval-category CATEGORY=hurricane` | Test hurricane safety-critical queries (20 cases) | ~4-5 minutes | `evaluation_hurricane.json` | ✅ Validated |
+| 5 | `make eval-category CATEGORY=complex` | Test complex multi-location queries (30 cases) | ~6-7 minutes | `evaluation_complex.json` | ✅ Validated |
+| 6 | `make eval-category CATEGORY=edge` | Test edge cases and error handling (15 cases) | ~2-3 minutes | `evaluation_edge.json` | ✅ Validated |
+| 7 | `make eval-check-gates` | Check quality gates on evaluation results | ~2 seconds | N/A (reads `evaluation_results.json`) | ✅ Validated |
+| 8 | `make eval-full` | **Full pipeline**: Upload → Run all 105 cases → Check gates | ~17-20 minutes | `evaluation_results.json` | ✅ Validated |
+
+**Quality Gates** (5 gates, all must pass for deployment):
+
+| Gate | Threshold | Purpose |
+|------|-----------|---------|
+| **Pass Rate** | ≥85% | Overall test success rate |
+| **Effectiveness** | ≥85% | Answer quality and correctness |
+| **Efficiency** | ≥80% | Tool usage optimization |
+| **Robustness** | ≥80% | Error handling and edge cases |
+| **Safety** | 0 violations | Life-safety critical errors (ZERO tolerance) |
+
+**Typical Evaluation Workflow:**
+```bash
+# Quick smoke test (recommended first)
+make eval-quick
+
+# Test specific category
+make eval-category CATEGORY=hurricane
+
+# Full evaluation pipeline (all 105 cases)
+make eval-full
+
+# View results in LangSmith
+# https://smith.langchain.com/datasets/14c92fff-0c08-49a3-976c-9084544327cb
+```
+
+**Quality Gates Guide**: See [docs/knowledgebase/quality-gates-guide.md](docs/knowledgebase/quality-gates-guide.md) for comprehensive details on what quality gates are, how they work, and what to do when they fail.
+
 ### Project Structure
 
 ```
 weather-agent/
-├── backend/                     # Backend application (Level 1+2+3+4+5a Complete)
-│   ├── config/                  # Configuration - SINGLE LOCATION (ALL config files here ONLY)
-│   │   ├── __init__.py          # Package initialization
-│   │   ├── settings.py          # Centralized app settings (Qdrant, OpenAI, MCP, env vars - 50+ vars)
-│   │   ├── llm_config.py        # LLM configuration (use cases: emergency/forecast/conversational)
-│   │   ├── memory_config.py     # Memory system configuration (20+ vars) - Level 3
-│   │   └── cache_config.py      # Cache system configuration (10+ vars) - Level 5a
-│   ├── data/                    # RAG data (Level 2)
-│   │   └── raw/
-│   │       ├── mock/            # Curated weather docs (3 files)
-│   │       │   ├── hurricanes/  # Saffir-Simpson, evacuation zones
-│   │       │   └── weather_terminology/ # Heat index
-│   │       └── kaggle/          # Kaggle datasets (600 docs)
-│   │           ├── daily_temperature_major_cities.csv (500 sampled)
-│   │           └── city_temperature_1980_2020.csv (100 city profiles)
-│   ├── migrations/              # Database migrations (Alembic)
-│   │   └── versions/            # Migration version files
+├── backend/                     # Backend application 
+│   ├── config/                  # Configuration (SINGLE LOCATION)
+│   │   ├── settings.py          # Centralized app settings (50+ env vars)
+│   │   ├── llm_config.py        # LLM use case configuration
+│   │   ├── memory_config.py     # Memory system configuration
+│   │   └── cache_config.py      # Cache system configuration
+│   ├── data/raw/                # RAG knowledge base (603 documents)
+│   ├── migrations/              # Database migration scripts
 │   ├── src/                     # Source code
-│   │   ├── agents/              # LangChain agents (Level 1+2+3+4) - 15 specialized agents
-│   │   │   ├── __init__.py           # Agent exports and initialization
-│   │   │   ├── state.py              # Agent state TypedDict
-│   │   │   ├── base_prompts.py       # Base prompt templates
-│   │   │   ├── weather_agent.py      # Unified ReAct agent (enable_rag + enable_cot + enable_memory)
-│   │   │   ├── triage_agent.py       # Level 4a: Query classification and routing
-│   │   │   ├── hurricane_specialist.py # Level 4a: Hurricane-specific analysis
-│   │   │   ├── alert_manager.py      # Level 4a: Alert generation and validation
-│   │   │   ├── forecaster_agent.py   # Level 4b: General forecasting
-│   │   │   ├── historical_agent.py   # Level 4b: Historical data analysis
-│   │   │   ├── research_agent.py     # Level 4b: Deep research queries
-│   │   │   ├── climate_agent.py      # Level 4b: Climate and long-term trends
-│   │   │   ├── supervisor_agent.py   # Level 4b: Multi-agent orchestration
-│   │   │   ├── meta_prompt_agent.py  # Level 4c: Self-optimizing prompts
-│   │   │   ├── debate_agent.py       # Level 4c: Multi-perspective analysis
-│   │   │   ├── self_healing_agent.py # Level 4c: Error recovery and self-correction
-│   │   │   ├── emergency_agent.py    # Level 4c: Emergency response coordination
-│   │   │   ├── personalization_agent.py # Level 4c: User preference adaptation
-│   │   │   ├── reflection_agent.py   # Level 4c: Quality assurance and critique
-│   │   │   ├── critique_agent.py     # Level 4c: Output validation
-│   │   │   ├── circuit_breaker.py    # Level 4c: Fault tolerance and resilience
-│   │   │   └── prompts/              # Agent-specific prompt templates
-│   │   │       ├── __init__.py
-│   │   │       ├── triage_prompts.py
-│   │   │       ├── hurricane_prompts.py
-│   │   │       ├── alert_prompts.py
-│   │   │       ├── supervisor_prompts.py
-│   │   │       ├── meta_prompt_templates.py
-│   │   │       ├── debate_prompts.py
-│   │   │       └── reflection_prompts.py
-│   │   ├── api/                 # FastAPI service (Level 1+2+3+5a)
-│   │   │   └── main.py          # FastAPI app + 6 endpoints + L1/L2 cache integration
-│   │   ├── models/              # Pydantic models - SINGLE SOURCE OF TRUTH
-│   │   │   ├── __init__.py      # Central exports + strict architectural rules
-│   │   │   ├── weather.py       # Weather domain (WeatherQuery, WeatherResponse, CacheStats, CacheClearResponse)
-│   │   │   ├── hurricane.py     # Hurricane domain (4 HITL models)
-│   │   │   ├── health.py        # Health check domain (HealthCheckResponse)
-│   │   │   ├── memory.py        # Memory domain (Level 3 - EmotionalMemory, ConversationContext, etc.)
-│   │   │   ├── reasoning.py     # Reasoning domain (Level 3 - ToT/GoT models, ThoughtNode, etc.)
-│   │   │   └── multi_agent.py   # Multi-agent domain (Level 4 - AgentState, SupervisorState, RoutingDecision, etc.)
-│   │   │   # Future: observability.py (Level 5b - metrics, traces), guardrails.py (Level 5b - safety models)
-│   │   ├── cache/               # Multi-layer caching system (Level 5a) - 60-75% cost reduction
-│   │   │   ├── l1_memory_cache.py    # In-process LRU cache (<1ms, 15-25% hit rate)
-│   │   │   ├── l2_redis_cache.py     # Distributed Redis cache (<10ms, 30-40% hit rate)
-│   │   │   ├── l3_anthropic_cache.py # Anthropic prompt cache utilities (60-70% potential)
-│   │   │   └── multi_layer_manager.py # Cache orchestration (L1→L2→L3 cascade)
-│   │   ├── hitl/                # Human-in-the-Loop (Level 1)
-│   │   │   └── approval_node.py # HITL approval nodes (Category 3+ hurricanes)
-│   │   ├── mcp/                 # MCP client integration (Level 1)
-│   │   │   └── weather_client.py # Async HTTP MCP client (header-based sessions)
-│   │   ├── memory/              # 7-layer memory system (Level 3) - ~5,849 lines
-│   │   │   ├── __init__.py          # Memory system exports
-│   │   │   ├── short_term.py        # Layer 1-2: Redis conversation & session memory (24-hour TTL)
-│   │   │   ├── long_term.py         # Layer 3-4: Graphiti episodic & semantic memory (Neo4j)
-│   │   │   ├── procedural.py        # Layer 5: Workflow pattern memory
-│   │   │   ├── emotional.py         # Layer 6: Emotion tracking & sentiment analysis (7-day TTL)
-│   │   │   ├── reflective.py        # Layer 7: Meta-cognitive learning
-│   │   │   ├── consolidation.py     # Memory ETL pipeline (99.7% compression: 150K→500 tokens)
-│   │   │   ├── manager.py           # Unified memory interface (<4K tokens/query)
-│   │   │   └── exceptions.py        # Memory-specific exceptions
-│   │   ├── rag/                 # RAG system (Level 2 Complete)
-│   │   │   ├── embeddings.py    # OpenAI embeddings (text-embedding-3-small)
-│   │   │   ├── vector_store.py  # QdrantVectorStore setup (Cosine distance)
-│   │   │   ├── retriever.py     # LangChain retriever interface
-│   │   │   ├── hybrid_search.py # RRF algorithm (70% semantic + 30% BM25)
-│   │   │   ├── build_knowledge_base.py # Knowledge base builder
-│   │   │   └── loaders/         # Document loaders
-│   │   │       ├── mock_loader.py         # Mock weather docs loader
-│   │   │       ├── kaggle_loader.py       # Kaggle CSV loader
-│   │   │       ├── csv_to_narrative.py    # CSV-to-text converter
-│   │   │       └── validate_kaggle_datasets.py # 7-check validation
-│   │   ├── reasoning/           # Advanced reasoning (Level 3b) - Tree/Graph-of-Thought
-│   │   │   ├── tot.py           # Tree-of-Thought (27 parallel paths: depth=3, width=3)
-│   │   │   └── got.py           # Graph-of-Thought (network reasoning with cycles)
-│   │   ├── routing/             # Auto-routing system (Level 4) ✅ NEW
-│   │   │   ├── __init__.py      # Module exports (classify_query, QueryTier)
-│   │   │   ├── models.py        # QueryTier, RoutingDecision, signal models
-│   │   │   ├── signals.py       # Query/context signal extraction (<1ms)
-│   │   │   ├── rules.py         # Priority-ordered routing rules (9 rules)
-│   │   │   └── classifier.py    # QueryClassifier (intent-based, no pre-fetch)
-│   │   ├── tools/               # LangChain tools (Level 1+2)
-│   │   │   ├── weather_tools.py # 3 MCP tool wrappers (@tool decorator)
-│   │   │   └── rag_tools.py     # 5 RAG-enhanced tools (analyze_trends, identify_patterns, compare_conditions, retrieve_weather_knowledge_tool, semantic_weather_search)
-│   │   └── workflows/           # LangGraph workflows (Level 1+4)
-│   │       └── weather_graph.py # HITL StateGraph workflow
+│   │   ├── agents/              # 15 specialized agents (weather, triage, hurricane, etc.)
+│   │   ├── api/main.py          # FastAPI app (9 endpoints + Prometheus metrics)
+│   │   ├── cache/               # Multi-layer caching (L1/L2/L3)
+│   │   ├── evaluation/          # Evaluation framework
+│   │   ├── guardrails/          # 12-layer safety guardrails
+│   │   ├── hitl/                # Human-in-the-Loop approval nodes
+│   │   ├── mcp/                 # MCP client integration
+│   │   ├── memory/              # 7-layer memory system
+│   │   ├── models/              # Pydantic models (weather, hurricane, health, etc.)
+│   │   ├── orchestration/       # Multi-agent workflow orchestration
+│   │   ├── rag/                 # RAG pipeline (embeddings, hybrid search)
+│   │   ├── reasoning/           # ToT/GoT advanced reasoning
+│   │   ├── routing/             # Auto-routing system
+│   │   ├── services/            # Shared business logic services
+│   │   ├── tools/               # LangChain tools (MCP + RAG)
+│   │   ├── utils/               # Utility functions and helpers
+│   │   └── workflows/           # LangGraph workflows
 │   └── tests/                   # Backend-specific tests
-│       ├── evaluation/          # Model evaluation tests
-│       └── integration/         # Integration test suites
 ├── docs/                        # Documentation
-│   ├── setup/                   # Setup guides
-│   │   ├── mcp-servers-setup.md        # MCP servers deployment
-│   │   ├── langsmith-studio-setup.md   # Studio integration (434 lines)
-│   │   ├── docker-usage-guide.md       # Docker orchestration (649 lines)
-│   │   └── rag-datasets-guide.md       # RAG datasets guide (211 lines)
-│   ├── test-guide/              # Testing guides
-│   │   ├── LEVEL_2_TEST_GUIDE.md # ✅ RAG + CoT testing (~15 minutes)
-│   │   ├── LEVEL_3_TEST_GUIDE.md # ✅ Memory + ToT/GoT testing (~30 minutes)
-│   │   └── LEVEL_4_TEST_GUIDE.md # ✅ Auto-routing v0.6.0 testing (~30 minutes)
-├── tests/                       # Test suite (Level 1+2+3+4+5a) ✅ UPDATED (20 test files)
-│   ├── conftest.py              # Pytest fixtures
-│   ├── test_mcp_client.py       # MCP client tests
-│   ├── test_weather_tool.py     # Weather tool tests
-│   ├── test_react_agent.py      # ReAct agent tests
-│   ├── test_hurricane_hitl.py   # HITL approval tests
-│   ├── test_workflow.py         # LangGraph workflow tests
-│   ├── test_api.py              # FastAPI endpoint tests
-│   ├── test_memory_parallel.py  # Parallel memory system tests (Level 3)
-│   ├── test_routing.py          # Auto-routing tests (Level 4) - 28 tests
-│   ├── test_level4c_circuit_breaker.py # Circuit breaker pattern tests ✅ NEW
-│   ├── test_level4c_cost_optimizer.py  # Cost optimization tests ✅ NEW
-│   ├── test_level4c_debate.py          # Debate agent tests ✅ NEW
-│   ├── test_level4c_load_router.py     # Load-aware routing tests ✅ NEW
-│   ├── test_level4c_meta_prompt.py     # Meta-prompt agent tests ✅ NEW
-│   ├── test_level4c_self_healing.py    # Self-healing agent tests ✅ NEW
-│   ├── test_level4c_specialists.py     # Specialist agents tests ✅ NEW
-│   ├── test_cache_l1_memory.py  # L1 in-process cache tests (Level 5a)
-│   ├── test_cache_l2_redis.py   # L2 Redis distributed cache tests (Level 5a)
-│   └── test_cache_l3_anthropic.py # L3 Anthropic prompt cache tests (Level 5a)
-├── Dockerfile                   # Multi-stage production + development build
-├── docker-compose.yml           # Production orchestration (4 services: API, 2 MCP, Qdrant)
-├── docker-compose.dev.yml       # Development orchestration (hot reload enabled)
-├── langgraph.json               # LangSmith Studio configuration (2 graphs)
-├── LANGSMITH_STUDIO_TESTING.md  # Studio testing guide (agent configurations)
-├── pyproject.toml               # Project config (v0.7.0, source of truth) ✅ UPDATED
-├── uv.lock                      # uv lockfile (reproducible builds)
-├── Makefile                     # Development commands (22 tasks: setup, RAG, Docker)
-├── verify_setup.py              # Level 0 verification (8 checks)
-├── CHANGELOG.md                 # Version history (v0.7.0 - Level 4 in progress) ✅ UPDATED
-└── README.md                    # This file (v0.7.0) ✅ UPDATED
+│   ├── setup/                   # Setup and configuration guides
+│   ├── test-guide/              # Test guides by level
+├── observability/               # Observability stack configuration
+│   ├── grafana/                 # Grafana dashboards and datasources
+│   ├── loki/                    # Loki log aggregation config
+│   └── prometheus/              # Prometheus metrics config
+├── scripts/                     # Evaluation and automation scripts
+│   ├── check_quality_gates.py   # CI/CD quality gate validation
+│   ├── run_batch_evaluation.py  # LangSmith batch evaluation runner
+│   └── upload_golden_dataset.py # Golden dataset upload to LangSmith
+├── tests/                       # Test suite (22 test files)
+├── .env.template                # Environment variables template
+├── CHANGELOG.md                 # Version history and release notes
+├── Dockerfile                   # Multi-stage production container
+├── docker-compose.yml           # Production orchestration (9 services)
+├── docker-compose.dev.yml       # Development orchestration (hot reload)
+├── langgraph.json               # LangGraph Studio (4 graphs)
+├── LICENSE                      # MIT License
+├── Makefile                     # Development and deployment commands
+├── pyproject.toml               # Project config (v0.10.0)
+└── README.md                    # This file
 ```
 
 **Key Highlights** (v0.7.0 - Level 4 COMPLETE):
 - **backend/src/**: ✅ Level 1 + Level 2 + Level 3 + Level 4 COMPLETE + Level 5a COMPLETE
   - **routing/**: Auto-routing system v0.6.0 (~500 lines, <1ms classification)
-  - **agents/**: 15 specialized agents (Triage, Hurricane Specialist, Alert Manager, Supervisor, Meta-Prompt, Debate, Self-Healing, Emergency Response, etc.)
-  - **memory/**: 7-layer memory system (~5,849 lines, 99.7% storage reduction)
+  - **agents/**:  15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
+  - **memory/**: 7-layer memory (conversation, session, episodic, semantic, procedural, emotional, reflective)
   - **reasoning/**: Tree/Graph-of-Thought (27 parallel paths, network reasoning)
+  - **orchestration/**: Multi-agent workflows (supervisor, parallel execution, auto-routing)
+  - **evaluation/**: 4-pillar evaluation framework (effectiveness, efficiency, robustness, safety)
   - **cache/**: Multi-layer caching (L1+L2+L3 utilities, 60-75% cost reduction potential)
   - **rag/**: Complete RAG pipeline (embeddings, vector store, hybrid search)
   - **tools/**: 7 tools total (3 MCP + 4 RAG-enhanced)
@@ -704,7 +694,7 @@ weather-agent/
 - **docs/setup/**:7 comprehensive guides (Dependency management, MCP, Studio, Docker, RAG datasets, Neo4j Desktop, Redis Insight)
 - **tests/**: 20 test modules covering MCP, RAG, HITL, API, memory, reasoning, routing, cache, Level 4c agents
 - **langgraph.json**: 2 graphs configured (weather_agent, weather_hitl_workflow)
-- **Makefile**: 22 commands (setup, RAG, Docker, testing)
+- **Makefile**: Commands (setup, RAG, Docker, Evaluating, testing)
 
 **Level 4 Achievements**:
 - ✅ 15-agent production system (3-agent → 8-agent → 15-agent progression)
@@ -727,25 +717,26 @@ weather-agent/
 - **Level 3b** (v0.5.0): Advanced Reasoning (Tree-of-Thoughts + Graph-of-Thoughts) ✅ COMPLETE
 - **Level 3c** (v0.6.0): Full 7-Layer Memory + Emotional Intelligence + Personalization ✅ COMPLETE
 - **Level 4a-c** (v0.7.0): Multi-Agent Orchestration (3 → 15 agents) ✅ COMPLETE
-- **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability) 🔜 NEXT
-- **Level 6** (v1.1.0): Self-Evolving (dual-loop architecture)
+- **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability) ✅ COMPLETE
+- **Level 6** (v1.1.0): Self-Evolving (dual-loop architecture) 🔜 NEXT
 
-**Current Status**: Level 4 (v0.7.0) - Multi-Agent Orchestration (3 → 15 agents) Complete | Test with `make test-dev`
+**Current Status**: Level 5 - Full Production + Observability Stack COMPLETE ✅ | Ready for Level 6 (Self-Evolving Architecture) | Test with `make test-dev`
 
 ## API Endpoints Reference
 
-All REST endpoints with descriptions and use cases:
+All REST endpoints (9 total):
 
-
-| Method | Endpoint | Description | Features |
-|--------|----------|-------------|----------|
-| **POST** | `/weather/query` | General weather queries with intelligent routing | • Runtime toggles: `enable_rag` (knowledge base), `enable_cot` (reasoning), `enable_memory` (context recall)<br>• Multi-layer caching: L1 (in-process <1ms), L2 (Redis <10ms), L3 (Anthropic prompt cache)<br>• 8 tools: 3 MCP (weather, hurricane, alerts) + 5 RAG (trends, patterns, comparison, knowledge retrieval, semantic search)<br>• Memory-aware responses with emotional intelligence and personalization<br>• Token optimization: <4K tokens/query via consolidation pipeline |
-| **POST** | `/weather/hurricane/alert` | Create hurricane alert with life-safety validation | • HITL approval workflow: Cat 1-2 auto-approved, Cat 3-5 require human approval<br>• Saffir-Simpson scale validation (wind speed must match category)<br>• Evacuation zone compliance (A-E letter-based zones)<br>• Time specificity enforcement (exact EDT/UTC hours, not "soon")<br>• LangGraph StateGraph with interrupt nodes for manual review |
-| **POST** | `/weather/hurricane/approve/{thread_id}` | Approve or reject pending hurricane alert | • Human review endpoint for Category 3+ hurricanes<br>• Accepts `approved: true/false` in request body<br>• Updates LangGraph checkpointer state and resumes workflow<br>• Thread-based state persistence (PostgreSQL in production, SQLite in dev) |
-| **GET** | `/health` | Service health check with detailed diagnostics | • Returns service status, implementation level (v0.6.0), timestamp<br>• Database connectivity checks (Redis, Neo4j, PostgreSQL, Qdrant)<br>• MCP server health verification (weather-mcp, hurricane-mcp)<br>• Memory system status (7-layer architecture validation) |
-| **POST** | `/cache/clear` | Clear all cache layers (L1 + L2) | • Development tool for test isolation<br>• Clears L1 in-process cache (Python dict)<br>• Clears L2 Redis cache (pattern-based key deletion)<br>• Returns detailed status with cleared layers and timestamp |
-| **GET** | `/cache/stats` | Retrieve cache performance statistics | • L1 cache metrics: hit rate, total requests, cache size<br>• L2 Redis metrics: distributed cache performance<br>• Overall hit rate across both layers<br>• Real-time cache health monitoring |
-rics: distributed cache performance<br>• Overall hit rate across both layers<br>• Real-time cache health monitoring |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| **POST** | `/weather/query` | Weather queries with AUTO-ROUTING (v0.6.0), multi-agent orchestration, RAG, CoT, memory, 3-layer caching |
+| **POST** | `/weather/hurricane/alert` | Create hurricane alert (Cat 1-2 auto-approved, Cat 3+ requires HITL approval) |
+| **POST** | `/weather/hurricane/approve/{thread_id}` | Approve or reject pending hurricane alerts (Cat 3+ only) |
+| **GET** | `/health` | Service health check with 9 monitored services (returns level: L4+L5c) |
+| **GET** | `/cache/stats` | Cache statistics for all 3 layers (L1 in-process, L2 Redis, L3 Anthropic) |
+| **POST** | `/cache/clear` | Clear L1 (in-process) and L2 (Redis) cache layers |
+| **POST** | `/cache/invalidate` | Invalidate specific cache entry at L1 and L2 |
+| **GET** | `/cache/config` | View current cache configuration (L1, L2, L3 settings) |
+| **GET** | `/metrics` | Prometheus metrics endpoint (text format for scraping) |
 
 **Access Points**:
 - **Swagger UI**: http://localhost:8000/docs (interactive testing)
@@ -754,28 +745,45 @@ rics: distributed cache performance<br>• Overall hit rate across both layers<b
 
 **Example Usage**:
 ```bash
-# Basic weather query (Level 1 - 3 MCP tools)
+# Simple weather query
 curl -X POST "http://localhost:8000/weather/query" \
   -H "Content-Type: application/json" \
-  -d '{"query": "What is the weather in Miami?"}'
+  -d '{"query": "What is the weather in Miami?", "user_id": "test_001"}'
 
-# Query with RAG enabled (Level 2 - 8 tools with knowledge base)
-curl -X POST "http://localhost:8000/weather/query?enable_rag=true" \
+# Hurricane query (triggers multi-agent routing)
+curl -X POST "http://localhost:8000/weather/query" \
   -H "Content-Type: application/json" \
-  -d '{"query": "What is a Category 5 hurricane?"}'
+  -d '{"query": "What is the status of Hurricane Milton?", "user_id": "test_002"}'
 
-# Query with CoT reasoning (5-step framework)
-curl -X POST "http://localhost:8000/weather/query?enable_rag=true&enable_cot=true" \
+# Emergency evacuation query (triggers l4b orchestration)
+curl -X POST "http://localhost:8000/weather/query" \
   -H "Content-Type: application/json" \
-  -d '{"query": "Should I evacuate for a Category 4 hurricane in Zone B?"}'
+  -d '{"query": "Should I evacuate from Tampa Beach?", "user_id": "test_003"}'
+
+# Create Category 4 hurricane alert (requires HITL approval)
+curl -X POST "http://localhost:8000/weather/hurricane/alert" \
+  -H "Content-Type: application/json" \
+  -d '{"category": 4, "message": "Cat 4 Hurricane approaching Tampa", "thread_id": "alert-001"}'
+
+# Approve pending alert
+curl -X POST "http://localhost:8000/weather/hurricane/approve/alert-001" \
+  -H "Content-Type: application/json" \
+  -d '{"approved": true, "reviewer_notes": "Verified with NHC"}'
 
 # Health check
 curl http://localhost:8000/health
-```
 
-**LangSmith Studio Graphs** (visual debugging):
-- `weather_agent`: Unified agent with configurable RAG + CoT (see [LANGSMITH_STUDIO_TESTING.md](./LANGSMITH_STUDIO_TESTING.md))
+# Cache statistics
+curl http://localhost:8000/cache/stats
+
+# Prometheus metrics
+curl http://localhost:8000/metrics
+```
+**LangGraph Studio Graphs** (4 graphs for visual debugging):
+- `weather_agent`: Unified agent with RAG + CoT
 - `weather_hitl_workflow`: Hurricane alert HITL approval workflow
+- `multi_agent_workflow`: Level 4a 3-agent orchestration
+- `level4b_workflow`: Level 4b 8-agent parallel execution
 
 ---
 
@@ -798,7 +806,8 @@ This single command:
 - **[Level 2 Test Guide](./docs/test-guide/LEVEL_2_TEST_GUIDE.md)** - RAG + CoT + Hybrid Search (6 Swagger tests + 6 Studio configs)
 - **[Level 3 Test Guide](./docs/test-guide/LEVEL_3_TEST_GUIDE.md)** - Memory + ToT/GoT
 - **[Level 4 Test Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md)** -  Multi-Agent Orchestration + Auto-Routing intelligence
-
+- **[Level 5 Test Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md)** - Eval + Guardrail + Observability
+- 
 **Prerequisites:** Docker services running
 ```bash
 make docker-up-dev
@@ -828,4 +837,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 0.7.0 | **Last Updated**: 2025-12-11
+**Version**: 0.10.7 | **Last Updated**: 2025-12-13
