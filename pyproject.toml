@@ -1,6 +1,6 @@
 [project]
 name = "weather-ai-agent-service"
-version = "0.10.0"  # Level 5c: Full Production + Observability Stack
+version = "0.10.7"  # Level 5c: Full Production + Observability Stack
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}

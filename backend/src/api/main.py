@@ -422,7 +422,7 @@ app = FastAPI(
         "**HITL Approval:**\n"
         "- Emergency tier queries may trigger human approval"
     ),
-    version="0.10.0",  # 🆕 Auto-routing version
+    version="0.10.7",  # 🆕 Auto-routing version
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,  # ✅ Modern pattern (FastAPI 0.100+)
