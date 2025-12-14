@@ -5,6 +5,10 @@ This script runs the golden dataset through the Weather AI Agent and
 evaluates results using the 4-pillar framework (Effectiveness, Efficiency,
 Robustness, Safety).
 
+Supports Level 5 and Level 6 evaluation types:
+- Level 5: 4-pillar evaluation (effectiveness, efficiency, robustness, safety)
+- Level 6: BLEU/ROUGE, Snapshot, Retrieval metrics, RAGAS, AgentBench
+
 Usage:
     uv run python scripts/run_batch_evaluation.py
 
@@ -13,6 +17,11 @@ Usage:
 
     # With options:
     uv run python scripts/run_batch_evaluation.py --max-cases=10 --category=hurricane
+
+    # Level 6 evaluations:
+    uv run python scripts/run_batch_evaluation.py --category=bleu_rouge
+    uv run python scripts/run_batch_evaluation.py --category=retrieval
+    uv run python scripts/run_batch_evaluation.py --level6-only
 """
 
 import asyncio
@@ -29,36 +38,54 @@ load_dotenv()
 # Import evaluation components
 from tests.evaluation.golden_dataset_runner import GoldenDatasetRunner
 
+# Level 6 categories
+LEVEL6_CATEGORIES = ["bleu_rouge", "snapshot", "retrieval", "ragas_recall", "agentbench"]
+
 
 async def run_batch_evaluation(
     max_cases: int | None = None,
     category: str | None = None,
     output_file: str | None = None,
+    level6_only: bool = False,
 ) -> dict[str, Any]:
     """Run batch evaluation with golden dataset.
 
     Args:
-        max_cases: Limit number of test cases (default: all 105)
-        category: Run only specific category (simple, complex, hurricane, edge)
+        max_cases: Limit number of test cases (default: all 185)
+        category: Run only specific category (simple, complex, hurricane, edge, bleu_rouge, etc.)
         output_file: Path to save results JSON (default: evaluation_results.json)
+        level6_only: Run only Level 6 evaluation categories
 
     Returns:
         Evaluation results dictionary
     """
     runner = GoldenDatasetRunner()
 
+    # Determine categories to run
+    categories_to_run = None
+    if level6_only:
+        categories_to_run = LEVEL6_CATEGORIES
+    elif category:
+        categories_to_run = [category]
+
+    is_level6 = category in LEVEL6_CATEGORIES if category else level6_only
+
     print("=" * 70)
     print("WEATHER AI AGENT - BATCH EVALUATION")
     print("=" * 70)
     print(f"Timestamp: {datetime.now().isoformat()}")
-    print(f"Max Cases: {max_cases or 'All (105)'}")
-    print(f"Category: {category or 'All'}")
+    print(f"Max Cases: {max_cases or 'All (185)'}")
+    print(f"Category: {category or ('Level 6 Only' if level6_only else 'All')}")
+    print(f"Level 6 Mode: {'Yes' if is_level6 else 'No'}")
     print()
 
     # Run evaluation
-    if category:
-        print(f"📊 Running evaluation for category: {category}")
-        results = await runner.run_category(category, max_cases=max_cases)
+    if categories_to_run and len(categories_to_run) == 1:
+        print(f"📊 Running evaluation for category: {categories_to_run[0]}")
+        results = await runner.run_category(categories_to_run[0], max_cases=max_cases)
+    elif categories_to_run:
+        print(f"📊 Running evaluation for categories: {', '.join(categories_to_run)}")
+        results = await runner.run_all(categories=categories_to_run, max_cases=max_cases)
     else:
         print("📊 Running full evaluation (all categories)")
         results = await runner.run_all(max_cases=max_cases)
@@ -93,6 +120,8 @@ async def run_batch_evaluation(
         "timestamp": datetime.now().isoformat(),
         "max_cases": max_cases,
         "category": category,
+        "level6_only": level6_only,
+        "is_level6_evaluation": is_level6,
         "total_cases": results.total_cases,
         "passed_cases": results.passed_cases,
         "failed_cases": results.failed_cases,
@@ -107,6 +136,14 @@ async def run_batch_evaluation(
         "quality_gates": gates,
         "all_gates_passed": all(gate_status),
     }
+
+    # Add Level 6 specific metrics if applicable
+    if is_level6:
+        results_dict["level6_metrics"] = {
+            "category": category or "all_level6",
+            "eval_types_tested": LEVEL6_CATEGORIES if level6_only else [category] if category else [],
+            "note": "See LangSmith traces for detailed BLEU/ROUGE, Retrieval, RAGAS, and AgentBench metrics",
+        }
 
     with open(output_path, "w") as f:
         json.dump(results_dict, f, indent=2, default=str)
@@ -135,14 +172,22 @@ def main():
         "--max-cases",
         type=int,
         default=None,
-        help="Maximum number of test cases to run (default: all 105)",
+        help="Maximum number of test cases to run (default: all 185)",
     )
     parser.add_argument(
         "--category",
         type=str,
-        choices=["simple", "complex", "hurricane", "edge"],
+        choices=[
+            "simple", "complex", "hurricane", "edge",  # Level 5
+            "bleu_rouge", "snapshot", "retrieval", "ragas_recall", "agentbench",  # Level 6
+        ],
         default=None,
-        help="Run only specific category",
+        help="Run only specific category (Level 5 or Level 6)",
+    )
+    parser.add_argument(
+        "--level6-only",
+        action="store_true",
+        help="Run only Level 6 evaluation categories (BLEU/ROUGE, Snapshot, Retrieval, RAGAS, AgentBench)",
     )
     parser.add_argument(
         "--output",
@@ -159,6 +204,7 @@ def main():
             max_cases=args.max_cases,
             category=args.category,
             output_file=args.output,
+            level6_only=args.level6_only,
         )
     )
 

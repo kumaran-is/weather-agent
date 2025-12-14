@@ -1,6 +1,6 @@
 [project]
 name = "weather-ai-agent-service"
-version = "0.10.7"  # Level 5c: Full Production + Observability Stack
+version = "1.3.1"  # Level 6: Priority 1 & 2 Fixes (Hurricane Validation + PII Sanitization)
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
@@ -57,6 +57,14 @@ dependencies = [
     # NOTE: Using Qdrant (already installed) for semantic memory instead of ChromaDB
     # ChromaDB has onnxruntime dependency incompatible with macOS <13
     "textblob>=0.18.0,<1.0.0", # Sentiment analysis (Layer 6 - emotional memory)
+    # Level 6a: Context Optimization + Advanced Evaluation
+    "tiktoken>=0.8.0,<1.0.0",  # Token counting (context optimization)
+    "ragas>=0.2.0",  # RAG evaluation metrics (Faithfulness, Context Precision/Recall)
+    "datasets>=3.0.0",  # Required by Ragas for dataset handling
+    "deepeval>=2.0.0",  # LLM unit testing framework
+    # Level 6c: Additional Metrics
+    "rouge-score>=0.1.2",  # ROUGE metrics for summarization quality
+    "nltk>=3.9.0",  # BLEU score for text similarity
 ]
 
 [project.optional-dependencies]
@@ -74,6 +82,13 @@ consolidation = [
     #  "sentence-transformers>=3.3.0,<4.0.0",  # Phase 5: Semantic deduplication (requires macOS 13+)
     # NOTE: sentence-transformers has onnxruntime dependency incompatible with macOS <13
     # Alternative: Use simple embedding models or ChromaDB's built-in similarity for deduplication
+]
+level6 = [
+    # Level 6b: Self-Improvement + Real-time Evaluation
+    "trulens-eval>=1.0.0",  # Real-time RAG evaluation
+    "hypothesis>=6.0.0",  # Property-based testing (Level 6c)
+    # Level 6b: Tool Marketplace (optional - requires API keys)
+    "composio-core>=0.4.0",  # Enterprise tool marketplace
 ]
 
 [build-system]

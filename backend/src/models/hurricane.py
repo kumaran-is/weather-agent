@@ -11,15 +11,19 @@ Level 1 Implementation:
 Level 2 Enhancements:
 - Added timestamp to HurricaneAlertResponse for tracking
 
+Level 3+ Enhancements (2025-12-14):
+- ✅ Added Saffir-Simpson scale validation (category must match wind speed)
+- ✅ Added field validator to HurricaneAlertRequest
+
 Future Levels:
-- Level 3+: Add Saffir-Simpson scale validation (category must match wind speed)
 - Level 5+: Add evacuation zone validation and life-safety checks
 """
 
-from pydantic import BaseModel, Field
-from typing import Literal
+from pydantic import BaseModel, Field, field_validator
+from typing import Literal, ClassVar
 from datetime import datetime, timezone
 import uuid
+import re
 
 
 class HurricaneAlertRequest(BaseModel):
@@ -29,11 +33,27 @@ class HurricaneAlertRequest(BaseModel):
     - Category 1-2: Auto-approved, sent immediately
     - Category 3-5: Requires human approval before sending
 
+    Saffir-Simpson Scale Validation (CRITICAL):
+    - Category 1: 74-95 mph
+    - Category 2: 96-110 mph
+    - Category 3: 111-129 mph (MAJOR)
+    - Category 4: 130-156 mph (MAJOR)
+    - Category 5: 157+ mph (CATASTROPHIC)
+
     Test Scenarios (from test guide):
     - Scenario 28.1: Cat 1-2 (no HITL)
     - Scenario 28.2: Cat 3-4 (HITL triggered)
     - Scenario 28.3: Cat 5 (maximum alert)
     """
+
+    # Saffir-Simpson Scale (wind speeds in mph) - ClassVar to avoid Pydantic field error
+    SAFFIR_SIMPSON: ClassVar[dict[int, tuple[int, float]]] = {
+        1: (74, 95),
+        2: (96, 110),
+        3: (111, 129),
+        4: (130, 156),
+        5: (157, float("inf")),
+    }
 
     model_config = {
         "json_schema_extra": {
@@ -73,6 +93,66 @@ class HurricaneAlertRequest(BaseModel):
         default_factory=lambda: str(uuid.uuid4()),
         description="Unique thread ID for tracking this alert workflow"
     )
+
+    @field_validator('message')
+    @classmethod
+    def validate_category_matches_wind_speed(cls, v: str, info) -> str:
+        """Validate that stated wind speed matches hurricane category (Saffir-Simpson Scale).
+
+        LIFE-SAFETY CRITICAL: Zero tolerance for category-wind mismatches.
+
+        Args:
+            v: Message text
+            info: Validation context (contains category field)
+
+        Returns:
+            Original message if validation passes
+
+        Raises:
+            ValueError: If wind speed doesn't match stated category
+        """
+        # Get category from model data
+        category = info.data.get('category')
+        if category is None:
+            return v  # Category will be validated by its own Field constraints
+
+        # Extract wind speed from message (if present)
+        wind_pattern = r"(\d{2,3})\s*(?:mph|miles per hour)"
+        wind_matches = re.findall(wind_pattern, v, re.IGNORECASE)
+
+        if not wind_matches:
+            return v  # No wind speed stated, nothing to validate
+
+        # Validate each wind speed mention matches the category
+        min_wind, max_wind = cls.SAFFIR_SIMPSON[category]
+
+        for wind_str in wind_matches:
+            wind_mph = int(wind_str)
+
+            # Check if wind speed is within category range
+            if wind_mph < min_wind:
+                raise ValueError(
+                    f"Hurricane Category {category} requires {min_wind}-"
+                    f"{max_wind if max_wind != float('inf') else '∞'} mph winds, "
+                    f"but message states {wind_mph} mph. "
+                    f"This violates the Saffir-Simpson Hurricane Wind Scale."
+                )
+            elif wind_mph > max_wind:
+                # Determine correct category
+                correct_cat = None
+                for cat, (min_w, max_w) in cls.SAFFIR_SIMPSON.items():
+                    if min_w <= wind_mph <= max_w:
+                        correct_cat = cat
+                        break
+
+                raise ValueError(
+                    f"Wind speed of {wind_mph} mph indicates Category {correct_cat}, "
+                    f"not Category {category}. Message states Category {category} but "
+                    f"Category {category} maximum is {max_wind} mph. "
+                    f"This violates the Saffir-Simpson Hurricane Wind Scale."
+                )
+
+        return v
 
 
 class HurricaneAlertResponse(BaseModel):
