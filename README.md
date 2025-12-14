@@ -6,16 +6,15 @@
 [![LangGraph 1.0+](https://img.shields.io/badge/langgraph-1.0+-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-Dual%20Servers-orange)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.10.7-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](./CHANGELOG.md)
 
-**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Evaluation, guardrails and comprehensive observability.
+**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, comprehensive golden dataset evaluation with ZERO safety violations, guardrails and observability.
 
-**From zero to production** Progressive implementation showcasing enterprise AI patterns, multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction) and production deployment strategies.
+**From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), full observability stack (Prometheus, Grafana, Loki), adversarial testing, LLM-as-Judge, Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt), constitutional AI (12-layer safety guardrails), and **[planned]** self-evolving agentic dual-loop architecture for continuous improvement.
 
-**How It Works:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), and full observability stack (Prometheus, Grafana, Loki
+**How It Works:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), Comprehensive golden dataset evaluation and full observability stack (Prometheus, Grafana, Loki
 
-**Current Stage**: ✅ **Level 5 Complete** — Evaluation, Guardrail + Observability Stack 
-
+**Current Stage**: ✅ **Level 6 Complete**  — Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt)
 
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
 
@@ -27,6 +26,7 @@
   - [Table of Contents](#table-of-contents)
   - [Technology Stack](#technology-stack)
   - [Testing Tools \& Interfaces](#testing-tools--interfaces)
+  - [| **Level 10** | Context Engineering \& Optimization|  | 📋 Planned |](#-level-10--context-engineering--optimization----planned-)
   - [Quick Start](#quick-start)
     - [System Requirements](#system-requirements)
     - [Prerequisites](#prerequisites)
@@ -149,9 +149,12 @@ Quick reference for testing and debugging the Weather AI Agent:
 | **Level 2** | [RAG + CoT Guide](./docs/test-guide/LEVEL_2_TEST_GUIDE.md) | 603 docs, hybrid search, CoT reasoning | ✅ Complete |
 | **Level 3** | [Memory + Reasoning Guide](./docs/test-guide/LEVEL_3_TEST_GUIDE.md) | 7-layer memory, ToT/GoT, emotional intelligence | ✅ Complete |
 | **Level 4** | [Multi-Agent Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md) | 15-agent orchestration, auto-routing | ✅ Complete |
-| **Level 5** | [Evaluation + Guardrail Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md) | Caching (L1/L2/L3), Prometheus, Swagger UI (37 scenarios) | ✅ Complete |
-| **Level 6** | TBD | Self-evolving architecture | 📋 Planned |
-
+| **Level 5** | [Evaluation + Guardrail Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md) | Caching (L1/L2/L3), Prometheus, Swagger UI | ✅ Complete |
+| **Level 6** | [Advanced Evaluation + Self-Improvement](./docs/test-guide/LEVEL_6_TEST_GUIDE.md) |  | ✅ Complete |
+| **Level 7** | MCP Tool Dynamic Registry = Context Optimization |  | 📋 Planned |
+| **Level 8** | Self Evolving Agenitc Dual-Loop Architecture |  | 📋 Planned |
+| **Level 9** | Advanced HITL |  | 📋 Planned |
+| **Level 10** | Context Engineering & Optimization|  | 📋 Planned |
 ---
 
 ## Quick Start
@@ -230,6 +233,7 @@ Edit `.env` with your configuration. Below are all available settings organized 
 | Variable | Required | Get From | Description |
 |----------|----------|----------|-------------|
 | `OPENAI_API_KEY` | **YES** | [OpenAI Platform](https://platform.openai.com/api-keys) | Used for GPT-4o-mini LLM and text-embedding-3-small |
+| `ANTHROPIC_API_KEY` | **Nice-to-have** | [Anthropic Platform](https://console.anthropic.com/settings/keys) | Used for claude-3-5-sonnet LLM as Judge |
 | `LANGCHAIN_API_KEY` | **YES** | [LangSmith](https://smith.langchain.com/) | Enable tracing and debugging (optional for local dev) |
 
 ### MCP Server Configuration
@@ -627,7 +631,7 @@ make eval-full
 
 ```
 weather-agent/
-├── backend/                     # Backend application 
+├── backend/                     # Backend application (Level 5c Complete)
 │   ├── config/                  # Configuration (SINGLE LOCATION)
 │   │   ├── settings.py          # Centralized app settings (50+ env vars)
 │   │   ├── llm_config.py        # LLM use case configuration
@@ -674,12 +678,12 @@ weather-agent/
 ├── langgraph.json               # LangGraph Studio (4 graphs)
 ├── LICENSE                      # MIT License
 ├── Makefile                     # Development and deployment commands
-├── pyproject.toml               # Project config (v0.10.0)
+├── pyproject.toml               # Project config (v1.3.1)
 └── README.md                    # This file
 ```
 
-**Key Highlights** (v0.7.0 - Level 4 COMPLETE):
-- **backend/src/**: ✅ Level 1 + Level 2 + Level 3 + Level 4 COMPLETE + Level 5a COMPLETE
+**Key Directories**:
+- **backend/src/agents/**: 15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
   - **routing/**: Auto-routing system v0.6.0 (~500 lines, <1ms classification)
   - **agents/**:  15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
   - **memory/**: 7-layer memory (conversation, session, episodic, semantic, procedural, emotional, reflective)
@@ -695,17 +699,6 @@ weather-agent/
 - **tests/**: 20 test modules covering MCP, RAG, HITL, API, memory, reasoning, routing, cache, Level 4c agents
 - **langgraph.json**: 2 graphs configured (weather_agent, weather_hitl_workflow)
 - **Makefile**: Commands (setup, RAG, Docker, Evaluating, testing)
-
-**Level 4 Achievements**:
-- ✅ 15-agent production system (3-agent → 8-agent → 15-agent progression)
-- ✅ Multi-agent orchestration with supervisor pattern and parallel execution
-- ✅ Production resilience: Circuit breakers, load-aware routing, cost optimization
-- ✅ Advanced intelligence: Meta-prompts, debate agents, self-healing
-- ✅ Overall accuracy: 67% → 94% (+27 points, +40% relative improvement)
-- ✅ Latency optimization: 8.7s → 4.2s (-52%, -4.5s absolute)
-- ✅ Availability: 94.2% → 99.91% (+5.71 points, exceeds 99.9% SLA)
-- ✅ Cost reduction: $0.021 → $0.011 per query (-48% via tiered routing)
-- ✅ Zero cascade failures (47 circuit breaker activations during Hurricane Milton)
   
 **Note:** We use both `pyproject.toml` (defines what dependencies you want) and `uv.lock` (locks exact versions) to ensure reproducible builds across all environments.
 
@@ -718,9 +711,15 @@ weather-agent/
 - **Level 3c** (v0.6.0): Full 7-Layer Memory + Emotional Intelligence + Personalization ✅ COMPLETE
 - **Level 4a-c** (v0.7.0): Multi-Agent Orchestration (3 → 15 agents) ✅ COMPLETE
 - **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability) ✅ COMPLETE
-- **Level 6** (v1.1.0): Self-Evolving (dual-loop architecture) 🔜 NEXT
+- **Level 6** (v1.3.0): Self-Evolving AI Platform ✅ COMPLETE
+  - Level 6a: Context Optimization + Ragas/DeepEval Evaluation ✅ COMPLETE
+  - Level 6b: TruLens + AgentBench + Auto-Prompt Engineering ✅ COMPLETE
+  - Level 6c: Constitutional AI + Production Testing Infrastructure ✅ COMPLETE
+- **Level 7** : MCP Tool Dynamic Registry + Context Optimization 🔜 NEXT
+- **Level 8** : Self Evolving Agenitc Architecture 🔜 NEXT
+- **Level 9** : Advanced HITL 🔜 NEXT
 
-**Current Status**: Level 5 - Full Production + Observability Stack COMPLETE ✅ | Ready for Level 6 (Self-Evolving Architecture) | Test with `make test-dev`
+**Current Status**: Level 6 - Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt) COMPLETE ✅ | Ready for Level 7 MCP Tool Dynamic Registry | Test with `make test-dev`
 
 ## API Endpoints Reference
 
@@ -837,4 +836,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 0.10.7 | **Last Updated**: 2025-12-13
+**Version**: 1.3.1 | **Last Updated**: 2025-12-14

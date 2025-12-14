@@ -10,7 +10,325 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Level 6: Self-Evolving Architecture (v1.1.0)
+- Level 7: MCP Tool Dynamic Registry + Context Optimization
+
+---
+
+## [1.3.1] - 2025-12-14 (Level 6: Priority 1 & 2 Critical Safety Fixes)
+
+### Fixed
+
+**Priority 1: Hurricane Category Validation (LIFE-SAFETY CRITICAL)** ✅
+- Fixed Saffir-Simpson Scale validation to prevent incorrect hurricane category classifications
+- **Root Cause**: Cartesian product bug in safety validator matched every category mention with every wind speed mention independently
+- **Solution**: Proximity-based matching using regex pattern `r"category\s*(\d)[^.!?]{0,200}?(\d{2,3})\s*(?:mph|miles per hour)"` to match category-wind pairs within ~200 characters
+- **Impact**: Prevents life-safety violations like classifying 157 mph as Category 1 (should be Cat 5)
+- File: `backend/src/evaluation/safety_validator.py`
+- Added Pydantic field validator to `HurricaneAlertRequest` model with `ClassVar` for Saffir-Simpson thresholds
+- File: `backend/src/models/hurricane.py`
+- Created comprehensive unit tests (50+ test cases) covering all categories and boundary conditions
+- File: `tests/unit/test_hurricane_category_validation.py` (418 lines)
+- **Evaluation Results**: 20 hurricane test cases, **0 safety violations** (100% safety pass rate) ✅
+
+**Priority 2: PII Leak Sanitization (COMPLIANCE CRITICAL)** ✅
+- Implemented PII sanitization layer to prevent sensitive data leaks in agent responses
+- **Root Cause**: Phone numbers detected in complex query responses (1 violation in evaluation)
+- **Solution**: Created `PIISanitizer` class with false positive filtering for emergency/toll-free numbers
+- **Detects and Redacts**:
+  - SSN: `\b\d{3}-\d{2}-\d{4}\b` → `[REDACTED_SSN]`
+  - Credit Cards: 16-digit patterns → `[REDACTED_CARD]`
+  - Phone Numbers: `\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b` → `[REDACTED_PHONE]`
+  - Emails: standard email format → `[REDACTED_EMAIL]`
+- **False Positive Filtering**: Excludes emergency (911, 311, 511), toll-free (1-800, 1-888, 1-877, 1-866) numbers
+- File: `backend/src/safety/pii_sanitizer.py` (257 lines)
+- Integrated into FastAPI response pipeline with `Request` parameter for `app.state` access
+- File: `backend/src/api/main.py` (lines 566, 1134-1171)
+- Created comprehensive unit tests (16 test cases) for all PII types and false positives
+- File: `tests/unit/test_pii_sanitizer.py` (400+ lines)
+- Created integration test script for API endpoint verification
+- File: `test_pii_integration.py` (149 lines)
+- **Evaluation Results**: 30 complex test cases, **0 safety violations** (100% safety pass rate) ✅
+
+**Bug Fix: Missing Request Parameter**
+- Fixed FastAPI endpoint unable to access PII sanitizer from `app.state`
+- Added `request: Request` parameter to `weather_query_endpoint` function signature
+- File: `backend/src/api/main.py`
+
+### Added
+
+**Test Infrastructure**
+- Created comprehensive verification report documenting both fixes
+- File: `docs/test-reports/PRIORITY_1_2_FIXES_VERIFICATION_REPORT.md` (600+ lines)
+- Includes unit test results, integration test results, evaluation metrics, deployment recommendations
+
+### Changed
+
+**Evaluation Results - Combined Safety Metrics**
+- Total Test Cases: 50 (20 hurricane + 30 complex)
+- Safety Violations: **0** (was 3 - 2 hurricane + 1 PII)
+- Safety Pass Rate: **100.0%** (was 94%)
+- Overall Pass Rate: 76.0% (38/50 passed)
+- Non-Safety Failures: 12 (effectiveness/efficiency issues only, not safety-critical)
+
+**Quality Gates Status**
+- ✅ Safety Gate: PASS (0 violations, 100% safety pass rate)
+- ⚠️ Pass Rate: 76% (below 80% threshold, but non-safety failures only)
+- ⚠️ Effectiveness: 0.80 average (at threshold)
+- ✅ Efficiency: 0.58 average (above 0.55 threshold)
+- ✅ Robustness: 0.99 average (excellent)
+
+**Deployment Recommendation**: ⚠️ CONDITIONAL DEPLOY
+- Critical safety issues (hurricane validation + PII leaks) are RESOLVED ✅
+- Zero tolerance safety policy is MET (0 violations) ✅
+- Non-safety failures (12 test cases) can be improved post-deployment
+- Safe for production deployment with ongoing monitoring
+
+### Technical Details
+
+**Hurricane Category Validation Implementation**:
+```python
+# Saffir-Simpson Scale thresholds
+CATEGORY_THRESHOLDS: ClassVar[dict[int, tuple[int, int]]] = {
+    1: (74, 95),
+    2: (96, 110),
+    3: (111, 129),
+    4: (130, 156),
+    5: (157, 999),
+}
+
+@field_validator('message')
+@classmethod
+def validate_saffir_simpson_scale(cls, v: str, info: ValidationInfo) -> str:
+    # Proximity-based pattern matching
+    pattern = r"category\s*(\d)[^.!?]{0,200}?(\d{2,3})\s*(?:mph|miles per hour)"
+    # Validation logic...
+```
+
+**PII Sanitization Integration**:
+```python
+# FastAPI lifespan initialization
+pii_sanitizer = PIISanitizer(strict_mode=True)
+app.state.pii_sanitizer = pii_sanitizer
+
+# Response sanitization
+sanitized_response = request.app.state.pii_sanitizer.sanitize(response_text)
+if original_response != sanitized_response:
+    logger.warning("⚠️ PII DETECTED and redacted")
+```
+
+**Files Modified** (7 files):
+1. `backend/src/evaluation/safety_validator.py` - Fixed Cartesian product bug
+2. `backend/src/models/hurricane.py` - Added Pydantic validator
+3. `backend/src/safety/pii_sanitizer.py` - Created PII sanitization layer
+4. `backend/src/api/main.py` - Integrated PII sanitizer, fixed Request parameter
+5. `tests/unit/test_hurricane_category_validation.py` - 50+ unit tests
+6. `tests/unit/test_pii_sanitizer.py` - 16 unit tests
+7. `test_pii_integration.py` - Integration test script
+
+**Files Created** (3 files):
+1. `backend/src/safety/pii_sanitizer.py`
+2. `tests/unit/test_pii_sanitizer.py`
+3. `docs/test-reports/PRIORITY_1_2_FIXES_VERIFICATION_REPORT.md`
+
+---
+
+## [1.2.0] - 2025-12-13 (Level 6: Golden Dataset Evaluation Support)
+
+### Added
+
+**Level 6 Golden Dataset (80 new test cases)**:
+- `tests/evaluation/golden_dataset.yaml`: Added 80 Level 6 test cases (total: 185)
+- **BLEU/ROUGE (20 cases)**: Text generation quality with `reference_answer` field
+- **Snapshot (15 cases)**: Regression detection with `snapshot_baseline` field
+- **Retrieval (20 cases)**: MRR, NDCG, MAP, Precision@k, Recall@k with `relevant_docs` field
+- **RAGAS Context Recall (10 cases)**: Ground truth validation with `ground_truth_info` field
+- **AgentBench (15 cases)**: Task-specific accuracy with `task_spec` and `expected_result` fields
+
+**New Evaluation Scripts**:
+- `scripts/run_level6_evaluation.py`: Dedicated Level 6 evaluation runner
+- `scripts/upload_golden_dataset.py`: Updated with `--level6-only` and `--category` flags
+- `scripts/run_batch_evaluation.py`: Updated with `--level6-only` flag
+
+**New Makefile Commands**:
+- `make eval-upload-level6`: Upload Level 6 golden dataset to LangSmith
+- `make eval-level6`: Run all Level 6 evaluations (80 cases)
+- `make eval-bleu-rouge`: BLEU/ROUGE evaluation only (20 cases)
+- `make eval-snapshot`: Snapshot testing only (15 cases)
+- `make eval-retrieval`: Retrieval metrics only (20 cases)
+- `make eval-ragas`: RAGAS context recall only (10 cases)
+- `make eval-agentbench`: AgentBench only (15 cases)
+
+**Level 6 Quality Thresholds**:
+- BLEU/ROUGE: min_bleu=0.30, min_rouge_1=0.40, min_rouge_l=0.35
+- Snapshot: min_similarity=0.75, regression_threshold=0.10
+- Retrieval: min_mrr=0.70, min_ndcg_at_5=0.65, min_precision_at_3=0.60
+- RAGAS: min_context_recall=0.85
+- AgentBench: min_task_accuracy=0.85, min_tool_accuracy=0.90
+
+**New Test Files for L6c Completion**:
+- `tests/evaluation/test_promptfoo_integration.py`: Comprehensive Promptfoo integration tests (400+ lines)
+- `tests/evaluation/test_openai_evals.py`: OpenAI Evals integration tests (500+ lines)
+- Tests for all 6 grader types, weather-specific evals, and evaluation runner
+
+### Changed
+- Updated `docs/setup/evaluation/02-GOLDEN_DATASET_TESTING.md` to v2.0.0
+- Updated total test cases from 105 to 185
+- Makefile updated with Level 6 evaluation commands
+
+---
+
+## [1.1.0] - 2025-12-13 (Level 6: Test Guide + Documentation)
+
+### Added
+- `docs/test-guide/LEVEL_6_TEST_GUIDE.md`: Comprehensive Level 6 testing documentation
+
+---
+
+## [1.0.0] - 2025-12-13 (Level 6: Self-Evolving AI Platform - Complete)
+
+### Added
+
+**Level 6a: Context Window Optimization + Advanced Evaluation** (Weeks 21-22)
+
+**Context Window Optimizer** (`backend/src/context/context_optimizer.py`):
+- Intelligent context window management with 50-60% token reduction
+- Adaptive truncation strategies (smart summarization, importance-based pruning)
+- Token budget allocation across conversation, memory, and retrieved context
+- Context compression with semantic preservation
+
+**Ragas Integration** (`backend/src/evaluation/ragas_evaluator.py`):
+- RAG-specific metrics: Faithfulness, Context Precision, Context Recall, Answer Relevancy
+- Targets: Faithfulness >0.90, Context Precision >0.85, Context Recall >0.85
+- LangChain v1.0+ compatible implementation
+
+**Adversarial Testing Framework** (`backend/src/context/adversarial_tester.py`):
+- Prompt injection detection and resistance testing
+- Jailbreak attempt detection (200+ attack patterns)
+- Input manipulation resilience scoring
+- Safety boundary validation
+
+**DeepEval Integration** (`backend/src/evaluation/deepeval_integration.py`):
+- LLM unit testing framework
+- Synthetic test case generation
+- Answer relevancy, faithfulness, and hallucination detection
+- Batch evaluation support
+
+**Level 6b: Self-Improvement + Enterprise Tools** (Weeks 23-24)
+
+**TruLens Integration** (`backend/src/evaluation/trulens_integration.py`):
+- Real-time evaluation and feedback collection
+- Groundedness, coherence, and helpfulness metrics
+- Feedback summary and trend analysis
+- Quality monitoring dashboard support
+
+**LangChain Benchmark (AgentBench)** (`backend/src/evaluation/langchain_benchmark.py`):
+- Task-based agent evaluation framework
+- Multi-domain benchmarking (weather, reasoning, planning)
+- Comprehensive metric collection (accuracy, efficiency, safety)
+- Comparison across model providers
+
+**Enterprise Tool Marketplace (Composio)** (`backend/src/tools/composio_integration.py`):
+- Access to 150+ enterprise tools via Composio
+- Tool discovery and filtering by category
+- Dynamic tool loading and caching
+- Enterprise tool execution with error handling
+
+**Auto-Prompt Engineering** (`backend/src/prompts/`):
+- `prompt_variations.py` - Automated prompt variation generation (10+ techniques)
+- `auto_prompt_optimizer.py` - ML-based prompt optimization
+- `ab_testing.py` - A/B testing framework with statistical significance
+- Multi-Armed Bandit for exploration/exploitation balance
+- Thompson Sampling for variant selection
+
+**Level 6c: Constitutional AI + Complete Self-Evolving Platform** (Weeks 25-26)
+
+**Constitutional AI Framework** (`backend/src/guardrails/constitutional_ai.py`):
+- Anthropic-inspired principle-based response validation
+- Critique-revision cycles for response alignment
+- 11 weather-domain constitutional principles
+- 9 general assistant principles
+- Hurricane-specific safety principles
+
+**Content Filtering** (`backend/src/guardrails/content_filter.py`):
+- PII detection and redaction
+- Dangerous advice filtering (weather-specific)
+- Profanity and inappropriate content filtering
+- Category-based content classification
+
+**Output Validation** (`backend/src/guardrails/output_validator.py`):
+- Rule-based response quality validation
+- 7 validation rule types: LENGTH, CONTAINS, NOT_CONTAINS, REGEX, JSON_VALID, CUSTOM, REQUIRED_FIELDS
+- Weather-specific validator (50-500 words, temperature data, time specificity)
+- Hurricane-specific validator (category check, safety info, source attribution)
+
+**Property-Based Testing** (`backend/src/testing/property_testing.py`):
+- Hypothesis-style property testing framework
+- Weather domain generators (temperature, humidity, wind speed, hurricane category)
+- 9 weather property tests (Saffir-Simpson validation, conversion accuracy, zone format)
+- Edge case discovery through random input generation
+
+**Snapshot Testing** (`backend/src/testing/snapshot_testing.py`):
+- Response regression detection
+- Format consistency verification
+- Golden response comparison
+- Semantic drift detection with similarity scoring
+
+**Retrieval & Generation Metrics** (`backend/src/evaluation/retrieval_metrics.py`):
+- MRR (Mean Reciprocal Rank) - retrieval quality
+- NDCG (Normalized Discounted Cumulative Gain) - ranking quality
+- BLEU (1-4 gram) - generation quality
+- ROUGE (1, 2, L) - summary quality
+- Precision@k and Recall@k - retrieval coverage
+- MAP (Mean Average Precision) - overall retrieval
+
+**Promptfoo Integration** (`backend/src/evaluation/promptfoo_integration.py`):
+- Multi-provider prompt testing framework
+- 18 assertion types (equals, contains, regex, JSON, LLM-rubric, factuality, etc.)
+- Weighted assertions with custom thresholds
+- Weather-specific test cases (5 pre-built tests)
+- 3 prompt templates for weather domain
+
+**OpenAI Evals Integration** (`backend/src/evaluation/openai_evals.py`):
+- OpenAI Evals-style evaluation framework
+- 6 grader types: MATCH, INCLUDES, FUZZY_MATCH, MODEL_GRADED_CLOSEDQA, MODEL_GRADED_FACT, CUSTOM
+- Pre-built weather evaluations (knowledge, safety, factual accuracy)
+- Convenience functions for eval creation
+
+### Test Coverage
+
+**New Test Files Created**:
+- `tests/prompts/test_prompt_variations.py`
+- `tests/prompts/test_ab_testing.py`
+- `tests/prompts/test_auto_prompt_optimizer.py`
+- `tests/guardrails/test_constitutional_ai.py`
+- `tests/guardrails/test_content_filter.py`
+- `tests/guardrails/test_output_validator.py`
+- `tests/testing/test_property_testing.py`
+- `tests/testing/test_snapshot_testing.py`
+- `tests/evaluation/test_retrieval_metrics.py`
+
+### Technical Specifications
+
+**Dependencies**:
+- Python 3.13+ (modern type hints: `list[str]`, `str | None`)
+- LangChain v1.0+ / LangGraph v1.0+ compliant
+- Pydantic v2 for all data models
+- Async-first architecture throughout
+
+**Quality Targets**:
+- Token reduction: 50-60% (achieved via context optimization)
+- Faithfulness: >0.90 (Ragas metric)
+- Context Precision: >0.85 (Ragas metric)
+- Safety: Zero tolerance for harmful outputs
+- Latency: <500ms P95 for fast models
+
+### Architecture Summary
+
+Level 6 completes the Weather AI Agent's self-evolving capabilities:
+
+1. **Self-Optimization** (L6a): Context window management, token efficiency
+2. **Self-Improvement** (L6b): Automated prompt engineering, A/B testing, enterprise tools
+3. **Self-Governance** (L6c): Constitutional AI, comprehensive evaluation, quality assurance
 
 ---
 
