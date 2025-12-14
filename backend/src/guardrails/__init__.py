@@ -17,6 +17,11 @@ Layers:
     L11: Encryption - Data protection at rest and in transit
     L12: Compliance Reporting - Regulatory compliance tracking
 
+Level 6c Additions:
+    - Constitutional AI - Principle-based response validation
+    - Content Filtering - Harmful content detection
+    - Output Validator - Response quality assurance
+
 Usage:
     >>> from backend.src.guardrails import GuardrailManager
     >>> manager = GuardrailManager()
@@ -25,6 +30,13 @@ Usage:
     ...     # Process query
     ...     response = await agent.run(query)
     ...     output_result = await manager.check_output(response, query)
+
+Constitutional AI Usage:
+    >>> from backend.src.guardrails import ConstitutionalAI, Constitution
+    >>> constitution = Constitution.weather_domain()
+    >>> constitutional_ai = ConstitutionalAI(constitution=constitution)
+    >>> result = await constitutional_ai.validate_response(query, response)
+    >>> print(f"Passes: {result.passes}, Score: {result.score}")
 """
 
 from backend.src.guardrails.models import (
@@ -39,6 +51,28 @@ from backend.src.guardrails.models import (
 )
 from backend.src.guardrails.guardrail_manager import GuardrailManager
 
+# Level 6c: Constitutional AI and Enhanced Guardrails
+from backend.src.guardrails.constitutional_ai import (
+    ConstitutionalAI,
+    Constitution,
+    Principle,
+    PrincipleCategory,
+    ConstitutionalResult,
+    CritiqueResult,
+    RevisionResult,
+)
+from backend.src.guardrails.content_filter import (
+    ContentFilter,
+    ContentFilterResult,
+    FilterCategory,
+)
+from backend.src.guardrails.output_validator import (
+    OutputValidator,
+    ValidationResult,
+    ValidationRule,
+    RuleType,
+)
+
 __all__ = [
     # Main manager
     "GuardrailManager",
@@ -51,4 +85,21 @@ __all__ = [
     "ViolationSeverity",
     "ComplianceFramework",
     "AuditLogEntry",
+    # Constitutional AI (Level 6c)
+    "ConstitutionalAI",
+    "Constitution",
+    "Principle",
+    "PrincipleCategory",
+    "ConstitutionalResult",
+    "CritiqueResult",
+    "RevisionResult",
+    # Content Filter (Level 6c)
+    "ContentFilter",
+    "ContentFilterResult",
+    "FilterCategory",
+    # Output Validator (Level 6c)
+    "OutputValidator",
+    "ValidationResult",
+    "ValidationRule",
+    "RuleType",
 ]

@@ -162,10 +162,10 @@ class Settings(BaseSettings):
     )
 
     MCP_WEATHER_REQUEST_TIMEOUT: int = Field(
-        default=30,
-        description="Weather MCP request timeout in seconds (default: 30s)",
+        default=90,
+        description="Weather MCP request timeout in seconds (default: 90s to accommodate retry cascades)",
         ge=5,
-        le=120
+        le=180
     )
 
     MCP_WEATHER_HEALTH_CHECK_TIMEOUT: int = Field(
@@ -198,10 +198,10 @@ class Settings(BaseSettings):
     )
 
     MCP_HURRICANE_REQUEST_TIMEOUT: int = Field(
-        default=30,
-        description="Hurricane MCP request timeout in seconds (default: 30s)",
+        default=90,
+        description="Hurricane MCP request timeout in seconds (default: 90s for complex hurricane queries)",
         ge=5,
-        le=120
+        le=180
     )
 
     MCP_HURRICANE_HEALTH_CHECK_TIMEOUT: int = Field(
@@ -259,6 +259,16 @@ class Settings(BaseSettings):
     WORKFLOW_TIMEOUT_EMERGENCY_SECONDS: float = Field(
         default=60.0,
         description="Maximum time (seconds) for EMERGENCY tier queries (critical safety queries). Default: 60s (more time for thorough analysis)."
+    )
+
+    WORKFLOW_TIMEOUT_HURRICANE_SECONDS: float = Field(
+        default=90.0,
+        description="Maximum time (seconds) for HURRICANE-related queries with evaluation. Default: 90s (complex queries need more time)."
+    )
+
+    WORKFLOW_TIMEOUT_BATCH_SECONDS: float = Field(
+        default=120.0,
+        description="Maximum time (seconds) for BATCH evaluation operations. Default: 120s."
     )
 
     # ============================================================================

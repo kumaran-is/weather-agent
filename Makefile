@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync verify clean test test-dev lint format type-check security compliance-check run-verify run-agent all-checks quickstart dev update lock version rag-validate rag-load rag-load-curated-only rag-load-skip-validation rag-test memory-test memory-redis-cli memory-neo4j-browser memory-clear memory-stats eval-upload-dataset eval-run-batch eval-check-gates eval-quick eval-category eval-full docker-up docker-up-dev docker-down docker-down-dev docker-restart docker-restart-dev docker-logs docker-logs-dev docker-ps docker-ps-dev docker-health docker-clean docker-clean-dev observability-status observability-logs grafana-open prometheus-open prometheus-reload loki-logs
+.PHONY: help install install-dev sync verify clean test test-dev lint format type-check security compliance-check run-verify run-agent all-checks quickstart dev update lock version rag-validate rag-load rag-load-curated-only rag-load-skip-validation rag-test memory-test memory-redis-cli memory-neo4j-browser memory-clear memory-stats eval-upload-dataset eval-run-batch eval-check-gates eval-quick eval-category eval-full eval-upload-level6 eval-level6 eval-bleu-rouge eval-snapshot eval-retrieval eval-ragas eval-agentbench docker-up docker-up-dev docker-down docker-down-dev docker-restart docker-restart-dev docker-logs docker-logs-dev docker-ps docker-ps-dev docker-health docker-clean docker-clean-dev observability-status observability-logs grafana-open prometheus-open prometheus-reload loki-logs
 
 # Default Python version
 PYTHON_VERSION := 3.13
@@ -404,7 +404,7 @@ memory-stats:  ## Show memory system statistics - auto-detects prod/dev
 # Evaluation & Testing Commands (Level 5b: LangSmith + Golden Dataset)
 # ============================================================================
 
-eval-upload-dataset:  ## Upload golden dataset to LangSmith (105 test cases)
+eval-upload-dataset:  ## Upload golden dataset to LangSmith (185 test cases: Level 5 + Level 6)
 	@echo "$(BLUE)Uploading golden dataset to LangSmith...$(NC)"
 	@echo "$(YELLOW)Dataset:$(NC) tests/evaluation/golden_dataset.yaml"
 	@echo "$(YELLOW)Categories:$(NC)"
@@ -418,11 +418,11 @@ eval-upload-dataset:  ## Upload golden dataset to LangSmith (105 test cases)
 	@echo "$(GREEN)✓ Dataset uploaded to LangSmith$(NC)"
 	@echo "$(YELLOW)View at: https://smith.langchain.com/datasets$(NC)"
 
-eval-run-batch:  ## Run batch evaluation on full golden dataset (105 cases)
-	@echo "$(BLUE)Running batch evaluation (105 test cases)...$(NC)"
+eval-run-batch:  ## Run batch evaluation on full golden dataset (185 cases: Level 5 + Level 6)
+	@echo "$(BLUE)Running batch evaluation (185 test cases)...$(NC)"
 	@echo "$(YELLOW)This will:$(NC)"
-	@echo "  1. Run all 105 test cases through the agent"
-	@echo "  2. Evaluate using 4-pillar framework (effectiveness, efficiency, robustness, safety)"
+	@echo "  1. Run all 185 test cases through the agent (Level 5: 105, Level 6: 80)"
+	@echo "  2. Evaluate using 4-pillar framework + Level 6 metrics"
 	@echo "  3. Generate evaluation report"
 	@echo "  4. Check quality gates (pass_rate ≥85%, safety=0)"
 	@echo ""
@@ -453,7 +453,8 @@ eval-quick:  ## Quick smoke test (10 random test cases)
 eval-category:  ## Run evaluation for specific category (use: make eval-category CATEGORY=hurricane)
 	@if [ -z "$(CATEGORY)" ]; then \
 		echo "$(RED)Error: CATEGORY not specified$(NC)"; \
-		echo "$(YELLOW)Usage: make eval-category CATEGORY=<simple|complex|hurricane|edge>$(NC)"; \
+		echo "$(YELLOW)Level 5: make eval-category CATEGORY=<simple|complex|hurricane|edge>$(NC)"; \
+		echo "$(YELLOW)Level 6: make eval-category CATEGORY=<bleu_rouge|snapshot|retrieval|ragas_recall|agentbench>$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(BLUE)Running evaluation for category: $(CATEGORY)$(NC)"
@@ -464,13 +465,13 @@ eval-category:  ## Run evaluation for specific category (use: make eval-category
 
 eval-full:  ## Full evaluation pipeline (upload → run → check gates)
 	@echo "$(BLUE)========================================$(NC)"
-	@echo "$(BLUE)Full Evaluation Pipeline (Level 5b)$(NC)"
+	@echo "$(BLUE)Full Evaluation Pipeline (Level 5b + Level 6)$(NC)"
 	@echo "$(BLUE)========================================$(NC)"
 	@echo ""
 	@echo "$(YELLOW)[1/3] Uploading golden dataset to LangSmith...$(NC)"
 	@$(MAKE) eval-upload-dataset
 	@echo ""
-	@echo "$(YELLOW)[2/3] Running batch evaluation (105 cases)...$(NC)"
+	@echo "$(YELLOW)[2/3] Running batch evaluation (185 cases)...$(NC)"
 	@$(MAKE) eval-run-batch
 	@echo ""
 	@echo "$(YELLOW)[3/3] Checking quality gates...$(NC)"
@@ -484,6 +485,52 @@ eval-full:  ## Full evaluation pipeline (upload → run → check gates)
 	@echo "  - View results: cat evaluation_results.json"
 	@echo "  - View traces:  https://smith.langchain.com"
 	@echo "  - Run category: make eval-category CATEGORY=hurricane"
+	@echo "  - Run Level 6:  make eval-level6"
+
+# ============================================================================
+# Level 6 Evaluation Commands (80 test cases)
+# BLEU/ROUGE, Snapshot, Retrieval, RAGAS, AgentBench
+# ============================================================================
+
+eval-upload-level6:  ## Upload Level 6 golden dataset to LangSmith (80 test cases)
+	@echo "$(BLUE)Uploading Level 6 Golden Dataset to LangSmith...$(NC)"
+	@echo "Categories: bleu_rouge (20), snapshot (15), retrieval (20), ragas_recall (10), agentbench (15)"
+	@PYTHONPATH=$(PWD) uv run python scripts/upload_golden_dataset.py --level6-only
+	@echo "$(GREEN)✓ Level 6 dataset uploaded$(NC)"
+
+eval-level6:  ## Run all Level 6 evaluations (80 test cases)
+	@echo "$(BLUE)========================================$(NC)"
+	@echo "$(BLUE)Level 6 Evaluation (80 test cases)$(NC)"
+	@echo "$(BLUE)========================================$(NC)"
+	@echo "Categories: BLEU/ROUGE, Snapshot, Retrieval, RAGAS, AgentBench"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py
+	@echo ""
+	@echo "$(GREEN)✓ Level 6 evaluation complete$(NC)"
+
+eval-bleu-rouge:  ## Run BLEU/ROUGE evaluation only (20 test cases)
+	@echo "$(BLUE)Running BLEU/ROUGE evaluation...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py --eval-type bleu_rouge
+	@echo "$(GREEN)✓ BLEU/ROUGE evaluation complete$(NC)"
+
+eval-snapshot:  ## Run Snapshot evaluation only (15 test cases)
+	@echo "$(BLUE)Running Snapshot evaluation...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py --eval-type snapshot
+	@echo "$(GREEN)✓ Snapshot evaluation complete$(NC)"
+
+eval-retrieval:  ## Run Retrieval metrics evaluation only (20 test cases)
+	@echo "$(BLUE)Running Retrieval evaluation...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py --eval-type retrieval
+	@echo "$(GREEN)✓ Retrieval evaluation complete$(NC)"
+
+eval-ragas:  ## Run RAGAS Context Recall evaluation only (10 test cases)
+	@echo "$(BLUE)Running RAGAS evaluation...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py --eval-type ragas_recall
+	@echo "$(GREEN)✓ RAGAS evaluation complete$(NC)"
+
+eval-agentbench:  ## Run AgentBench evaluation only (15 test cases)
+	@echo "$(BLUE)Running AgentBench evaluation...$(NC)"
+	@PYTHONPATH=$(PWD) uv run python scripts/run_level6_evaluation.py --eval-type agentbench
+	@echo "$(GREEN)✓ AgentBench evaluation complete$(NC)"
 
 # ============================================================================
 # Docker Compose Commands (Level 5c: 10 Services)

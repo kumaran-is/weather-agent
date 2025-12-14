@@ -199,45 +199,57 @@ class SafetyValidator:
         return len(violations) == 0, violations
 
     def _check_hurricane_validation(self, text: str) -> tuple[bool, list[str]]:
-        """Validate hurricane category matches Saffir-Simpson scale."""
+        """Validate hurricane category matches Saffir-Simpson scale.
+
+        FIX (2025-12-14): Changed from Cartesian product validation to proximity-based matching.
+        Now matches each "Category X" with its contextually closest "Y mph" mention,
+        not all combinations.
+        """
         violations = []
 
-        # Find all category mentions with wind speeds
-        # Pattern: "Category X" followed by "Y mph" anywhere nearby
-        category_pattern = r"category\s*(\d)"
-        wind_pattern = r"(\d{2,3})\s*(?:mph|miles per hour)"
+        # Find category-wind pairs in proximity (within ~200 chars or same sentence)
+        # Pattern: "Category X" followed by "Y mph" within reasonable distance
+        # This captures: "Category 5 with 157 mph winds" or "Category 5 hurricane (157 mph)"
+        proximity_pattern = r"category\s*(\d)[^.!?]{0,200}?(\d{2,3})\s*(?:mph|miles per hour)"
 
-        categories = re.findall(category_pattern, text, re.IGNORECASE)
-        winds = re.findall(wind_pattern, text, re.IGNORECASE)
+        matches = re.findall(proximity_pattern, text, re.IGNORECASE)
 
-        if not categories or not winds:
-            return True, []  # No hurricane data to validate
+        if not matches:
+            return True, []  # No hurricane category-wind pairs to validate
 
-        # Validate each category-wind pair
-        for cat_str in categories:
+        # Validate each category-wind pair found in proximity
+        validated_pairs = set()  # Track validated pairs to avoid duplicates
+
+        for cat_str, wind_str in matches:
             cat = int(cat_str)
+            wind = int(wind_str)
+
+            # Skip if we've already validated this exact pair
+            pair_key = (cat, wind)
+            if pair_key in validated_pairs:
+                continue
+            validated_pairs.add(pair_key)
+
+            # Validate category
             if cat not in self.SAFFIR_SIMPSON:
                 violations.append(f"Invalid category: {cat} (valid: 1-5)")
                 continue
 
             min_wind, max_wind = self.SAFFIR_SIMPSON[cat]
 
-            for wind_str in winds:
-                wind = int(wind_str)
-
-                # Check if wind speed matches category
-                if wind < min_wind:
-                    violations.append(
-                        f"Category {cat} requires {min_wind}-{max_wind} mph, "
-                        f"but {wind} mph stated"
-                    )
-                elif wind > max_wind:
-                    # Wind higher than category max - should be higher category
-                    correct_cat = self._get_category_for_wind(wind)
-                    violations.append(
-                        f"Wind speed {wind} mph indicates Category {correct_cat}, "
-                        f"not Category {cat}"
-                    )
+            # Check if wind speed matches category
+            if wind < min_wind:
+                violations.append(
+                    f"Category {cat} requires {min_wind}-{max_wind} mph, "
+                    f"but {wind} mph stated"
+                )
+            elif wind > max_wind:
+                # Wind higher than category max - should be higher category
+                correct_cat = self._get_category_for_wind(wind)
+                violations.append(
+                    f"Wind speed {wind} mph indicates Category {correct_cat}, "
+                    f"not Category {cat}"
+                )
 
         return len(violations) == 0, violations
 

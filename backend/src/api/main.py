@@ -101,6 +101,8 @@ from backend.src.utils.health_checks import (
 )
 # 🆕 L5b: Evaluation framework for trajectory-based evaluation
 from backend.src.evaluation import TrajectoryEvaluator
+# 🆕 L5b: PII sanitization for agent responses (Priority 2 Fix - 2025-12-14)
+from backend.src.safety.pii_sanitizer import PIISanitizer
 # 🆕 L5c: MCP health monitoring
 from backend.src.mcp.health_monitor import MCPHealthMonitor
 # 🆕 v0.6.0: Auto-routing classifier (replaces explicit agent_level)
@@ -322,6 +324,16 @@ async def lifespan(app: FastAPI):
         logger.error("   Evaluation features will be disabled")
         app.state.trajectory_evaluator = None
 
+    # 🆕 L5b: Initialize PII sanitizer for response protection (Priority 2 Fix - 2025-12-14)
+    logger.info("🔒 Initializing PII sanitizer (L5b: response sanitization)...")
+    try:
+        app.state.pii_sanitizer = PIISanitizer(strict_mode=True)
+        logger.info("✅ PII sanitizer initialized (detects: SSN, credit cards, phone, email)")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize PII sanitizer: {e}")
+        logger.error("   PII sanitization will be disabled (SECURITY RISK)")
+        app.state.pii_sanitizer = None
+
     # 🆕 L5c: Initialize MCP health monitors
     global weather_health_monitor, hurricane_health_monitor
     from backend.config.settings import settings as config_settings
@@ -422,7 +434,7 @@ app = FastAPI(
         "**HITL Approval:**\n"
         "- Emergency tier queries may trigger human approval"
     ),
-    version="0.10.7",  # 🆕 Auto-routing version
+    version="0.10.0",  # 🆕 Auto-routing version
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,  # ✅ Modern pattern (FastAPI 0.100+)
@@ -551,6 +563,7 @@ async def _invoke_basic_agent(
 )
 async def weather_query_endpoint(
     query: WeatherQuery,
+    request: Request,  # 🆕 L5b: Access app state for PII sanitizer (Priority 2 Fix - 2025-12-14)
     enable_rag: bool | None = None,
     enable_cot: bool | None = None,
     enable_tot: bool | None = None,  # Level 3b
@@ -1119,8 +1132,31 @@ async def weather_query_endpoint(
         elif evaluate and cache_hit:
             logger.info("⏭️  Evaluation skipped (response served from cache)")
 
+        # 🆕 L5b: Sanitize response to remove PII (Priority 2 Fix - 2025-12-14)
+        # CRITICAL: Zero tolerance for PII leaks in production responses
+        sanitized_response = response_text
+        if hasattr(request.app.state, "pii_sanitizer") and request.app.state.pii_sanitizer:
+            try:
+                original_response = response_text
+                sanitized_response = request.app.state.pii_sanitizer.sanitize(response_text)
+
+                # Log if PII was detected and redacted
+                if original_response != sanitized_response:
+                    detections = request.app.state.pii_sanitizer.detect_pii(original_response)
+                    logger.warning(
+                        f"⚠️  PII DETECTED and redacted | user_id: {query.user_id} | "
+                        f"types: {list(detections.keys())} | "
+                        f"count: {sum(len(v) for v in detections.values())}"
+                    )
+            except Exception as e:
+                logger.error(f"❌ PII sanitization failed: {e}")
+                # CRITICAL: In case of sanitization failure, we still use sanitized_response
+                # which at this point equals response_text (better than blocking the request)
+        else:
+            logger.warning("⚠️  PII sanitizer not available - response NOT sanitized (SECURITY RISK)")
+
         return WeatherResponse(
-            response=response_text,
+            response=sanitized_response,
             user_id=query.user_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
             # 🆕 Level 4: Multi-agent metadata

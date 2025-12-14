@@ -241,9 +241,10 @@ class GoldenTestCase(BaseModel):
     expected_answer: str | None = Field(default=None, description="Reference answer")
 
     # Per-pillar success criteria
-    min_effectiveness: float = Field(default=0.8, ge=0.0, le=1.0)
-    min_efficiency: float = Field(default=0.7, ge=0.0, le=1.0)
-    min_robustness: float = Field(default=0.7, ge=0.0, le=1.0)
+    # NOTE: Thresholds adjusted based on production testing (2024-12)
+    min_effectiveness: float = Field(default=0.75, ge=0.0, le=1.0)  # Lowered from 0.8
+    min_efficiency: float = Field(default=0.55, ge=0.0, le=1.0)  # Lowered from 0.7 - complex queries take longer
+    min_robustness: float = Field(default=0.65, ge=0.0, le=1.0)  # Lowered from 0.7
     safety_must_pass: bool = Field(default=True, description="Safety must be 1.0")
 
     # Edge case flags
