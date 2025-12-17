@@ -10,7 +10,174 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Level 8 Context Window Optimization
+- Level 9 Semantic Caching(Tool Result Caching and LLM Response Caching) for AI Agents
+- Level 10 Self-Evolving AI Architecture
+
+---
+
+## [1.6.1] - 2025-12-17 (Level 8: Signal Correlation)
+
+### Added
+
+**Signal Correlation (4-Way Observability Linking)**
+- Created `observability/tempo/tempo.yaml` (~93 lines) - Tempo configuration for distributed tracing
+- Created `observability/grafana/provisioning/dashboards/signal-correlation.json` (~450 lines) - Dashboard with exemplar-enabled panels
+- Created `scripts/verify_signal_correlation.py` (~330 lines) - Verification script for all correlation components
+
+**Prometheus Exemplars (Metrics → Traces)**:
+- Added `get_exemplar_labels()` function in `backend/src/observability/metrics.py`
+- Added `observe_with_exemplar()` function for histogram observations with trace context
+- All histogram metrics now record exemplars with trace_id
+
+**Tempo Integration (Distributed Tracing Backend)**:
+- Added Tempo service to docker-compose.yml (grafana/tempo:2.3.1)
+- OTLP receiver on ports 4317 (gRPC) and 4318 (HTTP)
+- 7-day trace retention with local storage
+
+**Grafana Datasource Correlation**:
+- Prometheus `exemplarTraceIdDestinations` → Link metrics to Tempo traces
+- Tempo `tracesToLogsV2` → Link traces to Loki logs
+- Tempo `tracesToMetrics` → Show RED metrics in trace view
+- Loki `derivedFields` → Extract trace_id from logs and link to Tempo
+
+**Signal Correlation Dashboard**:
+- 6 panels with exemplar-enabled histograms
+- Request/LLM/MCP/Tool/Context/Cache latency tracking
+- One-click navigation: Metric → Trace → Logs
+
+### Changed
+
+**Updated Files**:
+- `docker-compose.yml` - Added Tempo service, `--enable-feature=exemplar-storage` for Prometheus
+- `observability/grafana/provisioning/datasources/datasources.yml` - Full correlation configuration
+- `backend/src/observability/metrics.py` - Added exemplar support functions
+
+---
+
+## [1.6.0] - 2025-01-21 (Level 8: Context Window Optimization & Observability)
+
+### Added
+
+**Context Window Optimization (5-Phase Pipeline)**
+- Created `backend/src/context/context_optimizer.py` (~250 lines) - Main orchestrator for 5-phase optimization
+- Created `backend/src/context/query_type_detector.py` (~250 lines) - Auto-detect EMERGENCY/COMPLEX/SIMPLE/STANDARD
+- Created `backend/src/context/semantic_chunker.py` (~200 lines) - Preserve meaning boundaries in chunks
+- Created `backend/src/context/relevance_filter.py` (~200 lines) - Score and filter by query relevance
+- Created `backend/src/context/dynamic_assembler.py` (~200 lines) - Adapt context to query type
+- Created `backend/src/context/hierarchical_loader.py` (~200 lines) - Load critical first, lazy-load rest
+
+**Query Type Detection**:
+- `EMERGENCY`: Life-safety queries (evacuation, hurricane warnings) - 30-40% reduction, safety prioritized
+- `COMPLEX`: Multi-part queries (compare, plan, analyze) - 50-55% reduction
+- `STANDARD`: Normal weather queries - 50-60% reduction
+- `SIMPLE`: Single data point queries (temperature) - 60-70% reduction
+
+**Observability Stack (Level 9)**
+- Created `backend/src/observability/metrics.py` (~400 lines) - Prometheus metrics with SLO support
+- Created `backend/src/observability/logging.py` (~330 lines) - Structured JSON logging with trace context
+- Created `backend/src/observability/tracing.py` (~400 lines) - OpenTelemetry distributed tracing
+- Created `backend/src/observability/callbacks.py` (~350 lines) - LangChain auto-instrumentation
+
+**Metrics (SLO-Based)**:
+- Request metrics: count, latency histogram, error rate
+- LLM metrics: tokens, cost, latency by provider/model
+- Tool metrics: call count, latency by tool
+- MCP metrics: call count, latency, health status
+- Cache metrics: hit/miss rate by level (L1/L2/L3)
+- Context optimization metrics: tokens saved, reduction percentage
+- Guardrail metrics: pass/fail by severity
+- Hurricane validation metrics: category validation
+
+**Structured Logging**:
+- JSON format for log aggregation (Loki, ELK)
+- Automatic trace context injection (trace_id, span_id)
+- Request context propagation (user_id, session_id, request_id)
+- Exception logging with traceback
+
+**OpenTelemetry Tracing**:
+- Span hierarchy: HTTP → LangGraph → LangChain → Tool → MCP
+- W3C TraceContext propagation
+- SpanAttributes constants for consistency
+- SpanNames constants for semantic naming
+
+**LangChain Callbacks**:
+- Auto-instrumentation for LLM calls
+- Auto-instrumentation for tool calls
+- Auto-instrumentation for chain execution
+- Token counting and cost calculation
+
+**Grafana Integration**:
+- SLO dashboard configuration
+- Alert rules for availability, latency, safety
+- Prometheus datasource integration
+
+### Changed
+
+**Updated Files**:
+- `backend/src/context/__init__.py` - New exports for context optimization
+- `backend/src/observability/__init__.py` - New exports for observability stack
+- `pyproject.toml` - Version bump to 1.6.0
+
+**Updated Tests**:
+- Created `backend/tests/test_observability.py` - 46 unit tests for observability
+- Created `backend/tests/test_observability_integration.py` - 18 integration tests
+- Created `backend/tests/test_context_optimization.py` - Context optimization tests
+
+**Updated Documentation**:
+- Created `docs/test-guide/LEVEL_8_TEST_GUIDE.md` v1.0.0 - Comprehensive test guide (16 scenarios)
+- Updated `README.md` - Version 1.6.0, Level 8 status
+
+### Technical Details
+
+**Context Optimization Pipeline**:
+```python
+from backend.src.context import ContextWindowOptimizer, detect_query_type
+
+# Detect query type
+query_type = detect_query_type("Should I evacuate?")  # Returns "EMERGENCY"
+
+# Optimize context
+optimizer = ContextWindowOptimizer(target_tokens=4000)
+result = optimizer.optimize(context, query)
+# result.reduction_pct = 55.0  (8000 → 3600 tokens)
+```
+
+**Observability Usage**:
+```python
+from backend.src.observability import (
+    get_metrics, get_structured_logger, create_span,
+    create_langchain_callbacks
+)
+
+# Record metrics
+metrics = get_metrics()
+metrics.record_request(tier="standard", status="success", latency=0.5)
+
+# Structured logging with trace context
+logger = get_structured_logger(__name__)
+with create_span("http.request") as span:
+    logger.info("Processing query", extra={"query": "weather in miami"})
+
+# LangChain auto-instrumentation
+callbacks = create_langchain_callbacks(user_id="123")
+result = await chain.ainvoke(input, config={"callbacks": callbacks})
+```
+
+### Performance Metrics
+
+**Context Optimization**:
+- Token reduction: 50-60% (8K-12K → <4K tokens)
+- Optimization latency: <100ms
+- Context recall: >98%
+
+**Observability Overhead**:
+- Metrics recording: <1ms per operation
+- Logging overhead: <0.5ms per log
+- Tracing overhead: <2ms per span
+
+### Migration Notes
+
+No breaking changes. All new features are additive.
 
 ---
 
