@@ -275,6 +275,8 @@ services:
       - MCP_HURRICANE_SERVER_URL=http://hurricane-mcp:8080
       - MCP_WEATHER_SERVER_ENABLED=${MCP_WEATHER_SERVER_ENABLED:-true}
       - MCP_HURRICANE_SERVER_ENABLED=${MCP_HURRICANE_SERVER_ENABLED:-true}
+      # MCP Resilience Patterns (Level 7 - Critical Gap #1)
+      - MCP_WEATHER_REQUEST_TIMEOUT=90
       # Qdrant Vector Database (Level 2 - RAG)
       - QDRANT_URL=http://qdrant:6333
       # Redis (Level 3a - Short-Term Memory - ALWAYS use service name in containers)

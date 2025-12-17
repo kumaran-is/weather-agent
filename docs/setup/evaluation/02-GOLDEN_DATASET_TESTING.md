@@ -1,8 +1,10 @@
 # Step 2: Golden Dataset Testing Guide
 
-**Purpose**: Run and evaluate golden dataset tests with 4-pillar scoring
+**Document**: 2 of 4 (Progressive Testing Series)
+**Purpose**: Run and evaluate golden dataset tests with 4-pillar scoring + Level 6 metrics
 **Prerequisites**: Complete [01-LANGSMITH_EVALUATION_SETUP.md](./01-LANGSMITH_EVALUATION_SETUP.md)
 **Time Required**: 30-45 minutes
+**Version**: 2.0.0 (Updated for Level 6)
 
 ---
 
@@ -10,11 +12,13 @@
 
 1. [Overview](#overview)
 2. [Test Categories](#test-categories)
-3. [Running Tests Locally](#running-tests-locally)
-4. [Running Tests with LangSmith](#running-tests-with-langsmith)
-5. [Understanding Results](#understanding-results)
-6. [CI/CD Integration](#cicd-integration)
-7. [Progressive Testing Strategy](#progressive-testing-strategy)
+3. [Level 6 Evaluation Types](#level-6-evaluation-types) (NEW)
+4. [Running Tests Locally](#running-tests-locally)
+5. [Running Tests with LangSmith](#running-tests-with-langsmith)
+6. [Level 6 Specific Commands](#level-6-specific-commands) (NEW)
+7. [Understanding Results](#understanding-results)
+8. [CI/CD Integration](#cicd-integration)
+9. [Progressive Testing Strategy](#progressive-testing-strategy)
 
 ---
 
@@ -22,7 +26,7 @@
 
 ### What is Golden Dataset Testing?
 
-Golden dataset testing validates your AI agent against a curated set of **105 test cases** across different scenarios:
+Golden dataset testing validates your AI agent against a curated set of **185 test cases** across different scenarios:
 
 - **Known Paths**: Expected queries the agent should handle well
 - **Unknown Paths**: Edge cases, ambiguous inputs, errors
@@ -121,6 +125,146 @@ success_criteria:
 - Graceful error handling
 - Clarification requests
 - No hallucination on invalid input
+
+---
+
+## Level 6 Evaluation Types
+
+Level 6 adds 80 advanced evaluation test cases for comprehensive AI quality measurement.
+
+### Category 5: BLEU/ROUGE (20 cases) - Text Generation Quality
+
+Reference-based text generation quality metrics.
+
+```yaml
+# Example: bleu_rouge_001
+query: "What is the current weather in Miami?"
+category: "bleu_rouge"
+reference_answer: "Miami currently has sunny weather with temperatures around 85°F..."
+eval_type: "generation"
+success_criteria:
+  bleu_score: ">0.4"
+  rouge_1: ">0.5"
+  rouge_l: ">0.45"
+```
+
+**Test Focus**:
+- Text generation quality
+- Answer similarity to reference
+- Key information inclusion
+
+### Category 6: Snapshot (15 cases) - Regression Detection
+
+Baseline comparison for regression detection.
+
+```yaml
+# Example: snapshot_001
+query: "Current weather in Miami"
+category: "snapshot"
+snapshot_baseline: "Miami is currently experiencing sunny conditions with temperatures..."
+eval_type: "snapshot"
+success_criteria:
+  snapshot_similarity: ">0.85"
+  regression_threshold: "0.10"
+```
+
+**Test Focus**:
+- Consistency across versions
+- Regression detection
+- Format stability
+
+### Category 7: Retrieval (20 cases) - Information Retrieval Quality
+
+MRR, NDCG, MAP, Precision@k, Recall@k metrics.
+
+```yaml
+# Example: retrieval_001
+query: "What is the Saffir-Simpson scale?"
+category: "retrieval"
+eval_type: "retrieval"
+relevant_docs:
+  - doc_id: "hurricane_scale_001"
+    title: "Saffir-Simpson Hurricane Wind Scale"
+    relevance: 3  # Highly relevant
+  - doc_id: "hurricane_prep_001"
+    title: "Hurricane Preparedness Guide"
+    relevance: 2  # Moderately relevant
+success_criteria:
+  mrr: ">0.8"
+  ndcg_at_5: ">0.75"
+  precision_at_3: ">0.7"
+  recall_at_5: ">0.8"
+```
+
+**Test Focus**:
+- Retrieval accuracy (MRR, NDCG)
+- Precision/Recall at k
+- Document relevance ranking
+
+### Category 8: RAGAS Context Recall (10 cases)
+
+Ground truth context validation using RAGAS framework.
+
+```yaml
+# Example: ragas_recall_001
+query: "What are the hurricane categories and their wind speeds?"
+category: "ragas_recall"
+eval_type: "ragas_context_recall"
+ground_truth_info:
+  - "Category 1: 74-95 mph"
+  - "Category 2: 96-110 mph"
+  - "Category 3: 111-129 mph"
+  - "Category 4: 130-156 mph"
+  - "Category 5: 157+ mph"
+success_criteria:
+  context_recall: ">0.9"
+```
+
+**Test Focus**:
+- Ground truth coverage
+- Context recall accuracy
+- Factual completeness
+
+### Category 9: AgentBench (15 cases) - Task-Specific Accuracy
+
+Structured output and task execution validation.
+
+```yaml
+# Example: agentbench_001
+query: "What is the temperature in Miami in Celsius?"
+category: "agentbench"
+eval_type: "agentbench"
+task_spec:
+  task_type: "unit_conversion"
+  expected_format: "temperature in Celsius"
+expected_result:
+  must_contain: ["°C", "Celsius"]
+success_criteria:
+  task_accuracy: ">0.95"
+```
+
+**Test Focus**:
+- Task execution accuracy
+- Structured output format
+- Tool usage correctness
+
+### Level 6 Quality Thresholds
+
+| Eval Type | Metric | Threshold |
+|-----------|--------|-----------|
+| **BLEU/ROUGE** | min_bleu | 0.30 |
+| | min_rouge_1 | 0.40 |
+| | min_rouge_l | 0.35 |
+| **Snapshot** | min_similarity | 0.75 |
+| | regression_threshold | 0.10 |
+| **Retrieval** | min_mrr | 0.70 |
+| | min_ndcg_at_5 | 0.65 |
+| | min_precision_at_3 | 0.60 |
+| | min_recall_at_5 | 0.70 |
+| | min_map | 0.65 |
+| **RAGAS** | min_context_recall | 0.85 |
+| **AgentBench** | min_task_accuracy | 0.85 |
+| | min_tool_accuracy | 0.90 |
 
 ---
 
@@ -300,6 +444,30 @@ make eval-upload-dataset
    - Success criteria (effectiveness, efficiency, robustness, safety thresholds)
 
 **LangSmith Dataset URL**: https://smith.langchain.com/datasets
+
+### Step 3.1b: Upload Level 6 Dataset (NEW)
+
+Upload only Level 6 evaluation test cases:
+
+```bash
+# Upload only Level 6 categories
+make eval-upload-level6
+
+# Or use Python script directly
+uv run python scripts/upload_golden_dataset.py --level6-only
+
+# Upload specific Level 6 category
+uv run python scripts/upload_golden_dataset.py --category bleu_rouge
+uv run python scripts/upload_golden_dataset.py --category retrieval
+uv run python scripts/upload_golden_dataset.py --category agentbench
+```
+
+**What this uploads**:
+- BLEU/ROUGE test cases (20) with reference_answer
+- Snapshot test cases (15) with snapshot_baseline
+- Retrieval test cases (20) with relevant_docs
+- RAGAS Recall test cases (10) with ground_truth_info
+- AgentBench test cases (15) with task_spec and expected_result
 
 ### Step 3.2: Run Batch Evaluation
 
@@ -684,16 +852,16 @@ uv run python scripts/run_langsmith_evaluation.py
 
 ## Quick Reference Commands
 
-### ⚡ Recommended: Makefile Commands (NEW)
+### ⚡ Recommended: Makefile Commands (Updated for Level 6)
 
 ```bash
-# 🚀 Full pipeline (upload + run + check)
+# 🚀 Full pipeline (upload + run + check) - 185 cases
 make eval-full
 
 # Upload golden dataset to LangSmith
 make eval-upload-dataset
 
-# Run batch evaluation (105 cases)
+# Run batch evaluation (185 cases)
 make eval-run-batch
 
 # Check quality gates
@@ -702,11 +870,40 @@ make eval-check-gates
 # Quick smoke test (10 cases, ~2-3 minutes)
 make eval-quick
 
-# Test specific category
+# Test specific category (Level 5)
 make eval-category CATEGORY=hurricane
 make eval-category CATEGORY=simple
 make eval-category CATEGORY=complex
 make eval-category CATEGORY=edge
+
+# 🆕 Level 6 Commands
+make eval-level6              # Run all Level 6 evaluations (80 cases)
+make eval-upload-level6       # Upload only Level 6 categories
+make eval-bleu-rouge          # BLEU/ROUGE evaluation only
+make eval-snapshot            # Snapshot testing only
+make eval-retrieval           # Retrieval metrics only
+make eval-ragas               # RAGAS evaluation only
+make eval-agentbench          # AgentBench evaluation only
+```
+
+### 🆕 Level 6 Python Scripts (NEW)
+
+```bash
+# Run all Level 6 evaluations
+uv run python scripts/run_level6_evaluation.py
+
+# Run specific Level 6 eval type
+uv run python scripts/run_level6_evaluation.py --eval-type bleu_rouge
+uv run python scripts/run_level6_evaluation.py --eval-type retrieval
+uv run python scripts/run_level6_evaluation.py --eval-type snapshot
+uv run python scripts/run_level6_evaluation.py --eval-type ragas_recall
+uv run python scripts/run_level6_evaluation.py --eval-type agentbench
+
+# Limit cases
+uv run python scripts/run_level6_evaluation.py --max-cases 5
+
+# Custom output file
+uv run python scripts/run_level6_evaluation.py --output level6_results.json
 ```
 
 ### Alternative: Python Scripts
@@ -763,5 +960,16 @@ print(f'Safety violations: {results.safety_violations}')
 
 ---
 
+**Document Version**: 2.0.0
+**Last Updated**: 2025-12-13
 **Previous Document**: [01-LANGSMITH_EVALUATION_SETUP.md](./01-LANGSMITH_EVALUATION_SETUP.md)
 **Next Document**: [03-GUARDRAILS_TESTING.md](./03-GUARDRAILS_TESTING.md)
+
+## Changelog
+
+### v2.0.0 (2025-12-13)
+- Added Level 6 evaluation types (BLEU/ROUGE, Snapshot, Retrieval, RAGAS, AgentBench)
+- Updated total test cases from 105 to 185
+- Added Level 6 specific commands section
+- Added `run_level6_evaluation.py` script documentation
+- Updated Makefile commands for Level 6 support

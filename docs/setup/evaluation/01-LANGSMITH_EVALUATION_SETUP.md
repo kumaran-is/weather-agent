@@ -1,5 +1,6 @@
 # Step 1: LangSmith Evaluation Setup
 
+**Document**: 1 of 4 (Progressive Testing Series)
 **Purpose**: Set up LangSmith for evaluation dataset management and result tracking
 **Time Required**: 15-20 minutes
 
@@ -530,4 +531,6 @@ uv run python scripts/verify_langsmith_setup.py
 
 ---
 
+**Document Version**: 1.0.0
+**Last Updated**: 2025-12-11
 **Next Document**: [02-GOLDEN_DATASET_TESTING.md](./02-GOLDEN_DATASET_TESTING.md)
