@@ -10,11 +10,12 @@
 
 **Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, comprehensive golden dataset evaluation with ZERO safety violations, guardrails and observability.
 
-**From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), full observability stack (Prometheus, Grafana, Loki), adversarial testing, LLM-as-Judge, Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt), constitutional AI (12-layer safety guardrails), and **[planned]** self-evolving agentic dual-loop architecture for continuous improvement.
+**From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), full observability stack (Prometheus, Grafana, Loki), adversarial testing, LLM-as-Judge, Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt), constitutional AI (12-layer safety guardrails), LangGraph-bigtool Tool Registry & Semantic Discovery and **[planned]** Context Window Optimization, Semantic Caching for AI Agents, self-evolving agentic dual-loop architecture for continuous improvement.
 
 **How It Works:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), Comprehensive golden dataset evaluation and full observability stack (Prometheus, Grafana, Loki
 
-**Current Stage**: ✅ **Level 6 Complete**  — Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt)
+**Current Stage**: ✅ **Level 7 Complete** — LangGraph-bigtool Tool Registry & Semantic Discovery (100% LangChain v1.x/LangGraph v1.x Compliant)
+
 
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
 
@@ -26,7 +27,6 @@
   - [Table of Contents](#table-of-contents)
   - [Technology Stack](#technology-stack)
   - [Testing Tools \& Interfaces](#testing-tools--interfaces)
-  - [| **Level 10** | Context Engineering \& Optimization|  | 📋 Planned |](#-level-10--context-engineering--optimization----planned-)
   - [Quick Start](#quick-start)
     - [System Requirements](#system-requirements)
     - [Prerequisites](#prerequisites)
@@ -62,6 +62,7 @@
 | [**LangGraph**](https://github.com/langchain-ai/langgraph) | `1.0+` | Agent runtime with StateGraph, checkpointing, HITL |
 | [**FastAPI**](https://fastapi.tiangolo.com/) | `0.115+` | High-performance async web framework |
 | [**Pydantic**](https://docs.pydantic.dev/) | `2.0+` | Runtime validation & type-safe data models |
+| [**Langgraph Bigtool**](https://github.com/langchain-ai/langgraph-bigtool) | `0.0.3` | Tool Registry & Semantic Discovery |
 
 **AI/ML & LLM**:
 
@@ -151,10 +152,12 @@ Quick reference for testing and debugging the Weather AI Agent:
 | **Level 4** | [Multi-Agent Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md) | 15-agent orchestration, auto-routing | ✅ Complete |
 | **Level 5** | [Evaluation + Guardrail Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md) | Caching (L1/L2/L3), Prometheus, Swagger UI | ✅ Complete |
 | **Level 6** | [Advanced Evaluation + Self-Improvement](./docs/test-guide/LEVEL_6_TEST_GUIDE.md) |  | ✅ Complete |
-| **Level 7** | MCP Tool Dynamic Registry = Context Optimization |  | 📋 Planned |
-| **Level 8** | Self Evolving Agenitc Dual-Loop Architecture |  | 📋 Planned |
-| **Level 9** | Advanced HITL |  | 📋 Planned |
-| **Level 10** | Context Engineering & Optimization|  | 📋 Planned |
+| **Level 7** | MCP Tool Dynamic Registry = Context Optimization |  | ✅ Complete |
+| **Level 8** | Context Engineering & Optimization|  | 📋 Planned |
+| **Level 9** | Semantic Caching for AI Agents|  | 📋 Planned |
+| **Level 10** | Self Evolving Agenitc Dual-Loop Architecture |  | 📋 Planned |
+| **Level 11** | Advanced HITL |  | 📋 Planned |
+
 ---
 
 ## Quick Start
@@ -631,36 +634,43 @@ make eval-full
 
 ```
 weather-agent/
-├── backend/                     # Backend application (Level 5c Complete)
+├── backend/                     # Backend application (Level 7 Complete)
 │   ├── config/                  # Configuration (SINGLE LOCATION)
 │   │   ├── settings.py          # Centralized app settings (50+ env vars)
 │   │   ├── llm_config.py        # LLM use case configuration
 │   │   ├── memory_config.py     # Memory system configuration
-│   │   └── cache_config.py      # Cache system configuration
+│   │   ├── cache_config.py      # Cache system configuration
+│   │   └── tool_registry_config.py  # Tool Registry configuration (Level 7)
 │   ├── data/raw/                # RAG knowledge base (603 documents)
 │   ├── migrations/              # Database migration scripts
 │   ├── src/                     # Source code
 │   │   ├── agents/              # 15 specialized agents (weather, triage, hurricane, etc.)
-│   │   ├── api/main.py          # FastAPI app (9 endpoints + Prometheus metrics)
+│   │   ├── api/main.py          # FastAPI app (10 endpoints + Prometheus metrics)
 │   │   ├── cache/               # Multi-layer caching (L1/L2/L3)
 │   │   ├── evaluation/          # Evaluation framework
 │   │   ├── guardrails/          # 12-layer safety guardrails
 │   │   ├── hitl/                # Human-in-the-Loop approval nodes
 │   │   ├── mcp/                 # MCP client integration
 │   │   ├── memory/              # 7-layer memory system
-│   │   ├── models/              # Pydantic models (weather, hurricane, health, etc.)
+│   │   ├── models/              # Pydantic models (weather, hurricane, health, tool_registry)
 │   │   ├── orchestration/       # Multi-agent workflow orchestration
 │   │   ├── rag/                 # RAG pipeline (embeddings, hybrid search)
 │   │   ├── reasoning/           # ToT/GoT advanced reasoning
+│   │   ├── registry/            # Tool Registry & Semantic Discovery (Level 7)
+│   │   │   ├── tool_registry.py         # Thread-safe singleton registry
+│   │   │   └── semantic_discovery.py    # AI-powered tool discovery
 │   │   ├── routing/             # Auto-routing system
 │   │   ├── services/            # Shared business logic services
-│   │   ├── tools/               # LangChain tools (MCP + RAG)
+│   │   ├── tools/               # LangChain tools (MCP + RAG + Hurricane)
+│   │   │   ├── weather_tools.py         # Weather MCP tool wrappers
+│   │   │   ├── rag_tools.py             # RAG retrieval tools
+│   │   │   └── hurricane_tools.py       # Hurricane MCP tool wrappers (Level 7)
 │   │   ├── utils/               # Utility functions and helpers
 │   │   └── workflows/           # LangGraph workflows
 │   └── tests/                   # Backend-specific tests
 ├── docs/                        # Documentation
 │   ├── setup/                   # Setup and configuration guides
-│   ├── test-guide/              # Test guides by level
+│   ├── test-guide/              # Test guides by level (8 guides)
 ├── observability/               # Observability stack configuration
 │   ├── grafana/                 # Grafana dashboards and datasources
 │   ├── loki/                    # Loki log aggregation config
@@ -669,7 +679,12 @@ weather-agent/
 │   ├── check_quality_gates.py   # CI/CD quality gate validation
 │   ├── run_batch_evaluation.py  # LangSmith batch evaluation runner
 │   └── upload_golden_dataset.py # Golden dataset upload to LangSmith
-├── tests/                       # Test suite (22 test files)
+├── tests/                       # Test suite (25 test files)
+│   ├── unit/                    # Unit tests
+│   │   ├── test_tool_registry.py       # Tool Registry unit tests (Level 7)
+│   │   └── test_semantic_discovery.py  # Semantic Discovery unit tests (Level 7)
+│   └── integration/             # Integration tests
+│       └── test_mcp_integration.py     # MCP integration tests (20 scenarios, Level 7)
 ├── .env.template                # Environment variables template
 ├── CHANGELOG.md                 # Version history and release notes
 ├── Dockerfile                   # Multi-stage production container
@@ -678,7 +693,7 @@ weather-agent/
 ├── langgraph.json               # LangGraph Studio (4 graphs)
 ├── LICENSE                      # MIT License
 ├── Makefile                     # Development and deployment commands
-├── pyproject.toml               # Project config (v1.3.1)
+├── pyproject.toml               # Project config (v1.5.0)
 └── README.md                    # This file
 ```
 
@@ -687,12 +702,13 @@ weather-agent/
   - **routing/**: Auto-routing system v0.6.0 (~500 lines, <1ms classification)
   - **agents/**:  15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
   - **memory/**: 7-layer memory (conversation, session, episodic, semantic, procedural, emotional, reflective)
+  - **registry/**: Tool Registry & Semantic Discovery (Level 7) - Thread-safe singleton, AI-powered search
   - **reasoning/**: Tree/Graph-of-Thought (27 parallel paths, network reasoning)
   - **orchestration/**: Multi-agent workflows (supervisor, parallel execution, auto-routing)
   - **evaluation/**: 4-pillar evaluation framework (effectiveness, efficiency, robustness, safety)
-  - **cache/**: Multi-layer caching (L1+L2+L3 utilities, 60-75% cost reduction potential)
+  - **cache/**: Multi-layer caching - L1 (in-process), L2 (Redis), L3 (Anthropic) caching (60-75% cost reduction potential)
   - **rag/**: Complete RAG pipeline (embeddings, vector store, hybrid search)
-  - **tools/**: 7 tools total (3 MCP + 4 RAG-enhanced)
+  - **tools/**: LangChain tool wrappers (weather MCP, hurricane MCP, RAG retrieval). 7 tools total (3 MCP + 4 RAG-enhanced)
 - **backend/config/**: 3 config classes (Settings, MemoryConfig, CacheConfig) = 80+ env vars
 - **backend/data/**: 603 documents, 632 chunks embedded in Qdrant (3 mock + 600 Kaggle)
 - **docs/setup/**:7 comprehensive guides (Dependency management, MCP, Studio, Docker, RAG datasets, Neo4j Desktop, Redis Insight)
@@ -715,11 +731,14 @@ weather-agent/
   - Level 6a: Context Optimization + Ragas/DeepEval Evaluation ✅ COMPLETE
   - Level 6b: TruLens + AgentBench + Auto-Prompt Engineering ✅ COMPLETE
   - Level 6c: Constitutional AI + Production Testing Infrastructure ✅ COMPLETE
-- **Level 7** : MCP Tool Dynamic Registry + Context Optimization 🔜 NEXT
-- **Level 8** : Self Evolving Agenitc Architecture 🔜 NEXT
-- **Level 9** : Advanced HITL 🔜 NEXT
+- **Level 7** (v1.5.0):  LangGraph-bigtool Tool Registry & Semantic Discovery ✅ COMPLETE
+- **Level 8** : Context Engineering & Optimization 🔜 NEXT
+- **Level 9** : Semantic Caching for AI Agents 🔜 NEXT
+- **Level 10** : Self Evolving Agenitc Architecture 🔜 NEXT
+- **Level 11** : Advanced HITL 🔜 NEXT
 
-**Current Status**: Level 6 - Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt) COMPLETE ✅ | Ready for Level 7 MCP Tool Dynamic Registry | Test with `make test-dev`
+**Current Status**: Level 7 (v1.5.0) - LangGraph-bigtool Tool Registry & Semantic Discovery (100% LangChain v1.x/LangGraph v1.x Compliant) | Test with `make test-dev`
+
 
 ## API Endpoints Reference
 
@@ -806,7 +825,9 @@ This single command:
 - **[Level 3 Test Guide](./docs/test-guide/LEVEL_3_TEST_GUIDE.md)** - Memory + ToT/GoT
 - **[Level 4 Test Guide](./docs/test-guide/LEVEL_4_TEST_GUIDE.md)** -  Multi-Agent Orchestration + Auto-Routing intelligence
 - **[Level 5 Test Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md)** - Eval + Guardrail + Observability
-- 
+- **[Level 6 Test Guide](./docs/test-guide/LEVEL_6_TEST_GUIDE.md)** - Advanced Evals + 185 Golden Dataset Cases
+- **[Level 7 Test Guide](./docs/test-guide/LEVEL_7_TEST_GUIDE.md)** - LangGraph-bigtool Tool Registry & Semantic Discovery
+  
 **Prerequisites:** Docker services running
 ```bash
 make docker-up-dev
@@ -836,4 +857,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 1.3.1 | **Last Updated**: 2025-12-14
+**Version**: 1.5.1 | **Last Updated**: 2025-12-16
