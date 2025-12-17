@@ -78,8 +78,90 @@ from backend.src.tools.weather_tools import (
     get_forecast,
     retrieve_weather_context,
 )
+# 🆕 Level 8a: Context Window Optimization (50-60% token reduction)
+from backend.src.context import (
+    ContextWindowOptimizer,
+    detect_query_type,
+    get_optimization_config,
+)
+
+# 🆕 Level 8c: Prometheus metrics (optional - only if available)
+try:
+    from prometheus_client import Counter, Histogram
+
+    CONTEXT_OPTIMIZATIONS_TOTAL = Counter(
+        "weather_agent_context_optimizations_total",
+        "Total context optimizations performed by weather agent",
+        ["query_type"]
+    )
+    CONTEXT_OPTIMIZATION_DURATION = Histogram(
+        "weather_agent_context_optimization_seconds",
+        "Context optimization duration in seconds",
+        ["query_type"],
+        buckets=[0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5]
+    )
+    CONTEXT_TOKEN_REDUCTION = Histogram(
+        "weather_agent_context_token_reduction_percent",
+        "Token reduction percentage achieved",
+        ["query_type"],
+        buckets=[10, 20, 30, 40, 50, 60, 70, 80, 90]
+    )
+    _PROMETHEUS_AVAILABLE = True
+except ImportError:
+    _PROMETHEUS_AVAILABLE = False
+
+
+def _record_context_metrics(
+    query_type: str,
+    optimization_time_ms: float,
+    reduction_pct: float
+) -> None:
+    """Record Prometheus metrics for context optimization.
+
+    Level 8c: Only records if prometheus_client is available.
+    """
+    if not _PROMETHEUS_AVAILABLE:
+        return
+
+    try:
+        CONTEXT_OPTIMIZATIONS_TOTAL.labels(query_type=query_type).inc()
+        CONTEXT_OPTIMIZATION_DURATION.labels(query_type=query_type).observe(optimization_time_ms / 1000)
+        CONTEXT_TOKEN_REDUCTION.labels(query_type=query_type).observe(reduction_pct)
+    except Exception as e:
+        logger.debug(f"Failed to record Prometheus metrics: {e}")
 
 logger = logging.getLogger(__name__)
+
+# 🆕 Level 8a: Module-level optimizer singleton (lazy initialization)
+_context_optimizer: ContextWindowOptimizer | None = None
+
+
+def get_context_optimizer() -> ContextWindowOptimizer:
+    """Get or create singleton context optimizer instance.
+
+    Level 8a: Lazy initialization to avoid startup overhead.
+    Uses keyword-based filtering (no embedding API calls) for fast optimization.
+
+    Returns:
+        ContextWindowOptimizer: Singleton optimizer instance
+
+    Example:
+        >>> optimizer = get_context_optimizer()
+        >>> result = await optimizer.optimize(query, context, "STANDARD")
+        >>> print(f"Reduced {result.reduction_pct:.1f}%")
+    """
+    global _context_optimizer
+    if _context_optimizer is None:
+        _context_optimizer = ContextWindowOptimizer(
+            embeddings=None,  # Use keyword-based filtering (faster, no API calls)
+            target_tokens=4000,  # Target <4K tokens per context window
+            min_relevance_score=0.5,  # Keep chunks with >50% relevance
+        )
+        logger.info(
+            "🎯 Level 8a: Context optimizer initialized | "
+            "target_tokens=4000 | min_relevance=0.5"
+        )
+    return _context_optimizer
 
 
 def create_weather_agent(
@@ -91,6 +173,8 @@ def create_weather_agent(
     enable_tot: bool = False,  # 🆕 Level 3b
     enable_got: bool = False,  # 🆕 Level 3b
     memory_context: dict[str, any] | None = None,  # 🆕 Level 3a
+    user_query: str | None = None,  # 🆕 Level 8a: For context optimization
+    enable_context_optimization: bool = True,  # 🆕 Level 8a: Toggle optimization
 ):
     """Create ReAct weather agent with progressive enhancements.
 
@@ -120,6 +204,12 @@ def create_weather_agent(
         memory_context: Memory context dictionary (Level 3a, optional) 🆕
             - Contains session context and user profile
             - Format: {"session": ConversationContext, "profile": UserProfile}
+        user_query: User's current query (Level 8a, optional) 🆕
+            - Used for query type detection and context optimization
+            - If provided, enables adaptive context window optimization
+        enable_context_optimization: Enable context window optimization (Level 8a, default: True) 🆕
+            - If True: Applies 5-phase optimization to memory context (50-60% token reduction)
+            - If False: Uses full memory context (Level 3a behavior)
 
     Returns:
         CompiledStateGraph: LangChain agent graph configured with weather tools
@@ -349,7 +439,60 @@ def create_weather_agent(
             ]
         )
 
-        memory_prompt = "\n".join(memory_prompt_parts)
+        # Build full memory prompt
+        full_memory_prompt = "\n".join(memory_prompt_parts)
+
+        # 🆕 Level 8a: Apply context window optimization if enabled
+        if enable_context_optimization and user_query:
+            try:
+                # Detect query type for adaptive optimization
+                query_type = detect_query_type(user_query)
+
+                # Get optimization configuration based on query type
+                opt_config = get_optimization_config(query_type)
+
+                # Get optimizer instance
+                optimizer = get_context_optimizer()
+
+                # Apply sync optimization (keyword-based, no API calls)
+                optimization_result = optimizer.optimize_sync(
+                    query=user_query,
+                    context=full_memory_prompt,
+                    query_type=query_type,
+                )
+
+                # Use optimized context
+                memory_prompt = optimization_result.optimized_context
+
+                # Log optimization metrics
+                logger.info(
+                    f"🎯 Level 8a: Context optimized | "
+                    f"query_type={query_type} | "
+                    f"reduction={optimization_result.reduction_pct:.1f}% | "
+                    f"tokens={optimization_result.original_tokens}→{optimization_result.token_count} | "
+                    f"expected={opt_config['expected_reduction_pct']}"
+                )
+
+                # 🆕 Level 8c: Record Prometheus metrics
+                _record_context_metrics(
+                    query_type=query_type,
+                    optimization_time_ms=optimization_result.optimization_time_ms,
+                    reduction_pct=optimization_result.reduction_pct,
+                )
+            except Exception as e:
+                # Graceful degradation: use full context on failure
+                logger.warning(
+                    f"⚠️ Level 8a: Context optimization failed, using full context: {e}"
+                )
+                memory_prompt = full_memory_prompt
+        else:
+            # Optimization disabled or no user_query - use full context
+            memory_prompt = full_memory_prompt
+            if not enable_context_optimization:
+                logger.debug("Level 8a: Context optimization disabled")
+            elif not user_query:
+                logger.debug("Level 8a: No user_query provided, skipping optimization")
+
         system_prompt += memory_prompt
 
         # 🆕 REINFORCEMENT: If ToT/GoT is enabled, remind the model to follow format

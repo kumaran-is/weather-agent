@@ -23,6 +23,7 @@ from backend.src.context.semantic_chunker import SemanticChunker
 from backend.src.context.relevance_filter import RelevanceFilter
 from backend.src.context.dynamic_assembler import DynamicAssembler
 from backend.src.context.hierarchical_loader import HierarchicalLoader
+from backend.src.context.query_type_detector import get_optimization_config
 
 logger = logging.getLogger(__name__)
 
@@ -141,9 +142,13 @@ class ContextWindowOptimizer:
         truncated = self._intelligent_truncate(context)
         phases_completed.append("intelligent_truncation")
         truncated_tokens = self.count_tokens(truncated)
+        if original_tokens > 0:
+            phase1_reduction = (1 - truncated_tokens / original_tokens) * 100
+        else:
+            phase1_reduction = 0.0
         logger.debug(
             f"Phase 1 complete | truncated_tokens={truncated_tokens} | "
-            f"reduction={(1 - truncated_tokens/original_tokens)*100:.1f}%"
+            f"reduction={phase1_reduction:.1f}%"
         )
 
         # Phase 2: Semantic Chunking
@@ -151,15 +156,25 @@ class ContextWindowOptimizer:
         phases_completed.append("semantic_chunking")
         logger.debug(f"Phase 2 complete | chunks_created={len(chunks)}")
 
-        # Phase 3: Relevance Filtering
+        # Phase 3: Relevance Filtering (query-type aware)
+        # Get query-type-specific optimization config
+        query_config = get_optimization_config(query_type)
+        type_min_relevance = query_config.get("min_relevance", self.min_relevance_score)
+        type_target_tokens = query_config.get("target_tokens", self.target_tokens)
+
+        logger.debug(
+            f"Phase 3 using query-type config | query_type={query_type} | "
+            f"min_relevance={type_min_relevance} | target_tokens={type_target_tokens}"
+        )
+
         if self.embeddings is not None:
             scored_chunks = await self.relevance_filter.score_chunks(query, chunks)
             relevant_chunks = [
-                c for c in scored_chunks if c["score"] >= self.min_relevance_score
+                c for c in scored_chunks if c["score"] >= type_min_relevance
             ]
         else:
-            # Without embeddings, use keyword-based filtering
-            relevant_chunks = self._keyword_filter(query, chunks)
+            # Without embeddings, use keyword-based filtering with type-aware threshold
+            relevant_chunks = self._keyword_filter(query, chunks, type_min_relevance)
         phases_completed.append("relevance_filtering")
         logger.debug(
             f"Phase 3 complete | relevant_chunks={len(relevant_chunks)} | "
@@ -326,28 +341,47 @@ class ContextWindowOptimizer:
         return "\n".join(kept_lines)
 
     def _keyword_filter(
-        self, query: str, chunks: list[str]
+        self, query: str, chunks: list[str], min_score: float = 0.1
     ) -> list[dict[str, Any]]:
         """
         Fallback keyword-based filtering when embeddings not available.
 
         Scores chunks based on keyword overlap with query.
+        Uses query-type-aware threshold for EMERGENCY (lower = keep more).
+
+        Args:
+            query: User query string
+            chunks: List of text chunks to filter
+            min_score: Minimum score threshold (lower for EMERGENCY to preserve more)
         """
         query_words = set(query.lower().split())
+
+        # Add weather/safety keywords for better matching
+        safety_keywords = {
+            "hurricane", "evacuation", "warning", "emergency", "shelter",
+            "category", "storm", "surge", "mandatory", "zone", "danger"
+        }
+
         scored_chunks = []
 
         for chunk in chunks:
-            chunk_words = set(chunk.lower().split())
+            chunk_lower = chunk.lower()
+            chunk_words = set(chunk_lower.split())
             overlap = len(query_words & chunk_words)
-            score = overlap / max(len(query_words), 1)
+            base_score = overlap / max(len(query_words), 1)
 
-            scored_chunks.append({"chunk": chunk, "score": score})
+            # Boost score for safety-critical content
+            safety_matches = sum(1 for kw in safety_keywords if kw in chunk_lower)
+            safety_boost = min(safety_matches * 0.15, 0.5)  # Max 0.5 boost
+
+            final_score = min(base_score + safety_boost, 1.0)
+            scored_chunks.append({"chunk": chunk, "score": final_score})
 
         # Sort by score descending
         scored_chunks.sort(key=lambda x: x["score"], reverse=True)
 
         # Return chunks with score above threshold
-        return [c for c in scored_chunks if c["score"] >= 0.1]
+        return [c for c in scored_chunks if c["score"] >= min_score]
 
     def count_tokens(self, text: str) -> int:
         """
@@ -408,3 +442,118 @@ class ContextWindowOptimizer:
         """Reset optimization metrics."""
         self.metrics = OptimizationMetrics()
         logger.info("Optimization metrics reset")
+
+    def optimize_sync(
+        self, query: str, context: str, query_type: str = "STANDARD"
+    ) -> OptimizationResult:
+        """
+        Synchronous version of optimize() for use in sync contexts.
+
+        Level 8a: Enables context optimization in sync functions like create_weather_agent.
+        Only works when embeddings=None (keyword-based filtering).
+
+        Args:
+            query: User's query string
+            context: Full context string (potentially 8K-12K tokens)
+            query_type: Type of query (SIMPLE, STANDARD, COMPLEX, EMERGENCY)
+
+        Returns:
+            OptimizationResult with optimized_context, token_count, reduction_pct
+
+        Raises:
+            RuntimeError: If embeddings are configured (requires async)
+        """
+        import time as time_module
+
+        start_time = time_module.time()
+        phases_completed = []
+        original_tokens = self.count_tokens(context)
+
+        logger.info(
+            f"Starting sync context optimization | query_type={query_type} | "
+            f"original_tokens={original_tokens}"
+        )
+
+        # Phase 1: Intelligent Truncation
+        truncated = self._intelligent_truncate(context)
+        phases_completed.append("intelligent_truncation")
+
+        # Phase 2: Semantic Chunking
+        chunks = self.chunker.chunk(truncated)
+        phases_completed.append("semantic_chunking")
+
+        # Phase 3: Relevance Filtering (sync only works with keyword-based)
+        if self.embeddings is not None:
+            # Fall back to async wrapper if embeddings configured
+            import asyncio
+
+            logger.warning(
+                "Embeddings configured - using asyncio.run() for sync optimization"
+            )
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Already in async context - can't use asyncio.run
+                    raise RuntimeError(
+                        "optimize_sync called with embeddings in async context. "
+                        "Use optimize() instead."
+                    )
+            except RuntimeError:
+                pass
+            return asyncio.run(self.optimize(query, context, query_type))
+
+        # Phase 3: Relevance Filtering (query-type aware, sync-safe)
+        # Get query-type-specific optimization config
+        query_config = get_optimization_config(query_type)
+        type_min_relevance = query_config.get("min_relevance", self.min_relevance_score)
+
+        logger.debug(
+            f"Phase 3 (sync) using query-type config | query_type={query_type} | "
+            f"min_relevance={type_min_relevance}"
+        )
+
+        relevant_chunks = self._keyword_filter(query, chunks, type_min_relevance)
+        phases_completed.append("relevance_filtering")
+        logger.debug(
+            f"Phase 3 complete (sync) | relevant_chunks={len(relevant_chunks)} | "
+            f"filtered_out={len(chunks) - len(relevant_chunks)}"
+        )
+
+        # Phase 4: Dynamic Assembly
+        assembled_context = self.assembler.assemble(
+            query=query, chunks=relevant_chunks, query_type=query_type
+        )
+        phases_completed.append("dynamic_assembly")
+
+        # Phase 5: Hierarchical Loading (prepare load order)
+        load_order = self.loader.prepare_load_order(assembled_context, query_type)
+        phases_completed.append("hierarchical_loading")
+
+        # Calculate final metrics
+        optimized_tokens = self.count_tokens(assembled_context)
+        reduction_pct = (
+            (1 - optimized_tokens / original_tokens) * 100 if original_tokens > 0 else 0
+        )
+        optimization_time_ms = (time_module.time() - start_time) * 1000
+
+        # Update metrics
+        self._update_metrics(reduction_pct, optimization_time_ms)
+
+        result = OptimizationResult(
+            optimized_context=assembled_context,
+            token_count=optimized_tokens,
+            original_tokens=original_tokens,
+            reduction_pct=reduction_pct,
+            load_order=load_order,
+            chunks_used=len(relevant_chunks),
+            chunks_filtered=len(chunks) - len(relevant_chunks),
+            optimization_time_ms=optimization_time_ms,
+            phases_completed=phases_completed,
+        )
+
+        logger.info(
+            f"Sync context optimization complete | reduction={reduction_pct:.1f}% | "
+            f"tokens={original_tokens}→{optimized_tokens} | time={optimization_time_ms:.1f}ms"
+        )
+
+        return result

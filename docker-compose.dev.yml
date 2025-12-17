@@ -10,7 +10,7 @@
 #   - Auto-reload on code changes
 #   - Source code mounted for hot reload
 #
-# LEVEL 5c Services:
+# LEVEL 8 Services:
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
 #   - Weather AI Agent API (port 8000) - DEV MODE
@@ -18,6 +18,7 @@
 #   - Redis (port 6379)
 #   - Neo4j (ports 7474, 7687)
 #   - PostgreSQL (port 5432)
+#   - Tempo (port 3200, 4317, 4318) - Level 8: Distributed Tracing
 #   - Prometheus (port 9090)
 #   - Grafana (port 3001)
 #   - Loki (port 3100)
@@ -314,6 +315,10 @@ services:
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-weather-ai-agent-dev-l3a}
+      # Level 8: OpenTelemetry tracing to Tempo
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_TRACES_ENABLED=true
+      - OTEL_SERVICE_NAME=weather-ai-agent
     depends_on:
       weather-mcp:
         condition: service_started
@@ -348,8 +353,48 @@ services:
           memory: 256M
 
 # ==========================================================================
+  # Tempo (Port 3200) - Level 8: Distributed Tracing (DEV)
+  # ==========================================================================
+  # Grafana Tempo for trace storage and signal correlation
+  # Signal Correlation:
+  #   - Traces → Logs: tracesToLogsV2 (Tempo → Loki)
+  #   - Traces → Metrics: tracesToMetrics (Tempo → Prometheus)
+  #   - Metrics → Traces: Exemplars (Prometheus → Tempo)
+  #   - Logs → Traces: Derived fields (Loki → Tempo)
+  # ==========================================================================
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: weather-ai-tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"   # Tempo HTTP API (for Grafana)
+      - "4317:4317"   # OTLP gRPC receiver (for OTel SDK)
+      - "4318:4318"   # OTLP HTTP receiver (alternative)
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3200/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # ==========================================================================
   # Prometheus (Port 9090) - Level 5c: Metrics Collection (DEV)
   # ==========================================================================
+  # Updated for Level 8: Exemplar storage enabled for trace correlation
   prometheus:
     image: prom/prometheus:v2.47.0
     container_name: weather-ai-prometheus
@@ -363,12 +408,17 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'
       - '--storage.tsdb.retention.time=7d'  # Shorter retention for dev
+      # Level 8: Enable exemplar storage for metrics→traces correlation
+      - '--enable-feature=exemplar-storage'
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus-data:/prometheus
     networks:
       - mcp-network
+    depends_on:
+      tempo:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -408,6 +458,10 @@ services:
       - mcp-network
     depends_on:
       prometheus:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      loki:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
@@ -480,6 +534,8 @@ volumes:
     name: weather-ai-neo4j-logs  # Level 3a - Neo4j logs
   postgres-data:
     name: weather-ai-postgres-data  # Level 3c - PostgreSQL procedural/reflective memory
+  tempo-data:
+    name: weather-ai-tempo-data  # Level 8 - Tempo distributed tracing
   prometheus-data:
     name: weather-ai-prometheus-data  # Level 5c - Prometheus metrics storage
   grafana-data:
@@ -488,7 +544,7 @@ volumes:
     name: weather-ai-loki-data  # Level 5c - Loki log storage
 
 # ============================================================================
-# Service Access URLs (Development - Level 5c)
+# Service Access URLs (Development - Level 8)
 # ============================================================================
 # After starting with `docker-compose -f docker-compose.dev.yml up -d`:
 #
@@ -503,10 +559,17 @@ volumes:
 # - PostgreSQL:          postgresql://weather_ai:weatherai2025@localhost:5432/weather_ai
 # - Redis CLI:           docker exec -it weather-ai-redis redis-cli
 #
-# Observability (Level 5c):
+# Observability (Level 8 - Signal Correlation):
 # - Grafana:             http://localhost:3001 (user: admin, pass: weatherai2025)
-# - Prometheus:          http://localhost:9090
+# - Prometheus:          http://localhost:9090 (with exemplar storage)
+# - Tempo:               http://localhost:3200 (distributed tracing)
 # - Loki:                http://localhost:3100 (accessed via Grafana)
+#
+# Signal Correlation (Level 8):
+# - Metrics → Traces:    Click exemplars in Grafana histograms
+# - Traces → Logs:       Click "View Logs" in trace view
+# - Logs → Traces:       Click trace_id link in log view
+# - Traces → Metrics:    View related RED metrics in trace view
 #
 # Quick Commands:
 # - Start all:           make docker-up-dev
@@ -516,3 +579,4 @@ volumes:
 # - View metrics:        make observability-status
 # - Open Grafana:        make grafana-open
 # - Test L1/L2 cache:    python test_cache_l1_l2.py
+# - Verify correlation:  python scripts/verify_signal_correlation.py

@@ -81,7 +81,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total[5m])) / sum(rate(cache_requests_total[5m]))",
+          "expr": "sum(rate(weather_ai_cache_hits_total[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total)[5m]))",
           "refId": "A"
         }
       ],
@@ -146,7 +146,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate(cache_requests_total{tier=\"L1\"}[5m]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L1\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -211,7 +211,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate(cache_requests_total{tier=\"L2\"}[5m]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L2\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -380,7 +380,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate(cache_requests_total{tier=\"L1\"}[5m]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L1\"}[5m]))",
           "legendFormat": "L1 Memory",
           "refId": "A"
         },
@@ -389,7 +389,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate(cache_requests_total{tier=\"L2\"}[5m]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L2\"}[5m]))",
           "legendFormat": "L2 Redis",
           "refId": "B"
         },
@@ -398,7 +398,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(cache_hits_total[5m])) / sum(rate(cache_requests_total[5m]))",
+          "expr": "sum(rate(weather_ai_cache_hits_total[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total)[5m]))",
           "legendFormat": "Overall",
           "refId": "C"
         }

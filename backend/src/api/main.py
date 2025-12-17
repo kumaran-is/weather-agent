@@ -127,8 +127,11 @@ from prometheus_client import (
     REGISTRY,
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# 🆕 Level 8: Structured JSON logging with trace context
+from backend.src.observability.logging import configure_structured_logging
+
+# Configure structured JSON logging with trace context
+configure_structured_logging()
 logger = logging.getLogger(__name__)
 
 # ========== Prometheus Metrics Definitions (Level 5c) ==========
@@ -169,6 +172,39 @@ AGENTS_INVOKED_TOTAL = Counter(
 ACTIVE_REQUESTS = Gauge(
     "weather_ai_active_requests",
     "Number of requests currently being processed"
+)
+
+# 🆕 Level 8c: Context optimization metrics
+CONTEXT_OPTIMIZATIONS_TOTAL = Counter(
+    "weather_ai_context_optimizations_total",
+    "Total context optimizations performed",
+    ["query_type"]  # SIMPLE, STANDARD, COMPLEX, EMERGENCY
+)
+
+CONTEXT_OPTIMIZATION_DURATION = Histogram(
+    "weather_ai_context_optimization_seconds",
+    "Context optimization duration in seconds",
+    ["query_type"],
+    buckets=[0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5]
+)
+
+CONTEXT_TOKEN_REDUCTION = Histogram(
+    "weather_ai_context_token_reduction_percent",
+    "Token reduction percentage achieved by optimization",
+    ["query_type"],
+    buckets=[10, 20, 30, 40, 50, 60, 70, 80, 90]
+)
+
+CONTEXT_ORIGINAL_TOKENS = Histogram(
+    "weather_ai_context_original_tokens",
+    "Original token count before optimization",
+    buckets=[500, 1000, 2000, 4000, 6000, 8000, 10000, 12000]
+)
+
+CONTEXT_OPTIMIZED_TOKENS = Histogram(
+    "weather_ai_context_optimized_tokens",
+    "Token count after optimization",
+    buckets=[500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
 )
 
 # Initialize workflow (module-level, safe to initialize once)
@@ -514,6 +550,7 @@ async def _invoke_basic_agent(
     effective_tot: bool,
     effective_got: bool,
     memory_context: dict | None,
+    enable_context_optimization: bool = True,  # 🆕 Level 8a
 ) -> str:
     """Invoke the basic single-agent weather agent (Level 1-3 behavior).
 
@@ -527,6 +564,7 @@ async def _invoke_basic_agent(
         effective_tot: Whether ToT is enabled
         effective_got: Whether GoT is enabled
         memory_context: Memory context dict (if any)
+        enable_context_optimization: Whether to enable Level 8a context optimization
 
     Returns:
         Response text from the agent
@@ -539,6 +577,8 @@ async def _invoke_basic_agent(
         enable_tot=effective_tot,
         enable_got=effective_got,
         memory_context=memory_context,
+        user_query=query,  # 🆕 Level 8a: Pass query for context optimization
+        enable_context_optimization=enable_context_optimization,  # 🆕 Level 8a
     )
 
     result = await agent.ainvoke({
@@ -1572,6 +1612,103 @@ async def get_mcp_health() -> dict:
         result["hurricane_mcp"] = {"status": "DISABLED"}
 
     return result
+
+
+# 🆕 Level 8a: Context optimization health endpoint
+@app.get(
+    "/health/context",
+    status_code=status.HTTP_200_OK,
+    summary="Context optimization statistics (Level 8a)",
+    description="Get context window optimization metrics including token reduction and performance",
+    tags=["System"]
+)
+async def get_context_health() -> dict:
+    """Get context window optimization health and metrics.
+
+    Returns comprehensive information about context optimization
+    performance including token reduction rates and optimization timing.
+
+    **Level 8a Feature:** Context Window Optimization observability.
+
+    **Statistics Provided:**
+    - total_optimizations: Number of optimizations performed
+    - avg_reduction_pct: Average token reduction percentage
+    - avg_optimization_time_ms: Average optimization latency
+    - target_met_count: Optimizations meeting 50% target
+    - target_miss_count: Optimizations missing 50% target
+    - target_achievement_rate: Percentage meeting target
+    - optimizer_config: Current optimizer configuration
+
+    **Example Response:**
+        {
+            "status": "healthy",
+            "total_optimizations": 150,
+            "avg_reduction_pct": 52.3,
+            "avg_optimization_time_ms": 45.2,
+            "target_met_count": 142,
+            "target_miss_count": 8,
+            "target_achievement_rate": 94.67,
+            "optimizer_config": {
+                "target_tokens": 4000,
+                "min_relevance_score": 0.5,
+                "embeddings_enabled": false
+            },
+            "query_type_distribution": {
+                "SIMPLE": 45,
+                "STANDARD": 80,
+                "COMPLEX": 20,
+                "EMERGENCY": 5
+            }
+        }
+
+    Returns:
+        dict: Context optimization statistics and health status
+    """
+    from backend.src.agents.weather_agent import get_context_optimizer
+
+    logger.debug("Context optimization stats requested (Level 8a)")
+
+    try:
+        optimizer = get_context_optimizer()
+        metrics = optimizer.get_metrics()
+
+        # Determine health status based on metrics
+        status = "healthy"
+        if metrics["total_optimizations"] == 0:
+            status = "no_data"
+        elif metrics["target_achievement_rate"] < 80:
+            status = "degraded"
+        elif metrics["avg_optimization_time_ms"] > 100:
+            status = "slow"
+
+        logger.info(
+            f"Context optimization stats | "
+            f"optimizations: {metrics['total_optimizations']} | "
+            f"avg_reduction: {metrics['avg_reduction_pct']:.1f}% | "
+            f"avg_time_ms: {metrics['avg_optimization_time_ms']:.1f}"
+        )
+
+        return {
+            "status": status,
+            "total_optimizations": metrics["total_optimizations"],
+            "avg_reduction_pct": metrics["avg_reduction_pct"],
+            "avg_optimization_time_ms": metrics["avg_optimization_time_ms"],
+            "target_met_count": metrics["target_met_count"],
+            "target_miss_count": metrics["target_miss_count"],
+            "target_achievement_rate": metrics["target_achievement_rate"],
+            "optimizer_config": {
+                "target_tokens": optimizer.target_tokens,
+                "min_relevance_score": optimizer.min_relevance_score,
+                "embeddings_enabled": optimizer.embeddings is not None,
+            },
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get context optimization stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get context optimization statistics: {str(e)}"
+        )
 
 
 # 🆕 L7b: Tool registry statistics endpoint (migrated to langgraph-bigtool)

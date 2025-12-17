@@ -255,3 +255,88 @@ groups:
         annotations:
           summary: "Redis memory usage high"
           description: "Redis memory is {{ $value | humanizePercentage }} of max"
+
+  # =========================================================================
+  # Context Optimization Alerts (Level 8c)
+  # =========================================================================
+  - name: context_optimization
+    rules:
+      # Low token reduction rate (target: 50-60%)
+      - alert: LowTokenReduction
+        expr: |
+          avg(weather_agent_context_token_reduction_percent) < 40
+        for: 10m
+        labels:
+          severity: warning
+          service: context-optimizer
+        annotations:
+          summary: "Context optimization token reduction below target"
+          description: "Average token reduction is {{ $value | printf \"%.1f\" }}% (target: >50%)"
+
+      # High optimization latency (target: <100ms)
+      - alert: HighContextOptimizationLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_agent_context_optimization_seconds_bucket[5m])) by (le)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: context-optimizer
+        annotations:
+          summary: "Context optimization P95 latency too high"
+          description: "P95 context optimization latency is {{ $value | humanizeDuration }} (target: <100ms)"
+
+      # Very high optimization latency (>200ms - degraded performance)
+      - alert: CriticalContextOptimizationLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(weather_agent_context_optimization_seconds_bucket[5m])) by (le)
+          ) > 0.2
+        for: 2m
+        labels:
+          severity: critical
+          service: context-optimizer
+        annotations:
+          summary: "Context optimization latency critically high"
+          description: "P99 context optimization latency is {{ $value | humanizeDuration }} (threshold: 200ms)"
+
+      # Target achievement rate too low
+      - alert: LowTargetAchievementRate
+        expr: |
+          (
+            sum(rate(weather_agent_context_token_reduction_percent_bucket{le="50"}[1h]))
+            /
+            sum(rate(weather_agent_context_token_reduction_percent_count[1h]))
+          ) < 0.80
+        for: 15m
+        labels:
+          severity: warning
+          service: context-optimizer
+        annotations:
+          summary: "Context optimization target achievement rate low"
+          description: "Only {{ $value | humanizePercentage }} of optimizations achieving 50% reduction target"
+
+      # Emergency queries not getting adequate context (safety concern)
+      - alert: EmergencyQueryLowContext
+        expr: |
+          avg(weather_agent_context_token_reduction_percent{query_type="EMERGENCY"}) > 45
+        for: 5m
+        labels:
+          severity: warning
+          service: context-optimizer
+        annotations:
+          summary: "Emergency queries over-optimized"
+          description: "EMERGENCY queries reduced by {{ $value | printf \"%.1f\" }}% (should be <40% for safety)"
+
+      # No optimizations happening (optimizer might be broken)
+      - alert: NoContextOptimizations
+        expr: |
+          sum(rate(weather_agent_context_optimizations_total[15m])) == 0
+        for: 30m
+        labels:
+          severity: info
+          service: context-optimizer
+        annotations:
+          summary: "No context optimizations in last 30 minutes"
+          description: "Context optimizer might be disabled or not being invoked"

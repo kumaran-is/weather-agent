@@ -1,0 +1,434 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Signal Correlation Dashboard - Level 8: Metrics ↔ Traces ↔ Logs",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Tempo Traces",
+      "tooltip": "View all traces in Tempo",
+      "type": "link",
+      "url": "/explore?orgId=1&left=%7B%22datasource%22%3A%22tempo%22%7D"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "📊 Metrics → Traces (Click ⭐ Exemplars)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Click on ⭐ exemplar points to jump to the corresponding trace in Tempo.\n\nExemplars are recorded on histogram observations with trace_id context.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Latency (seconds)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_request_duration_seconds_bucket{tier=~\"$tier\"}[5m])) by (le, tier))",
+          "legendFormat": "P95 - {{tier}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(weather_ai_request_duration_seconds_bucket{tier=~\"$tier\"}[5m])) by (le, tier))",
+          "legendFormat": "P99 - {{tier}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Request Latency (Click ⭐ for Traces)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "LLM API latency with exemplar correlation.\n\nClick ⭐ to see the full trace including agent reasoning, tool calls, and MCP interactions.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Latency (seconds)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_llm_latency_seconds_bucket[5m])) by (le, model))",
+          "legendFormat": "P95 - {{model}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.99, sum(rate(weather_ai_llm_latency_seconds_bucket[5m])) by (le, model))",
+          "legendFormat": "P99 - {{model}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "LLM Latency by Model (Click ⭐ for Traces)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "MCP server latency with trace correlation.\n\nClick ⭐ to see the full request trace including weather/hurricane data retrieval.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Latency (seconds)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_mcp_latency_seconds_bucket[5m])) by (le, server, operation))",
+          "legendFormat": "P95 - {{server}}/{{operation}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "MCP Latency (Click ⭐ for Traces)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Cache operation latency with trace correlation.\n\nSee which traces hit/miss cache layers.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.1 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_cache_latency_seconds_bucket[5m])) by (le, layer))",
+          "legendFormat": "P95 - {{layer}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Cache Latency by Layer (Click ⭐ for Traces)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 6,
+      "panels": [],
+      "title": "📋 Logs → Traces (Click trace_id Links)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "description": "Click on trace_id values to jump to the corresponding trace in Tempo.\n\nDerived fields extract trace_id from JSON logs.",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 18 },
+      "id": 7,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "{app=\"weather-ai-agent\"} | json | level=~\"$log_level\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Application Logs (Click trace_id for Traces)",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 8,
+      "panels": [],
+      "title": "🔍 Trace Search (Tempo)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "description": "Search for traces by service, operation, or duration.\n\nClick on a trace to see:\n- Related logs (Logs tab)\n- Related metrics (Metrics tab)\n- Full span hierarchy",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 29 },
+      "id": 9,
+      "options": {},
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "limit": 20,
+          "queryType": "traceqlSearch",
+          "refId": "A",
+          "tableType": "traces"
+        }
+      ],
+      "title": "Recent Traces (Click for Logs & Metrics)",
+      "type": "traces"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "id": 10,
+      "panels": [],
+      "title": "📈 Signal Correlation Guide",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "datasource", "uid": "-- Dashboard --" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 38 },
+      "id": 11,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "## 🔗 Signal Correlation Flow\n\n```\n┌─────────────────────────────────────────────────────────────────────────────────────┐\n│                             OBSERVABILITY CORRELATION                                 │\n├─────────────────────────────────────────────────────────────────────────────────────┤\n│                                                                                      │\n│   ┌──────────────┐         ⭐ exemplars          ┌──────────────┐                   │\n│   │  PROMETHEUS  │ ────────────────────────────► │    TEMPO     │                   │\n│   │   Metrics    │   (click stars on charts)     │   Traces     │                   │\n│   │              │ ◄──────────────────────────── │              │                   │\n│   └──────────────┘    tracesToMetrics (RED)      └──────────────┘                   │\n│          │                                              │                            │\n│          │                                              │ tracesToLogsV2             │\n│          ▼                                              ▼                            │\n│   ┌───────────────────────────────────────────────────────────────┐                 │\n│   │                         GRAFANA                               │                 │\n│   │  • Metrics panels: Click ⭐ exemplars → Jump to Tempo trace   │                 │\n│   │  • Logs panel: Click trace_id → Jump to Tempo trace          │                 │\n│   │  • Trace view: See \"Logs\" and \"Metrics\" tabs                 │                 │\n│   └───────────────────────────────────────────────────────────────┘                 │\n│          ▲                                              ▲                            │\n│          │                                              │                            │\n│          │ derivedFields                                │                            │\n│          │ (trace_id regex)                             │                            │\n│          │                                              │                            │\n│   ┌──────────────┐                              ┌──────────────┐                    │\n│   │    LOKI      │ ◄────────────────────────────│    TEMPO     │                    │\n│   │    Logs      │      tracesToLogsV2          │   Traces     │                    │\n│   │              │      (by trace_id)           │              │                    │\n│   └──────────────┘                              └──────────────┘                    │\n│                                                                                      │\n└─────────────────────────────────────────────────────────────────────────────────────┘\n```\n\n### Quick Actions\n\n| From | To | How |\n|------|----|----- |\n| **Metrics** → Traces | Click ⭐ exemplar points on histogram charts |\n| **Logs** → Traces | Click `trace_id` link in log entries |\n| **Traces** → Logs | Open trace, click \"Logs\" tab |\n| **Traces** → Metrics | Open trace, click \"Metrics\" tab (RED signals) |",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.0",
+      "title": "Signal Correlation Guide",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["level-8", "signal-correlation", "observability", "exemplars"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(weather_ai_requests_total, tier)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Tier",
+        "multi": true,
+        "name": "tier",
+        "options": [],
+        "query": { "query": "label_values(weather_ai_requests_total, tier)", "refId": "StandardVariableQuery" },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Log Level",
+        "multi": true,
+        "name": "log_level",
+        "options": [
+          { "selected": true, "text": "All", "value": "$__all" },
+          { "selected": false, "text": "error", "value": "error" },
+          { "selected": false, "text": "warn", "value": "warn" },
+          { "selected": false, "text": "info", "value": "info" },
+          { "selected": false, "text": "debug", "value": "debug" }
+        ],
+        "query": "error,warn,info,debug",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Signal Correlation (Level 8)",
+  "uid": "signal-correlation-l8",
+  "version": 1,
+  "weekStart": ""
+}

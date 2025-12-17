@@ -54,20 +54,22 @@ test:  ## Run all tests with pytest
 	uv run pytest
 	@echo "$(GREEN)✓ All tests passed$(NC)"
 
-test-dev:  ## Restart dev environment and run complete test suite (progressive: currently Level 5c complete)
+test-dev:  ## Restart dev environment and run complete test suite (progressive: currently Level 8 complete)
 	@echo "$(BLUE)========================================$(NC)"
 	@echo "$(BLUE)Weather AI Agent - Development Test Suite$(NC)"
 	@echo "$(BLUE)========================================$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Current Level: Level 5c COMPLETE (v0.10.0)$(NC)"
+	@echo "$(YELLOW)Current Level: Level 8 COMPLETE (v1.6.1)$(NC)"
 	@echo "  ✅ Level 1: ReAct Agent + HITL (7 tests)"
 	@echo "  ✅ Level 2: RAG + Chain-of-Thought (4 tests)"
 	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + 3-Layer Caching (15 tests)"
 	@echo "  ✅ Level 4: 15-Agent Multi-Agent Orchestration (20 tests)"
 	@echo "  ✅ Level 5: Production + Guardrails + Evaluation + Observability (3 tests)"
+	@echo "  ✅ Level 7: LangGraph-BigTool Tool Registry + Semantic Discovery"
+	@echo "  ✅ Level 8: Signal Correlation (Metrics ↔ Traces ↔ Logs)"
 	@echo "  $(GREEN)Total: 49 test files$(NC)"
 	@echo ""
-	@echo "$(BLUE)[1/3] Restarting development environment (10 services)...$(NC)"
+	@echo "$(BLUE)[1/3] Restarting development environment (11 services)...$(NC)"
 	@docker-compose -f docker-compose.dev.yml restart
 	@echo "$(GREEN)✓ Development environment restarted$(NC)"
 	@echo ""
@@ -170,16 +172,16 @@ run-verify:  ## Run Level 0 verification script (alias for 'verify')
 run-agent:  ## Run Weather AI Agent Service (use docker-up-dev instead)
 	@echo "$(BLUE)Starting Weather AI Agent Service...$(NC)"
 	@echo "$(YELLOW)⚠️  Use 'make docker-up-dev' to run the service$(NC)"
-	@echo "$(YELLOW)   Current: Level 5c COMPLETE (v0.10.0)$(NC)"
+	@echo "$(YELLOW)   Current: Level 8 COMPLETE (v1.6.1)$(NC)"
 	@echo ""
 	@echo "$(GREEN)Quick start:$(NC)"
-	@echo "  1. make docker-up-dev   # Start all 10 services"
+	@echo "  1. make docker-up-dev   # Start all 11 services"
 	@echo "  2. make test-dev        # Run 49 tests"
 	@echo "  3. Visit http://localhost:8000/docs"
 
 # Version info
-version:  ## Show installed versions (Level 5c: all dependencies)
-	@echo "$(BLUE)Installed Versions (Level 5c v0.10.0):$(NC)"
+version:  ## Show installed versions (Level 8: all dependencies + OpenTelemetry)
+	@echo "$(BLUE)Installed Versions (Level 8 v1.6.1):$(NC)"
 	@uv run python --version
 	@echo ""
 	@echo "$(YELLOW)LangChain Ecosystem (Level 1+2+3+4):$(NC)"
@@ -198,7 +200,7 @@ version:  ## Show installed versions (Level 5c: all dependencies)
 	@echo "$(YELLOW)Vector Store (Level 2):$(NC)"
 	@uv run python -c "import qdrant_client; print(f'  qdrant-client:       {qdrant_client.__version__}')" 2>/dev/null || echo "  qdrant-client: not installed"
 	@echo ""
-	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@echo "$(YELLOW)Observability (Level 8 - Signal Correlation):$(NC)"
 	@uv run python -c "import prometheus_client; print(f'  prometheus-client:   {prometheus_client.__version__}')" 2>/dev/null || echo "  prometheus-client: not installed"
 
 # Quick start
@@ -208,24 +210,26 @@ quickstart: install-dev version verify  ## Quick start - install everything, sho
 	@echo "$(YELLOW)Next steps:$(NC)"
 	@echo "  1. If verification failed, copy .env.template to .env and add your API keys"
 	@echo "  2. Run 'make verify' again to confirm setup"
-	@echo "  3. Run 'make docker-up-dev' to start all 10 services in dev mode"
-	@echo "  4. Run 'make test-dev' to test all features (Level 1-5c, 49 tests)"
+	@echo "  3. Run 'make docker-up-dev' to start all 11 services in dev mode"
+	@echo "  4. Run 'make test-dev' to test all features (Level 1-8, 49 tests)"
 	@echo "  5. Run 'make help' to see all available commands"
 
 # Development workflow
-dev: install-dev  ## Setup development environment (progressive: currently Level 5c complete)
+dev: install-dev  ## Setup development environment (progressive: currently Level 8 complete)
 	@echo "$(GREEN)✓ Development environment ready!$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Current Level: Level 5c COMPLETE (v0.10.0)$(NC)"
+	@echo "$(YELLOW)Current Level: Level 8 COMPLETE (v1.6.1)$(NC)"
 	@echo "  ✅ Level 1: ReAct Agent + HITL"
 	@echo "  ✅ Level 2: RAG + Chain-of-Thought"
 	@echo "  ✅ Level 3: 7-Layer Memory + Advanced Reasoning + 3-Layer Caching"
 	@echo "  ✅ Level 4: 15-Agent Multi-Agent Orchestration"
 	@echo "  ✅ Level 5: Production + Guardrails + Evaluation + Observability"
+	@echo "  ✅ Level 7: LangGraph-BigTool Tool Registry + Semantic Discovery"
+	@echo "  ✅ Level 8: Signal Correlation (Metrics ↔ Traces ↔ Logs)"
 	@echo ""
 	@echo "$(YELLOW)Next steps:$(NC)"
 	@echo "  1. Copy .env.template to .env and add your API keys"
-	@echo "  2. Run 'make docker-up-dev' to start all 10 services in dev mode"
+	@echo "  2. Run 'make docker-up-dev' to start all 11 services in dev mode"
 	@echo "  3. Run 'make test-dev' to run complete test suite (49 tests)"
 	@echo "  4. Run 'make all-checks' before committing code"
 	@echo "  5. Run 'make observability-status' to check monitoring stack"
@@ -533,14 +537,14 @@ eval-agentbench:  ## Run AgentBench evaluation only (15 test cases)
 	@echo "$(GREEN)✓ AgentBench evaluation complete$(NC)"
 
 # ============================================================================
-# Docker Compose Commands (Level 5c: 10 Services)
+# Docker Compose Commands (Level 8: 11 Services - Signal Correlation)
 # Core Services: weather-mcp:8080, hurricane-mcp:8081, weather-ai-api:8000
 # Databases: qdrant:6333, redis:6379, neo4j:7474/7687, postgres:5432
-# Observability: prometheus:9090, grafana:3001, loki:3100
+# Observability: prometheus:9090, grafana:3001, loki:3100, tempo:3200
 # ============================================================================
 
-docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 5c: 10 services)
-	@echo "$(BLUE)Starting all Docker containers (PRODUCTION MODE - Level 5c)...$(NC)"
+docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 8: 11 services)
+	@echo "$(BLUE)Starting all Docker containers (PRODUCTION MODE - Level 8)...$(NC)"
 	@echo "$(YELLOW)Core Services:$(NC)"
 	@echo "  - weather-mcp:      http://localhost:8080"
 	@echo "  - hurricane-mcp:    http://localhost:8081"
@@ -550,10 +554,11 @@ docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 5c: 10 serv
 	@echo "  - redis:            redis://localhost:6379 (Level 3a - Memory + Cache)"
 	@echo "  - neo4j:            http://localhost:7474  (Level 3a - Long-term memory)"
 	@echo "  - postgres:         localhost:5432         (Level 3c - Procedural memory)"
-	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@echo "$(YELLOW)Observability (Level 8 - Signal Correlation):$(NC)"
 	@echo "  - prometheus:       http://localhost:9090  (Metrics)"
 	@echo "  - grafana:          http://localhost:3001  (Dashboards)"
 	@echo "  - loki:             http://localhost:3100  (Logs)"
+	@echo "  - tempo:            http://localhost:3200  (Traces)"
 	docker-compose up -d
 	@echo "$(GREEN)✓ All containers started$(NC)"
 	@echo ""
@@ -562,15 +567,15 @@ docker-up:  ## Start all Docker containers in PRODUCTION mode (Level 5c: 10 serv
 	@echo "$(YELLOW)Observability:       make observability-status$(NC)"
 	@echo "$(YELLOW)Open Grafana:        make grafana-open$(NC)"
 
-docker-up-dev:  ## Start all Docker containers in DEVELOPMENT mode (Level 5c: 10 services + hot reload)
-	@echo "$(BLUE)Starting all Docker containers (DEVELOPMENT MODE - Level 5c)...$(NC)"
+docker-up-dev:  ## Start all Docker containers in DEVELOPMENT mode (Level 8: 11 services + hot reload)
+	@echo "$(BLUE)Starting all Docker containers (DEVELOPMENT MODE - Level 8)...$(NC)"
 	@echo "$(YELLOW)Dev Features:$(NC)"
 	@echo "  ✅ Hot reload enabled (code changes reflect immediately)"
 	@echo "  ✅ Source code mounted as volume (no rebuild needed)"
 	@echo "  ✅ Debug logging enabled"
 	@echo "  ✅ LangSmith tracing enabled"
 	@echo "  ✅ Memory system enabled (Redis + Neo4j)"
-	@echo "  ✅ Observability stack (Prometheus + Grafana + Loki)"
+	@echo "  ✅ Observability stack (Prometheus + Grafana + Loki + Tempo)"
 	@echo ""
 	@echo "$(YELLOW)Core Services:$(NC)"
 	@echo "  - weather-mcp:      http://localhost:8080"
@@ -581,10 +586,11 @@ docker-up-dev:  ## Start all Docker containers in DEVELOPMENT mode (Level 5c: 10
 	@echo "  - redis:            redis://localhost:6379 (Level 3a - Memory + Cache)"
 	@echo "  - neo4j:            http://localhost:7474  (Level 3a - Long-term memory)"
 	@echo "  - postgres:         localhost:5432         (Level 3c - Procedural memory)"
-	@echo "$(YELLOW)Observability (Level 5c):$(NC)"
+	@echo "$(YELLOW)Observability (Level 8 - Signal Correlation):$(NC)"
 	@echo "  - prometheus:       http://localhost:9090  (Metrics)"
 	@echo "  - grafana:          http://localhost:3001  (Dashboards - admin/weatherai2025)"
 	@echo "  - loki:             http://localhost:3100  (Logs)"
+	@echo "  - tempo:            http://localhost:3200  (Traces)"
 	docker-compose -f docker-compose.dev.yml up -d
 	@echo "$(GREEN)✓ All containers started in DEV mode$(NC)"
 	@echo ""
@@ -639,8 +645,8 @@ docker-ps-dev:  ## Show status of all DEVELOPMENT Docker containers
 	@echo "$(BLUE)Docker container status (DEVELOPMENT):$(NC)"
 	@docker-compose -f docker-compose.dev.yml ps
 
-docker-health:  ## Check health status of all Docker containers (Level 5c: 10 services)
-	@echo "$(BLUE)Checking health status of all containers (Level 5c)...$(NC)"
+docker-health:  ## Check health status of all Docker containers (Level 8: 11 services)
+	@echo "$(BLUE)Checking health status of all containers (Level 8)...$(NC)"
 	@echo ""
 	@echo "$(YELLOW)=== Core Services ===$(NC)"
 	@echo "Weather MCP Server (8080):"; \
@@ -660,13 +666,15 @@ docker-health:  ## Check health status of all Docker containers (Level 5c: 10 se
 	@echo "PostgreSQL (5432):"; \
 	docker inspect --format='  {{.State.Health.Status}}' weather-ai-postgres 2>/dev/null || echo "  $(RED)Not running$(NC)"
 	@echo ""
-	@echo "$(YELLOW)=== Observability (Level 5c) ===$(NC)"
+	@echo "$(YELLOW)=== Observability (Level 8 - Signal Correlation) ===$(NC)"
 	@echo "Prometheus (9090):"; \
 	docker inspect --format='  {{.State.Health.Status}}' weather-ai-prometheus 2>/dev/null || echo "  $(RED)Not running$(NC)"
 	@echo "Grafana (3001):"; \
 	docker inspect --format='  {{.State.Health.Status}}' weather-ai-grafana 2>/dev/null || echo "  $(RED)Not running$(NC)"
 	@echo "Loki (3100):"; \
 	docker inspect --format='  {{.State.Health.Status}}' weather-ai-loki 2>/dev/null || echo "  $(RED)Not running$(NC)"
+	@echo "Tempo (3200):"; \
+	docker inspect --format='  {{.State.Health.Status}}' weather-ai-tempo 2>/dev/null || echo "  $(RED)Not running$(NC)"
 	@echo ""
 	@echo "$(GREEN)✓ Health check complete$(NC)"
 	@echo ""
@@ -690,11 +698,11 @@ docker-clean-dev:  ## Stop DEVELOPMENT containers and remove volumes (WARNING: d
 	@echo "$(GREEN)✓ All dev containers and volumes removed$(NC)"
 
 # ============================================================================
-# Observability Commands (Level 5c: Prometheus + Grafana + Loki)
+# Observability Commands (Level 8: Prometheus + Grafana + Loki + Tempo)
 # ============================================================================
 
-observability-status:  ## Show status of observability stack (Prometheus, Grafana, Loki)
-	@echo "$(BLUE)Observability Stack Status (Level 5c)$(NC)"
+observability-status:  ## Show status of observability stack (Prometheus, Grafana, Loki, Tempo)
+	@echo "$(BLUE)Observability Stack Status (Level 8)$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Prometheus (Metrics):$(NC)"
 	@PROMETHEUS_STATUS=$$(docker inspect --format='{{.State.Health.Status}}' weather-ai-prometheus 2>/dev/null || echo "not running"); \
@@ -704,6 +712,16 @@ observability-status:  ## Show status of observability stack (Prometheus, Grafan
 		curl -s http://localhost:9090/api/v1/targets 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'  ✓ Targets: {len(d.get(\"data\", {}).get(\"activeTargets\", []))} active')" 2>/dev/null || echo "  ⚠️ Cannot fetch targets"; \
 	else \
 		echo "  $(RED)✗ Status: $$PROMETHEUS_STATUS$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)Tempo (Distributed Tracing - Level 8):$(NC)"
+	@TEMPO_STATUS=$$(docker inspect --format='{{.State.Health.Status}}' weather-ai-tempo 2>/dev/null || echo "not running"); \
+	if [ "$$TEMPO_STATUS" = "healthy" ]; then \
+		echo "  $(GREEN)✓ Status: $$TEMPO_STATUS$(NC)"; \
+		echo "  $(GREEN)✓ URL: http://localhost:3200$(NC)"; \
+		echo "  $(GREEN)✓ OTLP: grpc://localhost:4317, http://localhost:4318$(NC)"; \
+	else \
+		echo "  $(RED)✗ Status: $$TEMPO_STATUS$(NC)"; \
 	fi
 	@echo ""
 	@echo "$(YELLOW)Grafana (Dashboards):$(NC)"
@@ -728,12 +746,17 @@ observability-status:  ## Show status of observability stack (Prometheus, Grafan
 	@echo "$(GREEN)Quick Links:$(NC)"
 	@echo "  - Grafana:    http://localhost:3001"
 	@echo "  - Prometheus: http://localhost:9090"
+	@echo "  - Tempo:      http://localhost:3200"
 	@echo "  - LangSmith:  https://smith.langchain.com"
 
 observability-logs:  ## View logs from observability stack
 	@echo "$(BLUE)Observability Stack Logs$(NC)"
-	@docker-compose logs -f prometheus grafana loki 2>/dev/null || \
-	docker-compose -f docker-compose.dev.yml logs -f prometheus grafana loki
+	@docker-compose logs -f prometheus grafana loki tempo 2>/dev/null || \
+	docker-compose -f docker-compose.dev.yml logs -f prometheus grafana loki tempo
+
+verify-signal-correlation:  ## Verify signal correlation components (Level 8)
+	@echo "$(BLUE)Verifying Signal Correlation (Level 8)$(NC)"
+	@python scripts/verify_signal_correlation.py
 
 grafana-open:  ## Open Grafana in browser
 	@echo "$(BLUE)Opening Grafana...$(NC)"
@@ -741,9 +764,10 @@ grafana-open:  ## Open Grafana in browser
 	@echo "$(YELLOW)Login: admin / weatherai2025$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Dashboards:$(NC)"
-	@echo "  - MCP Health:        http://localhost:3001/d/mcp-health"
-	@echo "  - Agent Performance: http://localhost:3001/d/agent-performance"
-	@echo "  - Cache Metrics:     http://localhost:3001/d/cache-metrics"
+	@echo "  - Signal Correlation: http://localhost:3001/d/signal-correlation (Level 8)"
+	@echo "  - MCP Health:         http://localhost:3001/d/mcp-health"
+	@echo "  - Agent Performance:  http://localhost:3001/d/agent-performance"
+	@echo "  - Cache Metrics:      http://localhost:3001/d/cache-metrics"
 	@open http://localhost:3001 2>/dev/null || xdg-open http://localhost:3001 2>/dev/null || echo "$(YELLOW)Please open http://localhost:3001 in your browser$(NC)"
 
 prometheus-open:  ## Open Prometheus in browser

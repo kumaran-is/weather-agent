@@ -490,7 +490,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(weather_ai_requests_total[5m])) by (tier)",
+          "expr": "sum(rate(weather_ai_requests_total[5m])) by (complexity)",
           "legendFormat": "{{complexity}}",
           "refId": "A"
         }
