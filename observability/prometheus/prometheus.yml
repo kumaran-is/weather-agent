@@ -1,15 +1,20 @@
 # ============================================================================
-# Prometheus Configuration - Weather AI Agent Service (Level 5c)
+# Prometheus Configuration - Weather AI Agent Service (Level 8)
 # ============================================================================
-# Scrape configuration for all Weather AI services
+# Scrape configuration for all Weather AI services with exemplar support
+#
+# Level 8 Signal Correlation:
+#   - Exemplar storage enabled (--enable-feature=exemplar-storage)
+#   - HTTP/2 enabled for exemplar scraping
+#   - Metrics → Traces correlation via trace_id exemplars
 #
 # Services monitored:
-#   - Weather AI API (FastAPI + MCP metrics)
-#   - Redis Exporter (cache metrics)
-#   - Neo4j (graph database)
-#   - Node Exporter (system metrics) - optional
+#   - Weather AI API (FastAPI + MCP metrics + exemplars)
+#   - Tempo (distributed tracing)
+#   - Grafana (dashboards)
+#   - Loki (log aggregation)
 #
-# Alert rules: See alert_rules.yml
+# Alert rules: See alert_rules.yml, slo_alert_rules.yml
 # ============================================================================
 
 global:
@@ -22,6 +27,7 @@ global:
   external_labels:
     environment: 'production'
     project: 'weather-ai-agent'
+    cluster: 'weather-ai'
 
 # Alertmanager configuration (optional - can be added later)
 # alerting:
@@ -30,9 +36,10 @@ global:
 #         - targets:
 #           - alertmanager:9093
 
-# Load and evaluate rules from alert_rules.yml
+# Load and evaluate rules from alert files
 rule_files:
   - "/etc/prometheus/alert_rules.yml"
+  - "/etc/prometheus/slo_alert_rules.yml"  # Level 9: SLO-based alerting
 
 # Scrape configurations
 scrape_configs:
@@ -45,14 +52,17 @@ scrape_configs:
     metrics_path: /metrics
 
   # =========================================================================
-  # Weather AI API (FastAPI + MCP metrics)
+  # Weather AI API (FastAPI + MCP metrics + Exemplars)
   # =========================================================================
+  # Level 8: HTTP/2 enabled for exemplar scraping
   - job_name: 'weather-ai-api'
     static_configs:
       - targets: ['weather-ai-api:8000']
     metrics_path: /metrics
     scrape_interval: 10s
     scrape_timeout: 5s
+    # Level 8: Enable HTTP/2 for better exemplar support
+    enable_http2: true
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance

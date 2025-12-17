@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Agent Performance & Cost Tracking - Weather AI Agent Service (Level 5c)",
+  "description": "L1/L2/L3 Cache Metrics - Weather AI Agent Service (Level 5c)",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -20,7 +20,7 @@
       },
       "id": 1,
       "panels": [],
-      "title": "Agent Overview",
+      "title": "Cache Overview",
       "type": "row"
     },
     {
@@ -38,29 +38,37 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.2
+              },
+              {
+                "color": "green",
+                "value": 0.4
               }
             ]
           },
-          "unit": "none"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 6,
+        "w": 6,
         "x": 0,
         "y": 1
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": ["mean"],
           "fields": "",
           "values": false
         },
@@ -73,11 +81,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(weather_ai_requests_total[24h]))",
+          "expr": "sum(rate(cache_hits_total[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total)[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Queries (24h)",
+      "title": "Overall Hit Rate",
       "type": "stat"
     },
     {
@@ -95,27 +103,27 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
                 "color": "yellow",
-                "value": 25
+                "value": 0.2
               },
               {
-                "color": "red",
-                "value": 50
+                "color": "green",
+                "value": 0.3
               }
             ]
           },
-          "unit": "currencyUSD"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
+        "h": 6,
+        "w": 6,
+        "x": 6,
         "y": 1
       },
       "id": 3,
@@ -125,7 +133,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["sum"],
+          "calcs": ["mean"],
           "fields": "",
           "values": false
         },
@@ -138,11 +146,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(agent_query_cost_dollars[24h]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L1\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Cost (24h)",
+      "title": "L1 (Memory) Hit Rate",
       "type": "stat"
     },
     {
@@ -160,27 +168,27 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
                 "color": "yellow",
-                "value": 0.03
+                "value": 0.15
               },
               {
-                "color": "red",
-                "value": 0.05
+                "color": "green",
+                "value": 0.2
               }
             ]
           },
-          "unit": "currencyUSD"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
+        "h": 6,
+        "w": 6,
+        "x": 12,
         "y": 1
       },
       "id": 4,
@@ -203,11 +211,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(agent_query_cost_dollars[1h])) / sum(rate(weather_ai_requests_total[1h]))",
+          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L2\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Avg Cost/Query",
+      "title": "L2 (Redis) Hit Rate",
       "type": "stat"
     },
     {
@@ -230,11 +238,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.7
+                "value": 0.3
               },
               {
                 "color": "green",
-                "value": 0.85
+                "value": 0.5
               }
             ]
           },
@@ -243,9 +251,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
+        "h": 6,
+        "w": 6,
+        "x": 18,
         "y": 1
       },
       "id": 5,
@@ -268,133 +276,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(agent_queries_successful_total[1h])) / sum(rate(weather_ai_requests_total[1h]))",
+          "expr": "sum(rate(anthropic_cache_read_tokens_total[1h])) / sum(rate(anthropic_total_tokens_total[1h]))",
           "refId": "A"
         }
       ],
-      "title": "Success Rate",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 2
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 1
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["mean"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_request_duration_seconds_bucket[5m])) by (le))",
-          "refId": "A"
-        }
-      ],
-      "title": "P95 Latency",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 1
-      },
-      "id": 7,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["mean"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(rate(agent_tool_calls_total[1h])) / sum(rate(weather_ai_requests_total[1h]))",
-          "refId": "A"
-        }
-      ],
-      "title": "Avg Tools/Query",
+      "title": "L3 (Anthropic) Cache Ratio",
       "type": "stat"
     },
     {
@@ -403,11 +289,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
-      "id": 8,
+      "id": 6,
       "panels": [],
-      "title": "Query Trends",
+      "title": "Cache Trends",
       "type": "row"
     },
     {
@@ -447,7 +333,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
           },
           "mappings": [],
@@ -455,12 +341,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.3
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "percentunit"
         },
         "overrides": []
       },
@@ -468,9 +358,9 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 8
       },
-      "id": 9,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": ["mean", "max"],
@@ -490,12 +380,30 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(weather_ai_requests_total[5m])) by (tier)",
-          "legendFormat": "{{complexity}}",
+          "expr": "sum(rate(cache_hits_total{tier=\"L1\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L1\"}[5m]))",
+          "legendFormat": "L1 Memory",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cache_hits_total{tier=\"L2\"}[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total){tier=\"L2\"}[5m]))",
+          "legendFormat": "L2 Redis",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cache_hits_total[5m])) / sum(rate((weather_ai_cache_hits_total + weather_ai_cache_misses_total)[5m]))",
+          "legendFormat": "Overall",
+          "refId": "C"
         }
       ],
-      "title": "Query Rate by Complexity",
+      "title": "Cache Hit Rates Over Time",
       "type": "timeseries"
     },
     {
@@ -547,12 +455,16 @@
                 "value": null
               },
               {
+                "color": "yellow",
+                "value": 0.001
+              },
+              {
                 "color": "red",
-                "value": 50
+                "value": 0.01
               }
             ]
           },
-          "unit": "currencyUSD"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -560,12 +472,12 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 8
       },
-      "id": 10,
+      "id": 8,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": ["mean", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -582,12 +494,21 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(agent_query_cost_dollars[1h])) by (model)",
-          "legendFormat": "{{model}}",
+          "expr": "histogram_quantile(0.95, sum(rate(cache_latency_seconds_bucket{tier=\"L1\"}[5m])) by (le))",
+          "legendFormat": "L1 P95",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(cache_latency_seconds_bucket{tier=\"L2\"}[5m])) by (le))",
+          "legendFormat": "L2 P95",
+          "refId": "B"
         }
       ],
-      "title": "Cost by Model (hourly)",
+      "title": "Cache Latency (P95)",
       "type": "timeseries"
     },
     {
@@ -596,11 +517,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 16
       },
-      "id": 11,
+      "id": 9,
       "panels": [],
-      "title": "Guardrails & Safety",
+      "title": "L3 Anthropic Cache (Cost Savings)",
       "type": "row"
     },
     {
@@ -620,10 +541,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
               }
             ]
           },
@@ -633,9 +550,131 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 4,
+        "w": 6,
         "x": 0,
-        "y": 15
+        "y": 17
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(anthropic_cache_write_tokens_total[24h]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache Write Tokens (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 17
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(increase(anthropic_cache_read_tokens_total[24h]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache Read Tokens (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "green",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 17
       },
       "id": 12,
       "options": {
@@ -657,72 +696,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(guardrail_violations_total{layer=\"L2_PII\"}[24h]))",
+          "expr": "sum(increase(anthropic_cost_savings_dollars[24h]))",
           "refId": "A"
         }
       ],
-      "title": "PII Violations (24h)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 15
-      },
-      "id": 13,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["sum"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(increase(guardrail_violations_total{layer=\"L8_Hurricane\"}[24h]))",
-          "refId": "A"
-        }
-      ],
-      "title": "Hurricane Validation Failures (24h)",
+      "title": "L3 Cost Savings (24h)",
       "type": "stat"
     },
     {
@@ -741,8 +719,8 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
+            "drawStyle": "line",
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -759,7 +737,7 @@
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "normal"
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -775,22 +753,22 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "currencyUSD"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 6,
-        "w": 16,
-        "x": 8,
-        "y": 15
+        "w": 6,
+        "x": 18,
+        "y": 17
       },
-      "id": 14,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": ["sum"],
           "displayMode": "table",
-          "placement": "right",
+          "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
@@ -805,19 +783,19 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(guardrail_violations_total[1h])) by (layer)",
-          "legendFormat": "{{layer}}",
+          "expr": "sum(increase(anthropic_cost_savings_dollars[1h]))",
+          "legendFormat": "Savings",
           "refId": "A"
         }
       ],
-      "title": "Guardrail Violations by Layer (hourly)",
+      "title": "Hourly Cost Savings",
       "type": "timeseries"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["weather-ai", "agent", "level-5c"],
+  "tags": ["weather-ai", "cache", "level-5c"],
   "templating": {
     "list": [
       {
@@ -845,8 +823,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Agent Performance Dashboard",
-  "uid": "agent-performance",
+  "title": "Cache Metrics Dashboard",
+  "uid": "cache-metrics",
   "version": 1,
   "weekStart": ""
 }

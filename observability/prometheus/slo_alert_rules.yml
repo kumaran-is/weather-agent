@@ -1,0 +1,416 @@
+# ============================================================================
+# SLO-Based Alert Rules - Weather AI Agent Service (Level 9)
+# ============================================================================
+# Multi-window, multi-burn-rate alerting based on Google SRE best practices
+#
+# SLO Targets:
+#   - Availability: 99.9% (error budget: 0.1% = 43.8 min/month)
+#   - Latency P95: <2s (standard), <5s (complex/emergency)
+#   - Correctness: 95% for weather data accuracy
+#   - Safety: 100% for hurricane category validation
+#
+# Burn Rate Windows:
+#   - 2% burn rate (1h window): Page immediately
+#   - 10% burn rate (6h window): Page within 1h
+#   - 100% burn rate (3d window): Ticket
+#
+# Reference: https://sre.google/workbook/alerting-on-slos/
+# ============================================================================
+
+groups:
+  # =========================================================================
+  # SLO: Availability (99.9%)
+  # Error Budget: 43.8 minutes per month (0.1%)
+  # =========================================================================
+  - name: slo_availability
+    rules:
+      # ---------- Error Budget Tracking ----------
+      - record: weather_ai:slo:availability:error_budget_remaining
+        expr: |
+          1 - (
+            sum(increase(weather_ai_requests_total{status="error"}[30d]))
+            /
+            sum(increase(weather_ai_requests_total[30d]))
+          ) / 0.001
+
+      # ---------- Burn Rate: 2% (Page Immediately) ----------
+      # Budget consumed: 2% of monthly budget in 1 hour
+      # Time to exhaustion: ~36 hours
+      - alert: SLOAvailabilityBurnRateCritical
+        expr: |
+          (
+            sum(rate(weather_ai_requests_total{status="error"}[1h]))
+            /
+            sum(rate(weather_ai_requests_total[1h]))
+          ) > (14.4 * 0.001)
+          and
+          (
+            sum(rate(weather_ai_requests_total{status="error"}[5m]))
+            /
+            sum(rate(weather_ai_requests_total[5m]))
+          ) > (14.4 * 0.001)
+        for: 2m
+        labels:
+          severity: critical
+          slo: availability
+          burn_rate: "14.4x"
+          window: "1h"
+        annotations:
+          summary: "🚨 SLO Availability - Critical burn rate (14.4x)"
+          description: |
+            Error rate is consuming error budget at 14.4x normal rate.
+            At this rate, monthly budget will be exhausted in ~2.5 days.
+            Current error rate: {{ $value | humanizePercentage }}
+          runbook_url: "https://runbooks.example.com/weather-ai/slo-availability"
+
+      # ---------- Burn Rate: 10% (Page within 1h) ----------
+      # Budget consumed: 10% of monthly budget in 6 hours
+      # Time to exhaustion: ~2.5 days
+      - alert: SLOAvailabilityBurnRateHigh
+        expr: |
+          (
+            sum(rate(weather_ai_requests_total{status="error"}[6h]))
+            /
+            sum(rate(weather_ai_requests_total[6h]))
+          ) > (6 * 0.001)
+          and
+          (
+            sum(rate(weather_ai_requests_total{status="error"}[30m]))
+            /
+            sum(rate(weather_ai_requests_total[30m]))
+          ) > (6 * 0.001)
+        for: 15m
+        labels:
+          severity: warning
+          slo: availability
+          burn_rate: "6x"
+          window: "6h"
+        annotations:
+          summary: "⚠️ SLO Availability - High burn rate (6x)"
+          description: |
+            Error rate is consuming error budget at 6x normal rate.
+            At this rate, monthly budget will be exhausted in ~5 days.
+            Current error rate: {{ $value | humanizePercentage }}
+
+      # ---------- Burn Rate: 100% (Ticket) ----------
+      # Budget consumed: Full monthly budget pace over 3 days
+      - alert: SLOAvailabilityBurnRateElevated
+        expr: |
+          (
+            sum(rate(weather_ai_requests_total{status="error"}[3d]))
+            /
+            sum(rate(weather_ai_requests_total[3d]))
+          ) > (1 * 0.001)
+        for: 1h
+        labels:
+          severity: info
+          slo: availability
+          burn_rate: "1x"
+          window: "3d"
+        annotations:
+          summary: "📋 SLO Availability - Elevated burn rate"
+          description: |
+            Error rate is at or above budget consumption rate.
+            Review error patterns and consider preventive action.
+
+  # =========================================================================
+  # SLO: Latency P95 (<2s standard, <5s complex)
+  # =========================================================================
+  - name: slo_latency
+    rules:
+      # ---------- Standard Queries Latency ----------
+      - record: weather_ai:slo:latency:standard:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"simple|standard"}[5m])) by (le)
+          )
+
+      # Critical: P95 > 4s (2x target)
+      - alert: SLOLatencyStandardCritical
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"simple|standard"}[5m])) by (le)
+          ) > 4
+        for: 5m
+        labels:
+          severity: critical
+          slo: latency_standard
+          tier: standard
+        annotations:
+          summary: "🚨 SLO Latency - Standard queries P95 > 4s (2x target)"
+          description: |
+            Standard query P95 latency is {{ $value | humanizeDuration }}.
+            Target: <2s. This is 2x the SLO target.
+
+      # Warning: P95 > 2s (at target)
+      - alert: SLOLatencyStandardHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"simple|standard"}[15m])) by (le)
+          ) > 2
+        for: 15m
+        labels:
+          severity: warning
+          slo: latency_standard
+          tier: standard
+        annotations:
+          summary: "⚠️ SLO Latency - Standard queries P95 > 2s"
+          description: |
+            Standard query P95 latency is {{ $value | humanizeDuration }}.
+            Target: <2s. SLO is at risk.
+
+      # ---------- Complex/Emergency Queries Latency ----------
+      - record: weather_ai:slo:latency:complex:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"complex|emergency"}[5m])) by (le)
+          )
+
+      # Critical: P95 > 10s (2x target)
+      - alert: SLOLatencyComplexCritical
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"complex|emergency"}[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: critical
+          slo: latency_complex
+          tier: complex
+        annotations:
+          summary: "🚨 SLO Latency - Complex queries P95 > 10s (2x target)"
+          description: |
+            Complex/emergency query P95 latency is {{ $value | humanizeDuration }}.
+            Target: <5s. This is 2x the SLO target.
+
+      # Warning: P95 > 5s (at target)
+      - alert: SLOLatencyComplexHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_request_latency_seconds_bucket{tier=~"complex|emergency"}[15m])) by (le)
+          ) > 5
+        for: 15m
+        labels:
+          severity: warning
+          slo: latency_complex
+          tier: complex
+        annotations:
+          summary: "⚠️ SLO Latency - Complex queries P95 > 5s"
+          description: |
+            Complex/emergency query P95 latency is {{ $value | humanizeDuration }}.
+            Target: <5s. SLO is at risk.
+
+  # =========================================================================
+  # SLO: Safety (100% - Zero tolerance)
+  # =========================================================================
+  - name: slo_safety
+    rules:
+      # ---------- Hurricane Validation Failures ----------
+      # CRITICAL: Any hurricane validation failure is unacceptable
+      - alert: SLOSafetyHurricaneValidationFailure
+        expr: |
+          increase(weather_ai_guardrail_violations_total{guardrail="hurricane_saffir_simpson"}[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          slo: safety
+          guardrail: hurricane_validation
+        annotations:
+          summary: "🚨 SLO SAFETY - Hurricane category validation failure"
+          description: |
+            LIFE-SAFETY CRITICAL: Hurricane Saffir-Simpson validation failed.
+            This indicates incorrect hurricane category classification.
+            IMMEDIATE investigation required.
+          runbook_url: "https://runbooks.example.com/weather-ai/hurricane-validation"
+
+      # ---------- PII Leak Detection ----------
+      # CRITICAL: Any PII leak is unacceptable
+      - alert: SLOSafetyPIILeak
+        expr: |
+          increase(weather_ai_pii_detections_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          slo: safety
+          guardrail: pii_protection
+        annotations:
+          summary: "🚨 SLO SAFETY - PII detected in response"
+          description: |
+            PRIVACY CRITICAL: PII was detected and {{ $labels.action }}.
+            PII type: {{ $labels.pii_type }}
+            IMMEDIATE investigation required.
+
+      # ---------- Guardrail Bypass Attempts ----------
+      - alert: SLOSafetyGuardrailBypass
+        expr: |
+          sum(increase(weather_ai_guardrail_violations_total{severity="critical"}[15m])) > 3
+        for: 0s
+        labels:
+          severity: critical
+          slo: safety
+        annotations:
+          summary: "🚨 SLO SAFETY - Multiple critical guardrail violations"
+          description: |
+            {{ $value }} critical guardrail violations in 15 minutes.
+            Possible attack or system malfunction.
+
+  # =========================================================================
+  # SLO: LLM Cost Control
+  # Budget: $0.10/query average
+  # =========================================================================
+  - name: slo_cost
+    rules:
+      # Track cost per query
+      - record: weather_ai:slo:cost:per_query
+        expr: |
+          sum(rate(weather_ai_llm_cost_dollars_total[1h]))
+          /
+          sum(rate(weather_ai_requests_total[1h]))
+
+      # Warning: Cost > $0.10/query
+      - alert: SLOCostPerQueryHigh
+        expr: |
+          (
+            sum(rate(weather_ai_llm_cost_dollars_total[1h]))
+            /
+            sum(rate(weather_ai_requests_total[1h]))
+          ) > 0.10
+        for: 30m
+        labels:
+          severity: warning
+          slo: cost
+        annotations:
+          summary: "⚠️ SLO Cost - Per-query cost exceeds $0.10"
+          description: |
+            Average cost per query is ${{ $value | printf "%.4f" }}.
+            Target: <$0.10. Review model usage and caching.
+
+      # Critical: Cost > $0.25/query (2.5x target)
+      - alert: SLOCostPerQueryCritical
+        expr: |
+          (
+            sum(rate(weather_ai_llm_cost_dollars_total[15m]))
+            /
+            sum(rate(weather_ai_requests_total[15m]))
+          ) > 0.25
+        for: 10m
+        labels:
+          severity: critical
+          slo: cost
+        annotations:
+          summary: "🚨 SLO Cost - Per-query cost exceeds $0.25 (2.5x target)"
+          description: |
+            Average cost per query is ${{ $value | printf "%.4f" }}.
+            This is 2.5x the target. Check for runaway LLM calls.
+
+  # =========================================================================
+  # SLO: MCP Data Freshness
+  # Target: Weather <5min, Hurricane <3min
+  # =========================================================================
+  - name: slo_data_freshness
+    rules:
+      # Weather data freshness
+      - alert: SLODataFreshnessWeather
+        expr: weather_ai_mcp_data_freshness_seconds{data_type="weather"} > 300
+        for: 2m
+        labels:
+          severity: warning
+          slo: data_freshness
+          data_type: weather
+        annotations:
+          summary: "⚠️ SLO Data Freshness - Weather data > 5 minutes old"
+          description: |
+            Weather data is {{ $value | humanizeDuration }} old.
+            Target: <5 minutes.
+
+      # Hurricane data freshness (life-safety critical)
+      - alert: SLODataFreshnessHurricane
+        expr: weather_ai_mcp_data_freshness_seconds{data_type="hurricane"} > 180
+        for: 1m
+        labels:
+          severity: critical
+          slo: data_freshness
+          data_type: hurricane
+        annotations:
+          summary: "🚨 SLO Data Freshness - Hurricane data > 3 minutes old"
+          description: |
+            LIFE-SAFETY: Hurricane data is {{ $value | humanizeDuration }} old.
+            Target: <3 minutes. Stale hurricane data is dangerous.
+
+  # =========================================================================
+  # SLO: Cache Efficiency
+  # Target: >60% overall hit rate
+  # =========================================================================
+  - name: slo_cache
+    rules:
+      # Overall cache hit rate
+      - record: weather_ai:slo:cache:hit_rate
+        expr: |
+          sum(rate(weather_ai_cache_operations_total{result="hit"}[1h]))
+          /
+          sum(rate(weather_ai_cache_operations_total{operation="get"}[1h]))
+
+      # Warning: Hit rate < 40%
+      - alert: SLOCacheHitRateLow
+        expr: |
+          (
+            sum(rate(weather_ai_cache_operations_total{result="hit"}[1h]))
+            /
+            sum(rate(weather_ai_cache_operations_total{operation="get"}[1h]))
+          ) < 0.40
+        for: 30m
+        labels:
+          severity: warning
+          slo: cache
+        annotations:
+          summary: "⚠️ SLO Cache - Hit rate below 40%"
+          description: |
+            Cache hit rate is {{ $value | humanizePercentage }}.
+            Target: >60%. Review cache configuration.
+
+  # =========================================================================
+  # SLO: Context Optimization
+  # Target: >50% token reduction, <100ms latency
+  # =========================================================================
+  - name: slo_context_optimization
+    rules:
+      # Token reduction tracking
+      - record: weather_ai:slo:context:avg_reduction
+        expr: |
+          avg(rate(weather_ai_context_token_reduction_percent_sum[1h]))
+          /
+          avg(rate(weather_ai_context_token_reduction_percent_count[1h]))
+
+      # Warning: Reduction < 40%
+      - alert: SLOContextOptimizationLowReduction
+        expr: |
+          (
+            sum(rate(weather_ai_context_token_reduction_percent_sum[1h]))
+            /
+            sum(rate(weather_ai_context_token_reduction_percent_count[1h]))
+          ) < 40
+        for: 30m
+        labels:
+          severity: warning
+          slo: context_optimization
+        annotations:
+          summary: "⚠️ SLO Context Optimization - Reduction below 40%"
+          description: |
+            Average token reduction is {{ $value | printf "%.1f" }}%.
+            Target: >50%.
+
+      # Critical: Latency P95 > 200ms
+      - alert: SLOContextOptimizationLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(weather_ai_context_optimization_latency_seconds_bucket[5m])) by (le)
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          slo: context_optimization
+        annotations:
+          summary: "⚠️ SLO Context Optimization - P95 latency > 200ms"
+          description: |
+            Context optimization P95 latency is {{ $value | humanizeDuration }}.
+            Target: <100ms.

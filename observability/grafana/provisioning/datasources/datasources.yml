@@ -1,23 +1,51 @@
 # ============================================================================
-# Grafana Data Sources - Weather AI Agent Service (Level 5c)
+# Grafana Data Sources - Weather AI Agent Service (Level 8)
 # ============================================================================
-# Auto-provisioned data sources for Grafana
+# Auto-provisioned data sources for Grafana with full signal correlation
+#
+# Signal Correlation Architecture:
+#   ┌──────────────┐     exemplars      ┌──────────────┐
+#   │  Prometheus  │ ────────────────►  │    Tempo     │
+#   │   Metrics    │                    │   Traces     │
+#   │              │ ◄──────────────────│              │
+#   └──────────────┘   tracesToMetrics  └──────────────┘
+#          │                                   │
+#          │ Grafana                           │ tracesToLogsV2
+#          │ queries                           │
+#          ▼                                   ▼
+#   ┌───────────────────────────────────────────────────┐
+#   │                    GRAFANA                        │
+#   │  • Metrics panels with exemplar: true             │
+#   │  • Logs panel shows trace_id as clickable link    │
+#   │  • Trace view shows linked logs and metrics       │
+#   └───────────────────────────────────────────────────┘
+#          ▲                                   ▲
+#          │                                   │
+#          │ derivedFields                     │
+#          │ (trace_id → Tempo)                │
+#          │                                   │
+#   ┌──────────────┐                    ┌──────────────┐
+#   │    Loki      │ ◄──────────────────│    Tempo     │
+#   │    Logs      │   tracesToLogsV2   │   Traces     │
+#   │              │   (by trace_id)    │              │
+#   └──────────────┘                    └──────────────┘
 #
 # Data Sources:
-#   - Prometheus: Metrics (MCP, cache, agent, system)
-#   - Loki: Logs (centralized log aggregation)
-#
-# Note: LangSmith is used separately for AI/LLM-specific tracing
+#   - Prometheus: Metrics with exemplar support (→ Tempo)
+#   - Tempo: Distributed tracing (→ Loki, → Prometheus)
+#   - Loki: Log aggregation with derived fields (→ Tempo)
 # ============================================================================
 
 apiVersion: 1
 
 datasources:
   # =========================================================================
-  # Prometheus - Primary metrics source
+  # Prometheus - Primary metrics source with exemplar correlation
   # =========================================================================
+  # Exemplars: Click ⭐ on histogram panels to jump to Tempo traces
   - name: Prometheus
     type: prometheus
+    uid: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
@@ -28,24 +56,112 @@ datasources:
       prometheusType: Prometheus
       prometheusVersion: 2.47.0
       timeInterval: "15s"
+      # Level 8: Exemplar correlation - click ⭐ to jump to Tempo traces
       exemplarTraceIdDestinations:
         - name: trace_id
-          datasourceUid: loki
+          datasourceUid: tempo
+          urlDisplayLabel: "View Trace in Tempo"
 
   # =========================================================================
-  # Loki - Log aggregation
+  # Tempo - Distributed tracing with bi-directional correlation
   # =========================================================================
+  # tracesToLogsV2: Click "Logs" tab in trace view to see related logs
+  # tracesToMetrics: Click "Metrics" tab to see RED signals
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: false
+    jsonData:
+      # Service graph (optional - requires metrics generator)
+      serviceMap:
+        datasourceUid: prometheus
+
+      # Node graph visualization
+      nodeGraph:
+        enabled: true
+
+      # Trace search
+      search:
+        hide: false
+
+      # Span bar visualization
+      spanBar:
+        type: "Tag"
+        tag: "http.status_code"
+
+      # Level 8: Traces → Logs correlation
+      # When viewing a trace, show related logs from Loki
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: "service.name"
+            value: "app"
+        customQuery: true
+        # Query logs by trace_id from the current trace
+        query: '{app="weather-ai-agent"} | json | trace_id=`${__trace.traceId}`'
+
+      # Level 8: Traces → Metrics correlation
+      # When viewing a trace, show related metrics (RED signals)
+      tracesToMetrics:
+        datasourceUid: prometheus
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        tags:
+          - key: "service.name"
+            value: "job"
+        queries:
+          # Request Rate (R in RED)
+          - name: "Request Rate"
+            query: 'sum(rate(weather_ai_requests_total{job="weather-ai-api"}[5m]))'
+          # Error Rate (E in RED)
+          - name: "Error Rate"
+            query: 'sum(rate(weather_ai_requests_total{job="weather-ai-api", status="error"}[5m])) / sum(rate(weather_ai_requests_total{job="weather-ai-api"}[5m]))'
+          # Duration P99 (D in RED)
+          - name: "P99 Latency"
+            query: 'histogram_quantile(0.99, sum(rate(weather_ai_request_latency_seconds_bucket{job="weather-ai-api"}[5m])) by (le))'
+          # LLM-specific metrics
+          - name: "LLM P95 Latency"
+            query: 'histogram_quantile(0.95, sum(rate(weather_ai_llm_latency_seconds_bucket{job="weather-ai-api"}[5m])) by (le, model))'
+          - name: "MCP Success Rate"
+            query: 'sum(rate(weather_ai_mcp_requests_total{job="weather-ai-api", status="success"}[5m])) / sum(rate(weather_ai_mcp_requests_total{job="weather-ai-api"}[5m]))'
+          - name: "Cache Hit Rate"
+            query: 'avg(weather_ai_cache_hit_rate{job="weather-ai-api"})'
+
+  # =========================================================================
+  # Loki - Log aggregation with trace correlation
+  # =========================================================================
+  # Derived fields: Click trace_id in log entries to jump to Tempo
   - name: Loki
     type: loki
+    uid: loki
     access: proxy
     url: http://loki:3100
     isDefault: false
     editable: false
     jsonData:
       maxLines: 1000
+      # Level 8: Logs → Traces correlation
+      # Extract trace_id from JSON logs and link to Tempo
       derivedFields:
-        # Extract trace_id from logs for correlation
-        - datasourceUid: prometheus
-          matcherRegex: "trace_id=(\\w+)"
-          name: TraceID
-          url: "$${__value.raw}"
+        # JSON format: {"trace_id": "abc123def456..."}
+        - name: "TraceID"
+          matcherRegex: '"trace_id":\\s*"([a-f0-9]{32})"'
+          matcherType: "regex"
+          url: "${__value.raw}"
+          urlDisplayLabel: "View Trace in Tempo"
+          datasourceUid: tempo
+
+        # Alternative: Plain text format trace_id=abc123def456
+        - name: "TraceID (plain)"
+          matcherRegex: 'trace_id=([a-f0-9]{32})'
+          matcherType: "regex"
+          url: "${__value.raw}"
+          urlDisplayLabel: "View Trace"
+          datasourceUid: tempo

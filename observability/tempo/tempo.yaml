@@ -1,0 +1,87 @@
+# ============================================================================
+# Tempo Configuration - Weather AI Agent Service (Level 8)
+# ============================================================================
+# Distributed tracing backend for observability signal correlation
+#
+# Signal Correlation:
+#   - Traces → Logs: tracesToLogsV2 in Grafana (Tempo → Loki)
+#   - Traces → Metrics: tracesToMetrics in Grafana (Tempo → Prometheus)
+#   - Metrics → Traces: Exemplars with trace_id (Prometheus → Tempo)
+#   - Logs → Traces: Derived fields with trace_id regex (Loki → Tempo)
+#
+# Architecture:
+#   Weather AI API → OpenTelemetry SDK → OTLP (gRPC:4317) → Tempo
+#   Grafana → Tempo API (HTTP:3200) → Trace visualization
+# ============================================================================
+
+# Server configuration
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9096
+  log_level: info
+
+# Query frontend configuration
+query_frontend:
+  search:
+    # Maximum duration for trace search
+    max_duration: 168h  # 7 days
+    default_result_limit: 20
+    max_result_limit: 100
+
+# Distributor configuration - receives traces from applications
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+# Ingester configuration - processes and stores traces
+ingester:
+  trace_idle_period: 30s
+  max_block_bytes: 5000000
+  max_block_duration: 5m
+
+# Compactor configuration - manages trace storage
+compactor:
+  compaction:
+    block_retention: 168h  # 7 days retention
+
+# Storage configuration
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+    pool:
+      max_workers: 100
+      queue_depth: 10000
+
+# Metrics generator configuration (optional - generates RED metrics from traces)
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: weather-ai
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      # Enable to write span metrics to Prometheus (optional)
+      # - url: http://prometheus:9090/api/v1/write
+
+# Overrides configuration (optional - per-tenant limits)
+overrides:
+  defaults:
+    ingestion:
+      rate_limit_bytes: 15000000  # 15MB/s
+      burst_size_bytes: 20000000  # 20MB burst
+    global:
+      max_bytes_per_trace: 5000000  # 5MB max trace size
+
+# Usage reporting (disabled for privacy)
+usage_report:
+  reporting_enabled: false

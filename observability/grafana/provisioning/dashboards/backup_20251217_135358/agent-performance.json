@@ -73,7 +73,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(weather_ai_requests_total[24h]))",
+          "expr": "sum(increase(agent_queries_total[24h]))",
           "refId": "A"
         }
       ],
@@ -203,7 +203,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(agent_query_cost_dollars[1h])) / sum(rate(weather_ai_requests_total[1h]))",
+          "expr": "sum(rate(agent_query_cost_dollars[1h])) / sum(rate(agent_queries_total[1h]))",
           "refId": "A"
         }
       ],
@@ -268,7 +268,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(agent_queries_successful_total[1h])) / sum(rate(weather_ai_requests_total[1h]))",
+          "expr": "sum(rate(agent_queries_successful_total[1h])) / sum(rate(agent_queries_total[1h]))",
           "refId": "A"
         }
       ],
@@ -333,7 +333,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(weather_ai_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(agent_query_duration_seconds_bucket[5m])) by (le))",
           "refId": "A"
         }
       ],
@@ -390,7 +390,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(agent_tool_calls_total[1h])) / sum(rate(weather_ai_requests_total[1h]))",
+          "expr": "sum(rate(agent_tool_calls_total[1h])) / sum(rate(agent_queries_total[1h]))",
           "refId": "A"
         }
       ],
@@ -490,7 +490,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(weather_ai_requests_total[5m])) by (tier)",
+          "expr": "sum(rate(agent_queries_total[5m])) by (complexity)",
           "legendFormat": "{{complexity}}",
           "refId": "A"
         }
