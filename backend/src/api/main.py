@@ -1574,6 +1574,107 @@ async def get_mcp_health() -> dict:
     return result
 
 
+# 🆕 L7b: Tool registry statistics endpoint (migrated to langgraph-bigtool)
+@app.get(
+    "/health/tools",
+    status_code=status.HTTP_200_OK,
+    summary="Tool registry statistics (langgraph-bigtool)",
+    description="Get tool registry statistics including categories and semantic search capabilities",
+    tags=["System"]
+)
+async def get_tool_statistics() -> dict:
+    """Get tool registry statistics and metadata.
+
+    Returns comprehensive information about all registered tools
+    using langgraph-bigtool for semantic discovery.
+
+    **Level 7 Feature:** LangGraph-bigtool tool registry observability.
+
+    **Statistics Provided:**
+    - total_tools: Number of registered tools
+    - category_counts: Tool count by category
+    - store_backend: Storage backend (InMemoryStore or PostgresSaver)
+    - last_search_query: Most recent search query
+    - last_search_results: Number of results from last search
+    - tools: Detailed metadata for each registered tool
+
+    **Example Response:**
+        {
+            "total_tools": 10,
+            "category_counts": {
+                "weather_data": 2,
+                "rag": 1,
+                "analysis": 3,
+                "hurricane": 4
+            },
+            "store_backend": "InMemoryStore",
+            "last_search_query": "hurricane forecast Miami",
+            "last_search_results": 3,
+            "tools": [
+                {
+                    "name": "get_current_weather",
+                    "category": "weather_data",
+                    "description": "Get real-time current weather data",
+                    "tags": ["real-time", "current", "temperature", "mcp"],
+                    "version": "1.0.0",
+                    "is_mcp": true,
+                    "registered_at": "2025-12-14T12:00:00Z"
+                },
+                ...
+            ]
+        }
+
+    Returns:
+        dict: Tool registry statistics with BigtoolStats schema
+    """
+    from backend.src.registry import get_bigtool_registry
+
+    logger.debug("Tool registry stats requested (langgraph-bigtool)")
+
+    try:
+        registry = get_bigtool_registry()
+        stats = registry.get_statistics()
+
+        logger.info(
+            f"Tool registry stats | "
+            f"tools: {stats.total_tools} | "
+            f"categories: {list(stats.category_counts.keys())} | "
+            f"backend: {stats.store_backend}"
+        )
+
+        # Build tool metadata list
+        tools_metadata = []
+        for tool_name in registry.get_tool_names():
+            metadata = registry.get_metadata(tool_name)
+            if metadata:
+                tools_metadata.append({
+                    "name": metadata.name,
+                    "category": metadata.category,
+                    "description": metadata.description,
+                    "tags": metadata.tags,
+                    "version": metadata.version,
+                    "is_mcp": metadata.is_mcp,
+                    "registered_at": metadata.registered_at.isoformat(),
+                })
+
+        # Convert to dict for JSON response
+        return {
+            "total_tools": stats.total_tools,
+            "category_counts": stats.category_counts,
+            "store_backend": stats.store_backend,
+            "last_search_query": stats.last_search_query,
+            "last_search_results": stats.last_search_results,
+            "tools": tools_metadata,
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get tool registry stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get tool registry statistics: {str(e)}"
+        )
+
+
 @app.get(
     "/cache/stats",
     status_code=status.HTTP_200_OK,

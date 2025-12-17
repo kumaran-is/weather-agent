@@ -35,9 +35,11 @@ Step 4: Monitoring & Results
 
 ## What's Included
 
-### Golden Dataset (105 Test Cases)
+### Golden Dataset (185 Test Cases)
 
 Located at: `tests/evaluation/golden_dataset.yaml`
+
+**Level 5 Categories (105 cases)**:
 
 | Category | Test Cases | Focus |
 |----------|------------|-------|
@@ -45,6 +47,16 @@ Located at: `tests/evaluation/golden_dataset.yaml`
 | **Complex** | 30 | Multi-location, analysis |
 | **Hurricane** | 20 | Safety-critical queries |
 | **Edge** | 15 | Error handling, invalid inputs |
+
+**Level 6 Categories (80 cases)**:
+
+| Category | Test Cases | Focus |
+|----------|------------|-------|
+| **BLEU/ROUGE** | 20 | Text generation quality |
+| **Snapshot** | 15 | Regression detection |
+| **Retrieval** | 20 | MRR, NDCG, MAP, Precision@k |
+| **RAGAS Recall** | 10 | Context recall validation |
+| **AgentBench** | 15 | Task-specific accuracy |
 
 ### 4-Pillar Evaluation Framework
 
@@ -86,18 +98,18 @@ Safety:         100% (zero violations)
 
 ---
 
-## ⚡ Quick Commands (NEW - Automated)
+## ⚡ Quick Commands (Updated for Level 6)
 
 ### Recommended: Makefile Automation
 
 ```bash
-# 🚀 Full pipeline (upload + run + check)
+# 🚀 Full pipeline (upload + run + check) - 185 cases
 make eval-full
 
-# Upload golden dataset to LangSmith
+# Upload golden dataset to LangSmith (185 test cases)
 make eval-upload-dataset
 
-# Run batch evaluation (105 cases)
+# Run batch evaluation (185 cases: Level 5 + Level 6)
 make eval-run-batch
 
 # Check quality gates
@@ -106,8 +118,18 @@ make eval-check-gates
 # Quick smoke test (10 cases, ~2-3 minutes)
 make eval-quick
 
-# Test specific category
+# Test specific category (Level 5)
 make eval-category CATEGORY=hurricane
+make eval-category CATEGORY=simple
+make eval-category CATEGORY=complex
+make eval-category CATEGORY=edge
+
+# Test specific category (Level 6)
+make eval-category CATEGORY=bleu_rouge
+make eval-category CATEGORY=snapshot
+make eval-category CATEGORY=retrieval
+make eval-category CATEGORY=ragas_recall
+make eval-category CATEGORY=agentbench
 ```
 
 ### Alternative: Python Scripts
@@ -136,9 +158,9 @@ uv run pytest tests/guardrails/ -v
 
 **What it does**:
 1. ✅ Runs automatically on every PR and push to main/develop
-2. ✅ Uploads golden dataset to LangSmith
-3. ✅ Runs batch evaluation (105 test cases)
-4. ✅ Checks all quality gates
+2. ✅ Uploads golden dataset to LangSmith (185 test cases)
+3. ✅ Runs batch evaluation (185 test cases: Level 5 + Level 6)
+4. ✅ Checks all quality gates (including Level 6 thresholds)
 5. ✅ **Blocks merge if gates fail** 🛑
 6. ✅ Comments on PR with detailed results
 7. ✅ Uploads evaluation results as artifacts
@@ -167,8 +189,17 @@ uv run pytest tests/guardrails/ -v
 
 ---
 
+**Documentation Version**: 3.0.0 ✨ (Level 6: Golden Dataset Expansion + Advanced Metrics)
+**Last Updated**: 2025-12-13
 
-**What's New in v2.0.0**:
+**What's New in v3.0.0**:
+- ✅ Golden dataset expanded from 105 to 185 test cases
+- ✅ Level 6 categories: BLEU/ROUGE, Snapshot, Retrieval, RAGAS, AgentBench
+- ✅ Level 6 quality thresholds (BLEU ≥0.30, MRR ≥0.70, Context Recall ≥0.85)
+- ✅ `eval-category` supports all Level 5 + Level 6 categories
+- ✅ Full pipeline runs all 185 cases with Level 6 metrics
+
+**What's in v2.0.0**:
 - ✅ Automated evaluation with Makefile commands (`make eval-full`)
 - ✅ GitHub Actions CI/CD workflow pre-configured
 - ✅ Batch evaluation scripts with quality gate enforcement

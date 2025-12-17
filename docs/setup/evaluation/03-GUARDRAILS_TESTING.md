@@ -1,5 +1,6 @@
 # Step 3: Guardrails Testing Guide
 
+**Document**: 3 of 4 (Progressive Testing Series)
 **Purpose**: Test the 12-layer guardrails system for security and safety
 **Prerequisites**: Complete [02-GOLDEN_DATASET_TESTING.md](./02-GOLDEN_DATASET_TESTING.md)
 **Time Required**: 20-30 minutes
@@ -668,5 +669,7 @@ print(f'Safety violations: {results.safety_violations}')
 
 ---
 
+**Document Version**: 1.0.0
+**Last Updated**: 2025-12-11
 **Previous Document**: [02-GOLDEN_DATASET_TESTING.md](./02-GOLDEN_DATASET_TESTING.md)
 **Next Document**: [04-MONITORING_RESULTS.md](./04-MONITORING_RESULTS.md)

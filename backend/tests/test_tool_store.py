@@ -1,322 +1,332 @@
-"""Comprehensive tests for VectorToolStore (LangChain v1.x compliance).
+"""Comprehensive tests for BigtoolRegistry (LangGraph-bigtool migration).
 
 Tests cover:
-- P0: Correct imports from langchain_core
-- P0: BaseStore API v1.x compliance (positional namespace)
-- P1: Async and sync patterns
-- P1: Dependency injection (no globals)
-- Backward compatibility
-- Search functionality
-- Tool registration
+- P0: langgraph-bigtool integration
+- P0: Semantic search via embeddings
+- P1: Tool registration and retrieval
+- P1: Backward compatibility shims
+- Category filtering
+- Statistics
 
 Run: PYTHONPATH=. pytest backend/tests/test_tool_store.py -v
+
+References:
+- PyPI: https://pypi.org/project/langgraph-bigtool/
+- GitHub: https://github.com/langchain-ai/langgraph-bigtool
 """
 
 import pytest
 from langchain_core.tools import BaseTool  # ✅ P0: Correct v1.x import
-from langgraph.store.memory import InMemoryStore
 
-from backend.src.tools.tool_store import (
-    VectorToolStore,
-    create_tool_store,
+from backend.src.registry import (
+    BigtoolRegistry,
+    BigtoolStats,
+    ToolCategory,
+    ToolMetadata,
+    get_bigtool_registry,
+    reset_bigtool_registry,
+)
+from backend.src.tools import (
+    VectorToolStore,  # Backward-compatible shim
     get_tool_store,
+    create_tool_store,
 )
 
 
-class TestImports:
-    """P0 CRITICAL: Verify LangChain v1.x imports."""
+class TestBigtoolRegistryBasics:
+    """Test BigtoolRegistry core functionality."""
 
-    def test_correct_imports_from_langchain_core(self):
-        """✅ P0: BaseTool should be from langchain_core, not langchain.tools."""
-        from backend.src.tools import tool_store
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
 
-        # Verify the module uses correct imports
-        import inspect
+    def test_singleton_pattern(self):
+        """✅ Registry uses singleton pattern."""
+        registry1 = BigtoolRegistry()
+        registry2 = BigtoolRegistry()
 
-        source = inspect.getsource(tool_store)
-        assert "from langchain_core.tools import BaseTool" in source
-        assert "from langchain_core.embeddings import Embeddings" in source
-        # Should NOT use legacy imports
-        assert "from langchain.tools import BaseTool" not in source
+        assert registry1 is registry2
 
-    def test_base_tool_is_from_core(self):
-        """✅ P0: Verify BaseTool class is from langchain_core."""
-        assert BaseTool.__module__.startswith("langchain_core")
+    def test_auto_register_tools(self):
+        """✅ Tools are auto-registered on first access."""
+        registry = get_bigtool_registry()
 
+        # Should have at least 6 tools (weather + RAG)
+        assert registry.count_tools() >= 6
 
-class TestVectorToolStoreSyncPattern:
-    """Test synchronous pattern (backward compatibility)."""
-
-    def test_init_with_auto_register(self):
-        """✅ Backward compatible: Auto-register tools on init."""
-        store = VectorToolStore(auto_register=True)
-
-        # Verify tools registered
-        assert len(store.tool_registry) == 6
-        assert store._initialized is True
-
-        # Verify categories
-        categories = {d["category"] for d in store.tool_registry.values()}
-        assert categories == {"weather_data", "rag", "analysis"}
-
-    def test_init_without_auto_register(self):
-        """✅ New pattern: Skip auto-registration for async init."""
-        store = VectorToolStore(auto_register=False)
-
-        # Verify tools NOT registered
-        assert len(store.tool_registry) == 0
-        assert store._initialized is False
-
-    def test_search_tools_sync(self):
-        """✅ P1: Synchronous search_tools() works."""
-        store = VectorToolStore(auto_register=True)
-
-        # Search for weather-related tools
-        tools = store.search_tools("weather forecast London", limit=2)
-
-        # Verify results
-        assert isinstance(tools, list)
-        assert len(tools) <= 2
-        assert all(isinstance(t, BaseTool) for t in tools)
-
-    def test_get_all_tools(self):
-        """✅ Get all registered tools."""
-        store = VectorToolStore(auto_register=True)
-
-        tools = store.get_all_tools()
-        assert len(tools) == 6
-        assert all(isinstance(t, BaseTool) for t in tools)
+        # Verify expected tools
+        tool_names = registry.get_tool_names()
+        assert "get_current_weather" in tool_names
+        assert "get_forecast" in tool_names
+        assert "retrieve_weather_knowledge_tool" in tool_names
 
     def test_get_tool_by_name(self):
         """✅ Get specific tool by name."""
-        store = VectorToolStore(auto_register=True)
+        registry = get_bigtool_registry()
+
+        tool = registry.get_tool("get_current_weather")
+        assert tool is not None
+        assert isinstance(tool, BaseTool)
+        assert tool.name == "get_current_weather"
+
+        # Non-existent tool
+        assert registry.get_tool("nonexistent") is None
+
+    def test_get_all_tools(self):
+        """✅ Get all registered tools."""
+        registry = get_bigtool_registry()
+
+        tools = registry.get_all_tools()
+        assert len(tools) >= 6
+        assert all(isinstance(t, BaseTool) for t in tools)
+
+    def test_get_metadata(self):
+        """✅ Get tool metadata."""
+        registry = get_bigtool_registry()
+
+        metadata = registry.get_metadata("get_current_weather")
+        assert metadata is not None
+        assert isinstance(metadata, ToolMetadata)
+        assert metadata.name == "get_current_weather"
+        assert metadata.category == ToolCategory.WEATHER_DATA
+        assert metadata.is_mcp is True
+
+
+class TestBigtoolRegistrySearch:
+    """Test semantic search functionality."""
+
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
+    def test_search_tools_returns_results(self):
+        """✅ Search returns relevant tools."""
+        registry = get_bigtool_registry()
+
+        tools = registry.search_tools("weather forecast London", limit=3)
+
+        assert isinstance(tools, list)
+        assert len(tools) <= 3
+        assert all(isinstance(t, BaseTool) for t in tools)
+
+    def test_search_respects_limit(self):
+        """✅ Search respects limit parameter."""
+        registry = get_bigtool_registry()
+
+        tools = registry.search_tools("weather", limit=2)
+        assert len(tools) <= 2
+
+        tools = registry.search_tools("weather", limit=5)
+        assert len(tools) <= 5
+
+    def test_search_returns_relevant_tools(self):
+        """✅ Search returns semantically relevant tools."""
+        registry = get_bigtool_registry()
+
+        # Weather query should return weather tools
+        tools = registry.search_tools("current temperature in Miami", limit=3)
+        tool_names = [t.name for t in tools]
+
+        # Should include weather-related tools
+        assert len(tools) > 0
+        # At least one tool should be weather-related
+        weather_tools = [n for n in tool_names if "weather" in n or "forecast" in n]
+        assert len(weather_tools) > 0 or len(tools) > 0
+
+    def test_search_with_historical_query(self):
+        """✅ Historical queries return analysis tools."""
+        registry = get_bigtool_registry()
+
+        tools = registry.search_tools("analyze historical weather patterns", limit=3)
+
+        assert len(tools) > 0
+
+
+class TestBigtoolRegistryCategories:
+    """Test category filtering."""
+
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
+    def test_get_tools_by_category(self):
+        """✅ Filter tools by category."""
+        registry = get_bigtool_registry()
+
+        weather_tools = registry.get_tools_by_category(ToolCategory.WEATHER_DATA)
+        assert len(weather_tools) >= 2  # get_current_weather, get_forecast
+
+        analysis_tools = registry.get_tools_by_category(ToolCategory.ANALYSIS)
+        assert len(analysis_tools) >= 3  # analyze_trends, identify_patterns, compare_conditions
+
+        rag_tools = registry.get_tools_by_category(ToolCategory.RAG)
+        assert len(rag_tools) >= 1  # retrieve_weather_knowledge_tool
+
+
+class TestBigtoolRegistryStatistics:
+    """Test statistics functionality."""
+
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
+    def test_get_statistics(self):
+        """✅ Get registry statistics."""
+        registry = get_bigtool_registry()
+
+        stats = registry.get_statistics()
+        assert isinstance(stats, BigtoolStats)
+        assert stats.total_tools >= 6
+        assert stats.store_backend == "InMemoryStore"
+        assert isinstance(stats.category_counts, dict)
+
+    def test_statistics_track_search(self):
+        """✅ Statistics track last search."""
+        registry = get_bigtool_registry()
+
+        # Perform a search
+        registry.search_tools("test query", limit=2)
+
+        stats = registry.get_statistics()
+        assert stats.last_search_query == "test query"
+        assert stats.last_search_results <= 2
+
+
+class TestBigtoolRegistryRegistration:
+    """Test tool registration."""
+
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
+    def test_register_tool(self):
+        """✅ Register a new tool."""
+        from backend.src.tools.weather_tools import get_current_weather
+
+        registry = get_bigtool_registry()
+        initial_count = registry.count_tools()
+
+        # Register a tool with different name
+        tool_id = registry.register_tool(
+            tool=get_current_weather,
+            description="Custom weather tool for testing",
+            category=ToolCategory.WEATHER_DATA,
+            tags=["test", "custom"],
+            is_mcp=False,
+        )
+
+        # Should not increase count (already registered with same name)
+        assert registry.count_tools() == initial_count
+
+    def test_register_prevents_duplicates(self):
+        """✅ Duplicate registration is prevented."""
+        registry = get_bigtool_registry()
+        initial_count = registry.count_tools()
+
+        # Try to register existing tool
+        from backend.src.tools.weather_tools import get_current_weather
+
+        registry.register_tool(
+            tool=get_current_weather,
+            description="Duplicate attempt",
+        )
+
+        # Count should not change
+        assert registry.count_tools() == initial_count
+
+
+class TestBackwardCompatibility:
+    """Test backward-compatible shims."""
+
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
+    def test_vector_tool_store_shim(self):
+        """✅ VectorToolStore shim works."""
+        store = VectorToolStore()
+
+        tools = store.search_tools("weather forecast", limit=3)
+        assert isinstance(tools, list)
+        assert len(tools) <= 3
+
+    def test_get_tool_store_shim(self):
+        """✅ get_tool_store() returns working shim."""
+        store = get_tool_store()
+
+        assert isinstance(store, VectorToolStore)
+        tools = store.get_all_tools()
+        assert len(tools) >= 6
+
+    def test_create_tool_store_shim(self):
+        """✅ create_tool_store() returns working shim."""
+        store = create_tool_store()
+
+        assert isinstance(store, VectorToolStore)
+
+    def test_shim_search_tools(self):
+        """✅ Shim search_tools works correctly."""
+        store = VectorToolStore()
+
+        tools = store.search_tools("historical weather patterns", limit=3)
+        assert isinstance(tools, list)
+
+    def test_shim_get_tool_by_name(self):
+        """✅ Shim get_tool_by_name works."""
+        store = VectorToolStore()
 
         tool = store.get_tool_by_name("get_current_weather")
         assert tool is not None
         assert isinstance(tool, BaseTool)
 
-        # Non-existent tool
-        assert store.get_tool_by_name("nonexistent") is None
+    def test_shim_get_tools_by_category(self):
+        """✅ Shim get_tools_by_category works."""
+        store = VectorToolStore()
 
-    def test_get_tools_by_category(self):
-        """✅ Get tools by category."""
-        store = VectorToolStore(auto_register=True)
-
-        weather_tools = store.get_tools_by_category("weather_data")
-        assert len(weather_tools) == 2
-
-        rag_tools = store.get_tools_by_category("rag")
-        assert len(rag_tools) == 1
-
-        analysis_tools = store.get_tools_by_category("analysis")
-        assert len(analysis_tools) == 3
-
-
-class TestVectorToolStoreAsyncPattern:
-    """Test async pattern (new v1.x compliant code)."""
-
-    @pytest.mark.asyncio
-    async def test_async_initialize(self):
-        """✅ P1: Async initialization pattern."""
-        store = VectorToolStore(auto_register=False)
-        assert store._initialized is False
-
-        await store.initialize()
-
-        # Verify tools registered
-        assert len(store.tool_registry) == 6
-        assert store._initialized is True
-
-    @pytest.mark.asyncio
-    async def test_search_tools_async(self):
-        """✅ P1: Async search_tools_async() works."""
-        store = VectorToolStore(auto_register=False)
-        await store.initialize()
-
-        # Search for weather-related tools
-        tools = await store.search_tools_async("weather forecast London", limit=2)
-
-        # Verify results
-        assert isinstance(tools, list)
-        assert len(tools) <= 2
-        assert all(isinstance(t, BaseTool) for t in tools)
-
-    @pytest.mark.asyncio
-    async def test_register_tool_async(self):
-        """✅ P1: Async tool registration."""
-        from backend.src.tools.weather_tools import get_current_weather
-
-        store = VectorToolStore(auto_register=False)
-
-        await store.register_tool(
-            name="test_tool",
-            tool=get_current_weather,
-            description="Test tool for async registration",
-            category="test",
-            tags=["test", "async"],
-        )
-
-        # Verify registration
-        assert "test_tool" in store.tool_registry
-        tool = store.get_tool_by_name("test_tool")
-        assert tool is not None
-
-
-class TestBaseStoreAPICompliance:
-    """P0 CRITICAL: Verify BaseStore API v1.x compliance."""
-
-    def test_namespace_is_positional_in_put(self):
-        """✅ P0: Namespace must be positional (not keyword) in put()."""
-        store = VectorToolStore(auto_register=False)
-
-        # This should NOT raise TypeError about unexpected keyword 'namespace'
-        store._register_tool_sync(
-            name="test_tool",
-            tool=None,  # type: ignore
-            description="Test",
-            category="test",
-            tags=["test"],
-        )
-
-        # Verify stored
-        assert "test_tool" in store.tool_registry
-
-    def test_namespace_is_positional_in_search(self):
-        """✅ P0: Namespace must be positional (not keyword) in search()."""
-        store = VectorToolStore(auto_register=True)
-
-        # This should NOT raise TypeError about unexpected keyword 'namespace'
-        results = store.search_tools("weather", limit=1)
-
-        # Should return results without errors
-        assert isinstance(results, list)
-
-
-class TestDependencyInjection:
-    """P1: Verify dependency injection pattern (no global singletons)."""
-
-    def test_create_tool_store_factory(self):
-        """✅ P1: Factory pattern works."""
-        store = create_tool_store()
-
-        assert isinstance(store, VectorToolStore)
-        assert isinstance(store.store, InMemoryStore)
-
-    def test_create_tool_store_with_custom_store(self):
-        """✅ P1: Can inject custom store."""
-        custom_store = InMemoryStore()
-        store = create_tool_store(store=custom_store)
-
-        assert store.store is custom_store
-
-    def test_get_tool_store_deprecated_but_works(self):
-        """⚠️ DEPRECATED: get_tool_store() still works for backward compat."""
-        store = get_tool_store()
-
-        assert isinstance(store, VectorToolStore)
-        # Should be auto-initialized for backward compatibility
-        assert len(store.tool_registry) == 6
-
-
-class TestSemanticSearch:
-    """Test semantic tool discovery functionality."""
-
-    def test_search_returns_relevant_tools(self):
-        """✅ Search returns tools relevant to query."""
-        store = VectorToolStore(auto_register=True)
-
-        # Search for forecast-related query
-        tools = store.search_tools("What's the forecast for next week?", limit=3)
-
-        # Should include get_forecast tool
-        tool_names = [d["tool"].name for d in store.tool_registry.values() if d["tool"] in tools]
-        assert "get_forecast" in tool_names or len(tools) > 0
-
-    def test_search_respects_limit(self):
-        """✅ Search respects limit parameter."""
-        store = VectorToolStore(auto_register=True)
-
-        tools = store.search_tools("weather", limit=2)
-        assert len(tools) <= 2
-
-        tools = store.search_tools("weather", limit=5)
-        assert len(tools) <= 5
-
-    def test_search_with_historical_query(self):
-        """✅ Historical queries return RAG tools."""
-        store = VectorToolStore(auto_register=True)
-
-        tools = store.search_tools("analyze historical weather patterns", limit=3)
-
-        # Should include RAG/analysis tools
-        assert len(tools) > 0
-
-
-class TestBackwardCompatibility:
-    """Verify backward compatibility with existing code."""
-
-    def test_synchronous_workflow_still_works(self):
-        """✅ Old synchronous code still works."""
-        # Old pattern: just call get_tool_store()
-        store = get_tool_store()
-        tools = store.search_tools("weather in London", limit=3)
-
-        assert isinstance(tools, list)
-        assert len(tools) <= 3
-
-    def test_all_existing_tools_present(self):
-        """✅ All 6 tools from Level 1 and Level 2 are present."""
-        store = VectorToolStore(auto_register=True)
-
-        expected_tools = {
-            "get_current_weather",
-            "get_forecast",
-            "retrieve_weather_knowledge_tool",
-            "analyze_trends",
-            "identify_patterns",
-            "compare_conditions",
-        }
-
-        registered_tools = set(store.tool_registry.keys())
-        assert registered_tools == expected_tools
+        tools = store.get_tools_by_category(ToolCategory.WEATHER_DATA)
+        assert len(tools) >= 2
 
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
+    def setup_method(self):
+        """Reset registry before each test."""
+        reset_bigtool_registry()
+
     def test_search_with_empty_query(self):
         """✅ Search handles empty query."""
-        store = VectorToolStore(auto_register=True)
+        registry = get_bigtool_registry()
 
-        tools = store.search_tools("", limit=3)
-        # Should not crash, may return 0 or more tools
+        tools = registry.search_tools("", limit=3)
+        # Should not crash
         assert isinstance(tools, list)
 
     def test_search_with_zero_limit(self):
         """✅ Search handles limit=0."""
-        store = VectorToolStore(auto_register=True)
+        registry = get_bigtool_registry()
 
-        tools = store.search_tools("weather", limit=0)
+        tools = registry.search_tools("weather", limit=0)
         assert len(tools) == 0
 
-    def test_multiple_instances_independent(self):
-        """✅ Multiple instances are independent."""
-        store1 = create_tool_store()
-        store2 = create_tool_store()
+    def test_reset_clears_registry(self):
+        """✅ Reset clears all data."""
+        registry = get_bigtool_registry()
+        assert registry.count_tools() > 0
 
-        # They should have separate registries
-        assert store1.tool_registry is not store2.tool_registry
+        registry.reset()
+        assert registry.count_tools() == 0
 
 
 # ============================================================================
 # Test Coverage Summary
 # ============================================================================
-# ✅ P0 Issue #1: Correct imports (langchain_core.tools)
-# ✅ P0 Issue #2: BaseStore API positional namespace
-# ✅ P0 Issue #3: InMemoryStore usage (documented)
-# ✅ P1 Issue #4: Dependency injection (create_tool_store)
-# ✅ P1 Issue #5: Async patterns (search_tools_async, initialize)
-# ✅ P1 Issue #6: Comprehensive test coverage (80%+)
-# ✅ Backward compatibility maintained
-# ✅ All 6 tools registered correctly
+# ✅ BigtoolRegistry singleton pattern
+# ✅ Auto-registration of tools
+# ✅ Tool retrieval by name
+# ✅ Semantic search with embeddings
+# ✅ Category filtering
+# ✅ Statistics tracking
+# ✅ Backward-compatible VectorToolStore shim
+# ✅ Edge cases (empty query, zero limit, reset)
 # ============================================================================

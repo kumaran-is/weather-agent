@@ -10,7 +10,280 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Level 7: MCP Tool Dynamic Registry + Context Optimization
+- Level 8 Context Window Optimization
+
+---
+
+## [1.5.0] - 2025-01-21 (Level 7: LangGraph-bigtool Migration)
+
+### Added
+
+**BigtoolRegistry (LangGraph-bigtool)**
+- Created `backend/src/registry/bigtool_registry.py` (~420 lines) - New registry built on official LangGraph-bigtool extension
+- Uses `InMemoryStore` with embedding index for semantic search
+- Uses `OpenAIEmbeddings` with `text-embedding-3-small` model (1536 dimensions)
+- Thread-safe singleton pattern
+- Auto-registers weather tools (3), RAG tools (3), and hurricane tools (4, conditional)
+
+**New Models**:
+- `ToolCategory`: Enum for tool categorization (WEATHER_DATA, RAG, ANALYSIS, MEMORY, CACHE, UTILITY)
+- `ToolMetadata`: Pydantic model for tool metadata (name, category, description, tags, is_available)
+- `BigtoolStats`: Statistics model (total_tools, category_counts, store_backend, last_search_query, last_search_results)
+
+**Semantic Search**:
+- `search_tools(query, limit)` method for semantic tool discovery
+- `retrieve_tools_for_query(query, limit)` convenience function
+- ~50% context token reduction (3 tools vs 10 in context)
+
+**Backward Compatibility**:
+- `ToolRegistry` alias → `BigtoolRegistry`
+- `get_tool_registry()` alias → `get_bigtool_registry()`
+- `VectorToolStore` shim class (delegates to BigtoolRegistry)
+- `SemanticToolDiscovery` shim class (delegates to BigtoolRegistry)
+
+### Changed
+
+**Updated Files**:
+- `backend/src/registry/__init__.py` - New exports with backward-compatible aliases
+- `backend/src/tools/__init__.py` - VectorToolStore shim for backward compatibility
+- `backend/src/agents/weather_agent.py` - Uses `get_bigtool_registry()`
+- `backend/src/api/main.py` - `/health/tools` endpoint returns `BigtoolStats` schema
+- `backend/src/models/__init__.py` - Removed old tool_registry exports
+- `pyproject.toml` - Added `langgraph-bigtool>=0.0.3` dependency
+
+**Updated Tests**:
+- `tests/unit/test_tool_store.py` - Rewritten for BigtoolRegistry
+- `tests/unit/test_tool_registry.py` - Rewritten for BigtoolRegistry
+- `tests/unit/test_semantic_discovery.py` - Rewritten for BigtoolRegistry semantic search
+- `tests/integration/test_mcp_integration.py` - Updated for BigtoolRegistry
+
+**Updated Documentation**:
+- `docs/test-guide/LEVEL_7_TEST_GUIDE.md` v1.1.0 → v2.0.0 (complete rewrite for LangGraph-bigtool)
+
+### Removed
+
+**Deleted Files**:
+- `backend/src/tools/tool_store.py` - Replaced by BigtoolRegistry
+- `backend/src/registry/tool_registry.py` - Replaced by BigtoolRegistry
+- `backend/src/registry/semantic_discovery.py` - Replaced by BigtoolRegistry.search_tools()
+- `backend/src/models/tool_registry.py` - Models moved to bigtool_registry.py
+- `backend/config/tool_registry_config.py` - No longer needed
+
+### Breaking Changes
+
+**API Changes** (with backward compatibility):
+- `ToolRegistry` → `BigtoolRegistry` (alias provided)
+- `get_tool_registry()` → `get_bigtool_registry()` (alias provided)
+- `VectorToolStore` → shim class (delegates to BigtoolRegistry)
+- `SemanticToolDiscovery` → shim class (delegates to BigtoolRegistry)
+
+**Response Schema Change**:
+- `/health/tools` now returns `BigtoolStats` schema with `store_backend`, `last_search_query`, `last_search_results` fields
+
+### Technical Details
+
+**BigtoolRegistry Architecture**:
+```python
+from backend.src.registry import BigtoolRegistry, get_bigtool_registry
+
+# Get singleton instance
+registry = get_bigtool_registry()
+
+# Semantic search for tools
+tools = registry.search_tools("weather forecast Miami", limit=3)
+# Returns: [get_forecast, get_current_weather, get_weather_alerts]
+
+# Get statistics
+stats = registry.get_statistics()
+# BigtoolStats(total_tools=10, store_backend="InMemoryStore", ...)
+```
+
+**Migration Path**:
+| Old Component | New Component | Status |
+|--------------|---------------|--------|
+| `VectorToolStore` | `BigtoolRegistry` | ✅ Shim provided |
+| `ToolRegistry` | `BigtoolRegistry` | ✅ Alias provided |
+| `SemanticToolDiscovery` | `BigtoolRegistry.search_tools()` | ✅ Shim provided |
+| Custom `InMemoryStore` | LangGraph `InMemoryStore` | ✅ Native support |
+| `text-embedding-ada-002` | `text-embedding-3-small` | ✅ Upgraded |
+
+### Dependencies
+
+**Added**:
+- `langgraph-bigtool>=0.0.3` - Official LangGraph extension for scalable tool management
+
+---
+
+## [1.4.1] - 2025-12-14 (Level 7: MCP Integration & Hurricane Tools)
+
+### Added
+
+**Hurricane MCP Tools Integration**
+- Created `backend/src/tools/hurricane_tools.py` (~330 lines) - LangChain tool wrappers for Hurricane MCP client
+- Added 4 hurricane tools conditionally registered when `MCP_HURRICANE_SERVER_ENABLED=true`:
+  - `get_active_storms`: Get currently active tropical storms and hurricanes
+  - `get_storm_forecast`: Get storm forecast cone and track
+  - `get_hurricane_alerts`: Get hurricane alerts for a location
+  - `get_storm_history`: Search historical hurricane data
+- Tool count: 6 (weather + RAG) → 10 (with hurricane enabled)
+
+**MCP Integration Tests**
+- Created `tests/integration/test_mcp_integration.py` (~390 lines)
+- 20 comprehensive integration tests covering:
+  - Settings configuration validation (5 tests)
+  - MCPLogger standalone tests (3 tests)
+  - Circuit breaker creation and configuration (2 tests)
+  - MCPFailoverHandler tests (3 tests)
+  - Tool registry singleton and manual registration (3 tests)
+  - Auto-registration verification (1 test)
+  - Hurricane tools conditional registration (2 tests)
+  - API format compatibility (1 test)
+
+**Test Guide Updates**
+- Updated `docs/test-guide/LEVEL_7_TEST_GUIDE.md` v1.0.0 → v1.1.0
+- Added Part 7: MCP Integration Testing (Scenarios 19-20)
+- Added hurricane tools conditional registration documentation
+- Added resilience patterns verification table
+- Updated tool count expectations (6 without hurricane, 10 with hurricane)
+- Added troubleshooting entries for hurricane tools and circular imports
+
+### Changed
+- Updated `backend/src/registry/tool_registry.py` - Added `_register_hurricane_tools()` method
+- Updated `backend/src/tools/__init__.py` - Conditional hurricane tools export
+- Version bumped from 1.4.0 to 1.4.1
+
+### Technical Details
+
+**Hurricane Tools Registration**:
+```python
+# Auto-registered when MCP_HURRICANE_SERVER_ENABLED=true
+from backend.src.tools.hurricane_tools import (
+    get_active_storms,
+    get_storm_forecast,
+    get_hurricane_alerts,
+    get_storm_history,
+)
+```
+
+**Resilience Patterns Verified**:
+| Pattern | Weather MCP | Hurricane MCP | Configuration |
+|---------|-------------|---------------|---------------|
+| Timeout | ✅ | ✅ | `MCP_*_REQUEST_TIMEOUT` (90s) |
+| Retry | ✅ | ✅ | 3 attempts, exponential backoff |
+| Circuit Breaker | ✅ | ✅ | Opens after 3 failures, 30s recovery |
+
+### Files Created
+- `backend/src/tools/hurricane_tools.py` (~330 lines)
+- `docs/architecture/MCP_INTEGRATION_ARCHITECTURE.md` (~230 lines)
+- `tests/integration/test_mcp_integration.py` (~390 lines)
+
+### Files Modified
+- `backend/src/registry/tool_registry.py` (+95 lines)
+- `backend/src/tools/__init__.py` (+27 lines)
+- `docs/test-guide/LEVEL_7_TEST_GUIDE.md` (+209 lines)
+
+**Total New Code**: ~1,300 lines (production + tests + docs)
+
+---
+
+## [1.4.0] - 2025-12-14 (Level 7: Tool Registry & Discovery System)
+
+### Added
+
+**Level 7a: Basic Tool Registry**
+- Created centralized `ToolRegistry` singleton with thread-safe operations
+- Added `backend/src/registry/` module with `tool_registry.py`
+- Implemented CRUD operations: `register_tool()`, `get_tool()`, `get_all_tools()`, `unregister_tool()`
+- Auto-registration of 6 existing tools on first access
+- Factory function `get_tool_registry()` for dependency injection
+- Thread-safe operations using `threading.Lock`
+
+**Level 7b: Metadata Registry & Performance Tracking**
+- Added `PerformanceMetrics` model for usage tracking (count, latency, success rate)
+- Added `ToolCapability` enum for capability-based filtering (REAL_TIME, FORECAST, HISTORICAL, etc.)
+- Added `EnhancedToolInfo` and `EnhancedToolMetadata` models with performance stats
+- Implemented `record_usage()` method for tracking tool invocations
+- Implemented `get_tools_by_capability()` for capability-based filtering
+- Implemented `get_statistics()` for registry-wide metrics aggregation
+- Added `/health/tools` endpoint for tool registry observability
+
+**Level 7c: Semantic Tool Discovery**
+- Created `SemanticToolDiscovery` class for AI-powered tool recommendations
+- Implemented natural language intent extraction (forecast, current, analyze, compare)
+- Implemented entity extraction (location, duration)
+- Implemented confidence-based tool ranking
+- Implemented parameter suggestion based on extracted entities
+- Added both sync (`discover_tools_sync()`) and async (`discover_tools()`) methods
+- Rule-based fallback when LLM is unavailable
+
+**New Models** (`backend/src/models/tool_registry.py`):
+- `ToolCategory`: Tool categories (WEATHER_DATA, RAG, ANALYSIS, etc.)
+- `ToolInfo`: Basic tool information
+- `ToolMetadata`: Extended metadata for introspection
+- `PerformanceMetrics`: Usage and latency tracking
+- `ToolCapability`: Capability enumeration
+- `EnhancedToolInfo`: Tool info with performance
+- `EnhancedToolMetadata`: Metadata with performance stats
+- `SemanticQuery`: Natural language query representation
+- `ToolRecommendation`: AI-powered tool recommendation
+- `ToolRegistryStats`: Registry statistics
+
+**Configuration** (`backend/config/tool_registry_config.py`):
+- `ENABLE_AUTO_REGISTRATION`: Auto-register tools on import (default: true)
+- `TRACK_TOOL_PERFORMANCE`: Track performance metrics (default: true)
+- `ENABLE_SEMANTIC_DISCOVERY`: Enable AI-powered discovery (default: true)
+- `DEFAULT_SEMANTIC_MODEL`: Model for intent extraction (default: gpt-4o-mini)
+- `MAX_RECOMMENDATIONS`: Max tool recommendations (default: 3)
+- `CONFIDENCE_THRESHOLD`: Min confidence for recommendations (default: 0.5)
+
+**New Endpoints**:
+- `GET /health/tools`: Tool registry statistics and metadata
+
+**Tests**:
+- `tests/unit/test_tool_registry.py`: Comprehensive registry tests (singleton, CRUD, performance, threading)
+- `tests/unit/test_semantic_discovery.py`: Semantic discovery tests (intent extraction, ranking, confidence)
+
+### Technical Details
+
+**Tool Registry Singleton**:
+```python
+from backend.src.registry import get_tool_registry
+
+registry = get_tool_registry()
+tools = registry.get_all_tools()  # 6 tools
+stats = registry.get_statistics()  # Performance metrics
+```
+
+**Semantic Discovery**:
+```python
+from backend.src.registry import get_semantic_discovery
+
+discovery = get_semantic_discovery()
+recommendations = await discovery.discover_tools(
+    "Find tools for 7-day weather forecasting in Miami"
+)
+# Returns: [ToolRecommendation(tool_name="get_forecast", confidence_score=0.92, ...)]
+```
+
+**Performance Tracking**:
+```python
+registry.record_usage("get_forecast", latency_ms=25.3, success=True)
+metadata = registry.get_enhanced_metadata("get_forecast")
+print(f"Usage: {metadata.usage_count}, Success Rate: {metadata.success_rate}%")
+```
+
+### Changed
+- Updated `backend/src/api/main.py` to include `/health/tools` endpoint
+- Version bumped from 1.3.1 to 1.4.0
+
+### Files Created
+- `backend/src/registry/__init__.py` (exports)
+- `backend/src/registry/tool_registry.py` (~500 lines)
+- `backend/src/registry/semantic_discovery.py` (~400 lines)
+- `backend/src/models/tool_registry.py` (~350 lines)
+- `backend/config/tool_registry_config.py` (~50 lines)
+- `tests/unit/test_tool_registry.py` (~400 lines)
+- `tests/unit/test_semantic_discovery.py` (~400 lines)
 
 ---
 

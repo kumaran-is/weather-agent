@@ -93,6 +93,13 @@ from backend.src.models.multi_agent import (
     MultiAgentState,
 )
 
+# Tool registry models (Level 7 - migrated to langgraph-bigtool)
+from backend.src.registry.bigtool_registry import (
+    BigtoolStats,
+    ToolCategory,
+    ToolMetadata,
+)
+
 __all__ = [
     # Weather (v0.6.0: AgentLevel for internal use, API uses auto-routing)
     "AgentLevel",  # Internal - not exposed in API
@@ -115,4 +122,8 @@ __all__ = [
     "AgentResponse",
     "AgentState",
     "MultiAgentState",
+    # Tool Registry (Level 7 - langgraph-bigtool)
+    "BigtoolStats",
+    "ToolCategory",
+    "ToolMetadata",
 ]

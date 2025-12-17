@@ -5,7 +5,6 @@ This module provides shared fixtures for all test modules.
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from backend.src.mcp.weather_client import WeatherMCPClient
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +14,8 @@ def mock_env_vars(monkeypatch):
     This fixture automatically runs for all tests to provide necessary
     environment variables without requiring a .env file.
     """
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-for-testing-only")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-for-testing-only-12345678901234567890")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key-for-testing-only-1234567890")
     monkeypatch.setenv("MCP_WEATHER_SERVER_URL", "http://localhost:8080")
     monkeypatch.setenv("MCP_HURRICANE_SERVER_URL", "http://localhost:8081")
 
@@ -30,6 +30,9 @@ def mock_mcp_client(monkeypatch):
     Returns:
         Mock WeatherMCPClient with mocked methods
     """
+    # Lazy import to avoid circular imports
+    from backend.src.mcp.weather_client import WeatherMCPClient
+
     async def mock_initialize():
         """Mock initialize method."""
         return {"status": "initialized"}

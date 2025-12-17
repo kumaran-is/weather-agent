@@ -38,7 +38,7 @@ Level 2 Enhancements:
 Level 3a Enhancements: 🆕
 - ✅ Short-term memory (Redis): Session context, entity tracking, pronoun resolution
 - ✅ Long-term memory (Graphiti + Neo4j): User profiles, preferences, temporal facts
-- ✅ Semantic tool discovery (VectorToolStore): 37.5% context reduction (8→3 tools)
+- ✅ Semantic tool discovery (langgraph-bigtool): ~50% context reduction (scales to 1000s tools)
 - ✅ Memory context injection: Personalized prompts with user history
 - ✅ Backward compatible (default behavior unchanged when enable_memory=False)
 
@@ -72,7 +72,7 @@ from backend.src.agents.prompts import (  # Level 2: CoT prompts, Level 3b: ToT/
     WEATHER_ASSISTANT_SYSTEM_PROMPT,
 )
 from backend.src.tools.rag_tools import get_rag_tools  # Level 2: RAG-enhanced tools
-from backend.src.tools.tool_store import get_tool_store  # Level 3a: Semantic tool discovery
+from backend.src.registry import get_bigtool_registry  # Level 7: langgraph-bigtool semantic discovery
 from backend.src.tools.weather_tools import (
     get_current_weather,
     get_forecast,
@@ -205,9 +205,9 @@ def create_weather_agent(
                             last_query = msg.get("content", "")
                             break
 
-            # Use semantic tool discovery for RAG tools only
-            tool_store = get_tool_store()
-            rag_tools_filtered = tool_store.search_tools(
+            # Use langgraph-bigtool semantic discovery for RAG tools
+            bigtool_registry = get_bigtool_registry()
+            rag_tools_filtered = bigtool_registry.search_tools(
                 query=last_query or "weather analysis and historical data",
                 limit=3,  # Select top 3 RAG tools based on query relevance
             )
