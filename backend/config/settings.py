@@ -18,7 +18,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def parse_cors_origins(v: str | list[str]) -> list[str]:
-    """Parse CORS_ORIGINS from string or list."""
+    """Parse CORS origins from string or list format.
+
+    Handles various input formats for CORS origin configuration:
+    - Empty string → ["*"] (allow all origins)
+    - Comma-separated string → parsed list
+    - List → returned as-is
+    - Other types → ["*"] (fallback)
+
+    Args:
+        v: CORS origins as string (comma-separated) or list of strings
+
+    Returns:
+        List of origin URLs or ["*"] for all origins
+
+    Examples:
+        >>> parse_cors_origins("")
+        ["*"]
+        >>> parse_cors_origins("http://localhost:3000,http://localhost:8080")
+        ["http://localhost:3000", "http://localhost:8080"]
+        >>> parse_cors_origins(["http://example.com"])
+        ["http://example.com"]
+    """
     if isinstance(v, str):
         # Handle empty string
         if not v or v.strip() == "":
@@ -484,6 +505,89 @@ class Settings(BaseSettings):
             )
         return v
 
+    @field_validator("MCP_WEATHER_SERVER_URL", "MCP_HURRICANE_SERVER_URL")
+    @classmethod
+    def validate_mcp_server_url(cls, v: str) -> str:
+        """Ensure MCP server URLs are valid HTTP/HTTPS URLs.
+
+        Args:
+            v: MCP server URL value
+
+        Returns:
+            Validated URL string
+
+        Raises:
+            ValueError: If URL doesn't start with http:// or https://
+        """
+        if not v.startswith(("http://", "https://")):
+            raise ValueError(
+                f"MCP server URL must start with 'http://' or 'https://'. "
+                f"Got: {v}. "
+                f"Example: http://localhost:8080 or https://mcp-server.example.com"
+            )
+        # Strip trailing slash for consistency
+        return v.rstrip("/")
+
+    @field_validator("REDIS_URL", "QDRANT_URL", "NEO4J_BOLT_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        """Ensure database URLs have valid protocol schemes.
+
+        Args:
+            v: Database URL value
+
+        Returns:
+            Validated URL string
+
+        Raises:
+            ValueError: If URL scheme is invalid
+        """
+        valid_schemes = {
+            "REDIS_URL": ["redis://", "rediss://"],
+            "QDRANT_URL": ["http://", "https://"],
+            "NEO4J_BOLT_URL": ["bolt://", "bolt+s://", "neo4j://", "neo4j+s://"],
+        }
+
+        # Get field name from validation context
+        # Note: In Pydantic v2, we can't directly get field name in @classmethod validator
+        # So we validate against all known valid schemes
+        all_valid_schemes = []
+        for schemes in valid_schemes.values():
+            all_valid_schemes.extend(schemes)
+
+        if not any(v.startswith(scheme) for scheme in all_valid_schemes):
+            raise ValueError(
+                f"Database URL must start with a valid protocol scheme. "
+                f"Got: {v}. "
+                f"Valid schemes: redis://, bolt://, http://, https://"
+            )
+        return v
+
+    @field_validator("POSTGRES_URL", mode="before")
+    @classmethod
+    def validate_postgres_url(cls, v: str | None) -> str | None:
+        """Ensure PostgreSQL URL has valid protocol if provided.
+
+        Args:
+            v: PostgreSQL URL value or None
+
+        Returns:
+            Validated URL string or None
+
+        Raises:
+            ValueError: If URL scheme is invalid
+        """
+        if v is None or v == "":
+            return None
+
+        if not v.startswith(("postgresql://", "postgres://")):
+            raise ValueError(
+                f"PostgreSQL URL must start with 'postgresql://' or 'postgres://'. "
+                f"Got: {v}. "
+                f"Example: postgresql://user:password@localhost:5432/database"
+            )
+        return v
+
     # ============================================================================
     # COMPUTED PROPERTIES
     # ============================================================================
@@ -540,10 +644,33 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def print_settings_summary():
-    """Print a summary of current settings (for debugging).
+def print_settings_summary() -> None:
+    """Print a summary of current application settings.
 
-    WARNING: Does NOT print sensitive values (API keys, secrets).
+    Displays non-sensitive configuration values for debugging and verification.
+    Sensitive values (API keys, secrets) are masked for security.
+
+    This function is useful for:
+    - Startup diagnostics
+    - Configuration verification
+    - Debugging environment variable issues
+
+    Returns:
+        None. Prints directly to stdout.
+
+    Example Output:
+        ============================================================
+        WEATHER AI AGENT - CONFIGURATION SUMMARY
+        ============================================================
+        Environment: development
+        Debug Mode: True
+        Log Level: INFO
+        ...
+        ============================================================
+
+    Note:
+        API keys and secrets are never printed in plaintext.
+        They show as "✓ Configured" or "✗ Missing" for security.
     """
     print("\n" + "=" * 60)
     print("WEATHER AI AGENT - CONFIGURATION SUMMARY")

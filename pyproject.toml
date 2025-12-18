@@ -146,5 +146,18 @@ pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=backend --cov-report=term-missing --cov-report=html"
+addopts = """
+    -v
+    --cov=backend/src
+    --cov-report=term-missing
+    --cov-report=html:htmlcov
+    --cov-report=xml:coverage.xml
+    --cov-branch
+    --cov-fail-under=90
+"""
 asyncio_mode = "auto"
+# Coverage thresholds (enforced via --cov-fail-under)
+# Line coverage: 90% minimum (--cov-fail-under=90)
+# Branch coverage: Enabled (--cov-branch)
+# Note: pytest-cov only enforces line coverage via --cov-fail-under
+# For branch coverage enforcement, use coverage.py directly or CI/CD checks

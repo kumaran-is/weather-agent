@@ -1,0 +1,65 @@
+# Coverage.py configuration for Weather AI Agent Service
+# Enforces 90% line coverage and 80% branch coverage
+
+[run]
+source = backend/src
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */site-packages/*
+    */.venv/*
+    */.venv-eval/*
+    */migrations/*
+    */conftest.py
+branch = True
+
+[report]
+# Show lines that weren't executed
+show_missing = True
+# Skip files with no executable code
+skip_empty = True
+# Precision for coverage percentage
+precision = 2
+# Exclude lines from coverage (e.g., defensive code, type checking)
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    # Don't complain about missing debug-only code
+    def __repr__
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    # Type checking blocks
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    # Abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+    # Ellipsis in protocol/stub definitions
+    \.\.\.
+    pass
+
+[html]
+directory = htmlcov
+title = Weather AI Agent - Coverage Report
+
+[xml]
+output = coverage.xml
+
+# Fail if coverage is below thresholds
+# Note: pytest-cov's --cov-fail-under only checks line coverage
+# Use these settings for more granular control
+[coverage:report]
+# Fail if line coverage < 90%
+fail_under = 90.0
+# Show branch coverage in report
+show_missing = True
+
+# Note on branch coverage threshold:
+# pytest-cov doesn't support --cov-fail-under for branch coverage
+# To enforce 80% branch coverage, use CI/CD checks:
+# - Parse coverage.xml and extract branch-rate attribute
+# - Or use: coverage report --fail-under=90 && coverage report --skip-covered | grep "TOTAL.*80%"

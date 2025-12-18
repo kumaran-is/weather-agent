@@ -278,3 +278,4 @@ logs/
 # - Respects Kaggle's terms of service (users must accept terms)
 # - Keeps repository lightweight
 backend/data/raw/kaggle/*.csv
+

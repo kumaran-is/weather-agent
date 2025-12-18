@@ -64,12 +64,14 @@ API Endpoints:
 
 import asyncio
 import logging
+import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from pydantic import ValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from langgraph.errors import GraphInterrupt
@@ -233,6 +235,47 @@ async def lifespan(app: FastAPI):
     """
     # ========== STARTUP ==========
     logger.info("🚀 Weather AI Agent API starting up...")
+
+    # Validate settings on startup (fail fast if configuration is invalid)
+    try:
+        from backend.config.settings import settings
+
+        # Force settings validation by accessing a field
+        # This will raise ValidationError if any required field is missing or invalid
+        _ = settings.OPENAI_API_KEY
+        _ = settings.MCP_WEATHER_SERVER_URL
+        _ = settings.MCP_HURRICANE_SERVER_URL
+        _ = settings.REDIS_URL
+        _ = settings.NEO4J_BOLT_URL
+        _ = settings.QDRANT_URL
+
+        logger.info("✅ Configuration validation successful")
+        logger.info(f"   - Environment: {settings.ENVIRONMENT}")
+        logger.info(f"   - OpenAI API Key: {'✓ Configured' if settings.OPENAI_API_KEY else '✗ Missing'}")
+        logger.info(f"   - MCP Weather Server: {settings.MCP_WEATHER_SERVER_URL}")
+        logger.info(f"   - MCP Hurricane Server: {settings.MCP_HURRICANE_SERVER_URL}")
+        logger.info(f"   - Redis: {settings.REDIS_URL}")
+        logger.info(f"   - Neo4j: {settings.NEO4J_BOLT_URL}")
+        logger.info(f"   - Qdrant: {settings.QDRANT_URL}")
+
+    except ValidationError as e:
+        logger.error("❌ Configuration validation failed!")
+        logger.error("=" * 60)
+        for error in e.errors():
+            field = error.get("loc", ["unknown"])[0]
+            msg = error.get("msg", "Unknown error")
+            logger.error(f"   Field: {field}")
+            logger.error(f"   Error: {msg}")
+            logger.error("-" * 60)
+        logger.error("=" * 60)
+        logger.error("Please check your .env file and environment variables.")
+        logger.error("Exiting...")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"❌ Unexpected error during startup: {e}")
+        logger.error("Exiting...")
+        sys.exit(1)
+
     logger.info("Level 4 Multi-Agent + L5a Caching 🆕")
     logger.info("Level 4 Multi-Agent System:")
     logger.info("  - L4a: 3-agent (Triage, Hurricane Specialist, Alert Manager)")
