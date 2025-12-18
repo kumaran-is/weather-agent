@@ -1,6 +1,6 @@
 # Weather AI Agent Service
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/weather-ai-agent-service)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kumaran-is/weather-agent)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![LangChain 1.0+](https://img.shields.io/badge/langchain-1.0+-green.svg)](https://github.com/langchain-ai/langchain)
 [![LangGraph 1.0+](https://img.shields.io/badge/langgraph-1.0+-orange.svg)](https://github.com/langchain-ai/langgraph)
@@ -213,8 +213,8 @@ This project uses **2 MCP servers** (Docker + HTTP Streamable transport) for wea
 
 **1. Clone repository**
 ```bash
-git clone https://github.com/kumaran-is/weather-ai-agent-service.git
-cd weather-ai-agent-service
+git clone https://github.com/kumaran-is/weather-agent.git
+cd weather-agent
 ```
 
 **2. Configure environment**
@@ -269,7 +269,7 @@ Edit `.env` with your configuration. Below are all available settings organized 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LANGCHAIN_TRACING_V2` | `false` | Enable LangSmith tracing (set to `true` to activate) |
-| `LANGCHAIN_PROJECT` | `weather-ai-agent-service` | LangSmith project name for organizing traces |
+| `LANGCHAIN_PROJECT` | `weather-agent` | LangSmith project name for organizing traces |
 | `LANGCHAIN_ENDPOINT` | `https://api.smith.langchain.com` | LangSmith API endpoint |
 
 **Access LangSmith Studio**: http://localhost:8123 (after running `make docker-up-dev`)
@@ -323,8 +323,8 @@ make version
 
 **1. Clone repository**
 ```bash
-git clone https://github.com/kumaran-is/weather-ai-agent-service.git
-cd weather-ai-agent-service
+git clone https://github.com/kumaran-is/weather-agent.git
+cd weather-agent
 ```
 
 **2. Configure environment**
@@ -652,12 +652,7 @@ make eval-full
 ### Project Structure
 
 ```
-weather-ai-agent-service/
-├── .claude/                     # Claude Code AI assistant configuration
-│   ├── commands/                # Slash commands (/l1, /l2, /verify, etc.)
-│   ├── rules/                   # AI development rules (symlinks to .clinerules/)
-│   └── skills/                  # AI skills (6 project skills)
-├── .clinerules/                 # Shared AI assistant rules (23 files)
+weather-agent/
 ├── backend/                     # Backend application (Level 8 Complete)
 │   ├── config/                  # Configuration (SINGLE LOCATION)
 │   │   ├── settings.py          # Centralized app settings (50+ env vars)
@@ -714,77 +709,26 @@ weather-ai-agent-service/
 │   │   └── workflows/           # LangGraph workflows
 │   └── tests/                   # Backend-specific tests
 ├── docs/                        # Documentation
-│   ├── architecture/            # System architecture diagrams
-│   │   └── MCP_INTEGRATION_ARCHITECTURE.md  # MCP dual integration patterns (Level 7)
-│   ├── blogs/                   # Technical blog posts (29 final posts, 296 total artifacts)
-│   │   ├── level-0 to level-7/  # Previous level blogs (25 posts)
-│   │   │   ├── level-7/         # Level 7 blog series (4 posts, 36 artifacts)
-│   │   │   │   ├── BLOG_SERIES_STRUCTURE.md     # Series overview
-│   │   │   │   ├── blog-1-tool-discovery-problem/  # 105× faster (9 files)
-│   │   │   │   ├── blog-2-bigtool-registry/        # Architecture deep dive (9 files)
-│   │   │   │   ├── blog-3-mcp-integration/         # Zero boilerplate (9 files)
-│   │   │   │   └── blog-4-production-testing/      # 74 tests, 96% coverage (9 files)
-│   │   └── level-8/             # Level 8 blog series (4 posts, 36 artifacts)
-│   │       ├── BLOG_SERIES_STRUCTURE.md     # Series overview
-│   │       ├── blog-1-context-problem/          # Token overflow challenges (9 files)
-│   │       ├── blog-2-optimization-pipeline/    # 5-phase solution (9 files)
-│   │       ├── blog-3-observability-stack/      # Full monitoring (9 files)
-│   │       └── blog-4-production-results/       # 50-60% reduction (9 files)
-│   ├── claude-guide/            # Claude Code usage guides (8 files)
-│   ├── cline-reference-docs/    # Cline AI reference patterns
-│   ├── diagrams/                # Architecture and workflow diagrams
-│   ├── knowledge/               # Level knowledge guides (25 files)
-│   │   ├── level-7-langgraph-bigtool-registry-knowledge.md  # Level 7 implementation guide
-│   │   └── level-8-context-optimization-knowledge.md        # Level 8 implementation guide
-│   ├── plan/                    # Implementation plans by level
-│   ├── prompt/                  # System prompts and templates
 │   ├── setup/                   # Setup and configuration guides
-│   ├── skill/                   # Skills documentation
 │   ├── test-guide/              # Test guides by level (9 guides)
-│   │   ├── LEVEL_7_TEST_GUIDE.md   # Level 7 comprehensive test guide (20 scenarios)
-│   │   └── LEVEL_8_TEST_GUIDE.md   # Level 8 comprehensive test guide (18 scenarios)
-│   ├── test-reports/            # Test execution reports
-│   │   ├── LEVEL_8_COMPREHENSIVE_TEST_REPORT.md     # Level 8 test results (114/114 passing)
-│   │   └── LEVEL_8_MINOR_ISSUES_RESOLUTION.md       # JSON logging + metrics resolution
-│   ├── tools/                   # Tools and utilities documentation
-│   └── verification/            # Verification and validation reports
-├── memory-bank/                 # Persistent AI assistant memory (12 files)
-│   ├── projectbrief.md          # Project overview and goals
-│   ├── productContext.md        # Product requirements and UX
-│   ├── systemPatterns.md        # Architecture patterns
-│   ├── techContext.md           # Technology stack details
-│   ├── activeContext.md         # Current work focus (updated with Level 7 blog series)
-│   ├── progress.md              # Completed tasks and milestones (Level 7 blog series complete)
-│   ├── consolidated_learnings.md # Key insights and lessons (7 new blog generation insights)
-│   └── raw_reflection_log.md    # Detailed development reflections
 ├── observability/               # Observability stack configuration (Level 8)
 │   ├── grafana/                 # Grafana dashboards and datasources (signal correlation)
 │   ├── loki/                    # Loki log aggregation config
 │   ├── prometheus/              # Prometheus metrics config (exemplar storage)
 │   └── tempo/                   # Tempo distributed tracing config (Level 8)
 ├── scripts/                     # Evaluation and automation scripts
-│   ├── check_quality_gates.py   # CI/CD quality gate validation
-│   ├── run_batch_evaluation.py  # LangSmith batch evaluation runner
-│   └── upload_golden_dataset.py # Golden dataset upload to LangSmith
 ├── tests/                       # Test suite (27 test files)
 │   ├── unit/                    # Unit tests
-│   │   ├── test_tool_registry.py       # Tool Registry unit tests (Level 7)
-│   │   ├── test_semantic_discovery.py  # Semantic Discovery unit tests (Level 7)
-│   │   └── test_context_optimizer.py   # Context Optimizer unit tests (Level 8)
 │   └── integration/             # Integration tests
-│       ├── test_mcp_integration.py      # MCP integration tests (20 scenarios, Level 7)
-│       └── test_level8_integration.py   # Level 8 integration tests (18 scenarios)
-├── workflows/                   # Workflow templates and examples
 ├── .env.template                # Environment variables template
 ├── CHANGELOG.md                 # Version history and release notes
-├── CLAUDE.md                    # AI assistant rules and guidelines
 ├── Dockerfile                   # Multi-stage production container
 ├── docker-compose.yml           # Production orchestration (9 services)
 ├── docker-compose.dev.yml       # Development orchestration (hot reload)
 ├── langgraph.json               # LangGraph Studio (4 graphs)
 ├── LICENSE                      # MIT License
 ├── Makefile                     # Development and deployment commands
-├── pyproject.toml               # Project config (v1.6.0)
+├── pyproject.toml               # Project config (v1.7.0)
 └── README.md                    # This file
 ```
 
@@ -798,12 +742,7 @@ weather-ai-agent-service/
 - **backend/src/orchestration/**: Multi-agent workflows (supervisor, parallel execution, auto-routing)
 - **backend/src/evaluation/**: 4-pillar evaluation framework (effectiveness, efficiency, robustness, safety)
 - **backend/src/tools/**: LangChain tool wrappers (weather MCP, hurricane MCP, RAG retrieval)
-- **docs/blogs/**: 29 final blog posts (level-0 to level-8) with 296 total artifacts (drafts, LinkedIn, social media, metrics)
-  - **level-7/**: 4-part blog series (37,341 words, OCEAN 97.25/100, 36 files)
-  - **level-8/**: 4-part blog series (Context Optimization + Observability Stack, 36 files)
-- **docs/knowledge/**: 25 comprehensive level guides (L0-L8 implementation details + evaluation-practical-guide)
 - **docs/test-guide/**: 9 test guides (L0-L8, 18 scenarios for Level 8)
-- **memory-bank/**: Persistent project context for AI assistants (Cline + Claude Code) - updated with Level 8 completion
 - **observability/**: Prometheus, Grafana, Loki, Tempo configuration (Level 8 signal correlation)
 - **scripts/**: Evaluation automation (quality gates, batch evaluation, dataset upload)
 - **tests/**: 27 test files (unit + integration, including 2 new Level 8 test files)
@@ -827,20 +766,16 @@ weather-ai-agent-service/
   - Level 6a: Context Optimization + Ragas/DeepEval Evaluation ✅ COMPLETE
   - Level 6b: TruLens + AgentBench + Auto-Prompt Engineering ✅ COMPLETE
   - Level 6c: Constitutional AI + Production Testing Infrastructure ✅ COMPLETE
-  - Blog Series: 6 blogs, 50 files, OCEAN 91.5/100 ✅ COMPLETE
 - **Level 7** (v1.5.0): LangGraph-bigtool Tool Registry & Semantic Discovery ✅ COMPLETE
-  - Blog Series: 4 blogs, 36 files, OCEAN 97.25/100 ✅ COMPLETE
 - **Level 8** (v1.6.0): Context Window Optimization & Full Observability Stack ✅ COMPLETE
   - Level 8a: Query Type Detection + 5-Phase Optimization Pipeline ✅ COMPLETE
   - Level 8b: OpenTelemetry Tracing + Structured JSON Logging ✅ COMPLETE
   - Level 8c: Prometheus Metrics + Grafana Dashboards + Alert Rules ✅ COMPLETE
-  - Blog Series: 4 blogs, 36 files (context problem, optimization pipeline, observability stack, production results) ✅ COMPLETE
   - Test Coverage: 114/114 tests passing (18 scenarios) ✅ COMPLETE
 - **Level 9** (v1.7.0): Two-Tier Semantic Caching Architecture ✅ COMPLETE
   - Level 9a: TwoTierCache Base Class + QueryNormalizer + SemanticMatcher ✅ COMPLETE
   - Level 9b: Tool Result Cache with Life-Safety Bypass ✅ COMPLETE
   - Level 9c: LLM Response Cache + Prometheus Metrics ✅ COMPLETE
-  - Blog Series: 4 blogs (semantic problem, two-tier architecture, safety-first caching, production deployment) ✅ COMPLETE
 - **Level 10**: Self Evolving Agentic Architecture: Self-evolving agentic systems that continuously learns, adapts, and improves based on real-world performance. 🔜 NEXT
 - **Level 11**: Advanced HITL 🔜 FUTURE
 
@@ -1004,8 +939,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/kumaran-is/weather-ai-agent-service/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/weather-ai-agent-service/discussions)
+- **Issues**: [GitHub Issues](https://github.com/kumaran-is/weather-agent/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kumaran-is/weather-agent/discussions)
 - **Documentation**: See `docs/` directory
 
 **Built for teams exploring agentic AI systems**
