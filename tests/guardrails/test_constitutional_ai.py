@@ -12,13 +12,14 @@ Tests:
 """
 
 import pytest
+
 from backend.src.guardrails.constitutional_ai import (
-    ConstitutionalAI,
     Constitution,
-    Principle,
-    PrincipleCategory,
+    ConstitutionalAI,
     ConstitutionalResult,
     CritiqueResult,
+    Principle,
+    PrincipleCategory,
 )
 
 

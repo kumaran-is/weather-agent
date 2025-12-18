@@ -12,6 +12,7 @@ Tests:
 """
 
 import pytest
+
 from backend.src.evaluation.ragas_evaluator import RagasEvaluator, RagasResult
 
 

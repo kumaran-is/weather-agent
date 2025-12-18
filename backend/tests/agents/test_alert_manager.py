@@ -9,20 +9,19 @@ Test Coverage:
 - Error handling and fallback alerts
 """
 
-import pytest
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
 from backend.src.agents.alert_manager import (
+    AlertChannel,
     AlertManagerAgent,
     AlertSeverity,
-    AlertChannel,
 )
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
-    RoutingDecision,
+    AgentRole,
 )
 
 
@@ -44,7 +43,7 @@ def base_state() -> dict:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Hurricane Michael is a Category 4 storm with 140 mph winds.",
                 confidence=0.85,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=1500.0,
                 metadata={"nhc_data_used": True},
             )
@@ -476,7 +475,7 @@ async def test_end_to_end_emergency_alert(alert_manager, mock_llm_alert_response
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Category 5 Hurricane approaching. Immediate evacuation recommended.",
                 confidence=0.95,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=1000.0,
             )
         ],

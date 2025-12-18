@@ -9,14 +9,12 @@ Validates that all observability components work together correctly:
 These tests simulate a full request lifecycle and verify observability data.
 """
 
-import pytest
-import json
 import io
-import uuid
+import json
 import logging
-from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timezone
+import uuid
 
+import pytest
 from prometheus_client import REGISTRY, generate_latest
 
 
@@ -90,10 +88,9 @@ class TestStructuredLoggingIntegration:
     def test_log_output_is_valid_json(self):
         """Test that log output is valid JSON."""
         from backend.src.observability.logging import (
-            get_structured_logger,
-            set_request_context,
-            clear_request_context,
             StructuredFormatter,
+            clear_request_context,
+            set_request_context,
         )
 
         # Capture log output
@@ -154,7 +151,7 @@ class TestOpenTelemetryTracingIntegration:
 
     def test_span_hierarchy_creation(self):
         """Test that spans maintain proper parent-child hierarchy."""
-        from backend.src.observability.tracing import create_span, SpanNames, SpanAttributes
+        from backend.src.observability.tracing import SpanAttributes, SpanNames, create_span
 
         # Create nested spans
         with create_span(SpanNames.HTTP_REQUEST, attributes={SpanAttributes.REQUEST_ID: "req_123"}) as parent:
@@ -172,7 +169,7 @@ class TestOpenTelemetryTracingIntegration:
 
     def test_span_attributes_propagate_correctly(self):
         """Test that span attributes are set correctly."""
-        from backend.src.observability.tracing import create_span, SpanAttributes
+        from backend.src.observability.tracing import SpanAttributes, create_span
 
         attributes = {
             SpanAttributes.REQUEST_USER_ID: "user_123",
@@ -188,9 +185,9 @@ class TestOpenTelemetryTracingIntegration:
     def test_trace_context_propagation(self):
         """Test W3C TraceContext propagation."""
         from backend.src.observability.tracing import (
-            inject_trace_context,
-            extract_trace_context,
             create_span,
+            extract_trace_context,
+            inject_trace_context,
         )
 
         # Create a span and inject its context
@@ -214,9 +211,10 @@ class TestLangChainCallbackIntegration:
     @pytest.mark.asyncio
     async def test_full_llm_lifecycle_instrumentation(self):
         """Test that full LLM lifecycle is instrumented."""
+        from langchain_core.outputs import Generation, LLMResult
+
         from backend.src.observability.callbacks import ObservabilityCallbackHandler
         from backend.src.observability.metrics import get_metrics
-        from langchain_core.outputs import LLMResult, Generation
 
         handler = ObservabilityCallbackHandler(
             run_id="test_run",
@@ -302,19 +300,19 @@ class TestEndToEndObservability:
     @pytest.mark.asyncio
     async def test_complete_request_observability_flow(self):
         """Test complete request flow with all observability components."""
+        from langchain_core.outputs import Generation, LLMResult
+
         from backend.src.observability import (
-            TracingManager,
-            create_span,
-            get_structured_logger,
-            get_metrics,
-            set_request_context,
-            clear_request_context,
             SpanAttributes,
             SpanNames,
+            TracingManager,
+            clear_request_context,
             create_langchain_callbacks,
+            create_span,
+            get_metrics,
+            get_structured_logger,
+            set_request_context,
         )
-        from backend.src.observability.callbacks import ObservabilityCallbackHandler
-        from langchain_core.outputs import LLMResult, Generation
 
         # Initialize components
         tracing = TracingManager(service_name="test-weather-ai", environment="test")

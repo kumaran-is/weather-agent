@@ -5,7 +5,7 @@ Level 5a: Anthropic prompt caching for 50-90% cost reduction
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from langchain_anthropic import ChatAnthropic

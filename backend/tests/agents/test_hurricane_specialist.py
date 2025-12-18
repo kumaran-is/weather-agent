@@ -10,16 +10,14 @@ Test Coverage:
 - Error handling and graceful degradation
 """
 
-import pytest
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from backend.src.agents.hurricane_specialist import HurricaneSpecialistAgent
 from backend.src.models.multi_agent import (
     AgentRole,
-    RoutingDecision,
-    AgentResponse,
 )
 
 
@@ -84,7 +82,7 @@ def mock_nhc_data() -> dict:
                 {"time": "72h", "latitude": 32.0, "longitude": -82.0, "max_wind_mph": 90},
             ]
         },
-        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "fetched_at": datetime.now(UTC).isoformat(),
         "source": "Hurricane MCP Server",
     }
 

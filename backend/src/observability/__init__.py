@@ -30,29 +30,29 @@ Usage:
     >>> metrics.record_request(tier="standard", status="success", latency=0.5)
 """
 
-from backend.src.observability.tracing import (
-    TracingManager,
-    get_tracer,
-    create_span,
-    inject_trace_context,
-    extract_trace_context,
-    SpanAttributes,
-    SpanNames,
-)
 from backend.src.observability.callbacks import (
     ObservabilityCallbackHandler,
     create_langchain_callbacks,
 )
 from backend.src.observability.logging import (
-    get_structured_logger,
     add_trace_context,
-    set_request_context,
     clear_request_context,
     configure_structured_logging,
+    get_structured_logger,
+    set_request_context,
 )
 from backend.src.observability.metrics import (
     MetricsRegistry,
     get_metrics,
+)
+from backend.src.observability.tracing import (
+    SpanAttributes,
+    SpanNames,
+    TracingManager,
+    create_span,
+    extract_trace_context,
+    get_tracer,
+    inject_trace_context,
 )
 
 __all__ = [

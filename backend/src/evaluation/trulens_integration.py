@@ -11,8 +11,9 @@ Feedback Functions:
 Target: >0.85 on all feedback functions, real-time monitoring
 """
 
-from typing import Any
 import logging
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -86,11 +87,10 @@ class TruLensIntegration:
         self._tru_chain = None
 
         try:
-            from trulens.core import TruSession
             from trulens.apps.langchain import TruChain
-            from trulens.providers.openai import OpenAI as TruOpenAI
-            from trulens.core import Feedback
+            from trulens.core import Feedback, TruSession
             from trulens.core.guardrails.base import context_filter
+            from trulens.providers.openai import OpenAI as TruOpenAI
 
             self._TruSession = TruSession
             self._TruChain = TruChain

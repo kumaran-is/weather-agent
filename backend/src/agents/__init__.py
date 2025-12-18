@@ -25,30 +25,7 @@ Level 4c Additions:
 - CircuitBreaker: Resilience pattern for agent failures
 """
 
-from backend.src.agents.state import WeatherAgentState
-from backend.src.agents.weather_agent import create_weather_agent, query_weather
-from backend.src.agents.prompts import WEATHER_ASSISTANT_SYSTEM_PROMPT
-
-# Level 4a: Multi-Agent System
-from backend.src.agents.triage_agent import TriageAgent
-from backend.src.agents.hurricane_specialist import HurricaneSpecialistAgent
-from backend.src.agents.alert_manager import AlertManagerAgent, AlertSeverity, AlertChannel
-
-# Level 4b: 8-Agent Orchestration System
-from backend.src.agents.supervisor_agent import SupervisorAgent, AgentCapabilityRegistry
-from backend.src.agents.reflection_agent import ReflectionAgent
-from backend.src.agents.critique_agent import CritiqueAgent
-from backend.src.agents.forecaster_agent import ForecasterAgent
-from backend.src.agents.historical_agent import HistoricalAnalystAgent
-from backend.src.agents.research_agent import ResearchAgent
-
-# Level 4c: 15-Agent Production System
-from backend.src.agents.meta_prompt_agent import MetaPromptAgent, create_meta_prompt_agent
-from backend.src.agents.self_healing_agent import (
-    SelfHealingAgent,
-    create_self_healing_agent,
-    self_healing_agent,
-)
+from backend.src.agents.alert_manager import AlertChannel, AlertManagerAgent, AlertSeverity
 from backend.src.agents.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerRegistry,
@@ -57,14 +34,37 @@ from backend.src.agents.circuit_breaker import (
     get_circuit_status,
     get_system_health,
 )
-from backend.src.agents.debate_agent import DebateAgent, Proposal, DebateResult, create_debate_agent
-from backend.src.agents.emergency_agent import EmergencyResponseAgent, create_emergency_agent
 from backend.src.agents.climate_agent import ClimateAnalystAgent, create_climate_agent
+from backend.src.agents.critique_agent import CritiqueAgent
+from backend.src.agents.debate_agent import DebateAgent, DebateResult, Proposal, create_debate_agent
+from backend.src.agents.emergency_agent import EmergencyResponseAgent, create_emergency_agent
+from backend.src.agents.forecaster_agent import ForecasterAgent
+from backend.src.agents.historical_agent import HistoricalAnalystAgent
+from backend.src.agents.hurricane_specialist import HurricaneSpecialistAgent
+
+# Level 4c: 15-Agent Production System
+from backend.src.agents.meta_prompt_agent import MetaPromptAgent, create_meta_prompt_agent
 from backend.src.agents.personalization_agent import (
     PersonalizationAgent,
     UserProfile,
     create_personalization_agent,
 )
+from backend.src.agents.prompts import WEATHER_ASSISTANT_SYSTEM_PROMPT
+from backend.src.agents.reflection_agent import ReflectionAgent
+from backend.src.agents.research_agent import ResearchAgent
+from backend.src.agents.self_healing_agent import (
+    SelfHealingAgent,
+    create_self_healing_agent,
+    self_healing_agent,
+)
+from backend.src.agents.state import WeatherAgentState
+
+# Level 4b: 8-Agent Orchestration System
+from backend.src.agents.supervisor_agent import AgentCapabilityRegistry, SupervisorAgent
+
+# Level 4a: Multi-Agent System
+from backend.src.agents.triage_agent import TriageAgent
+from backend.src.agents.weather_agent import create_weather_agent, query_weather
 
 __all__ = [
     # Level 1-3: Core agents

@@ -14,7 +14,6 @@ from typing import Any
 
 from backend.src.routing.models import ContextSignal, QueryAnalysisSignal, QueryTier
 
-
 # =============================================================================
 # KEYWORD PATTERNS (Compiled for performance)
 # =============================================================================

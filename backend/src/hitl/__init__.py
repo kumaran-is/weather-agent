@@ -5,10 +5,10 @@ like hurricane alerts and evacuation guidance.
 """
 
 from backend.src.hitl.approval_node import (
-    hurricane_approval,
+    cancel_alert_node,
     detect_hurricane_node,
+    hurricane_approval,
     send_alert_node,
-    cancel_alert_node
 )
 
 __all__ = [

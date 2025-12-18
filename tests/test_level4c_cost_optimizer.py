@@ -7,16 +7,16 @@ This module tests the cost optimization capabilities including:
 - Optimization recommendations
 """
 
-import pytest
-from unittest.mock import MagicMock
 
+import pytest
+
+from backend.src.models.multi_agent import AgentRole
 from backend.src.orchestration.cost_optimizer import (
-    CostOptimizer,
-    TOKEN_COSTS,
     AGENT_TOKEN_ESTIMATES,
+    TOKEN_COSTS,
+    CostOptimizer,
     create_cost_optimizer,
 )
-from backend.src.models.multi_agent import AgentRole, MultiAgentState
 
 
 class TestTokenCosts:

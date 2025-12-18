@@ -9,12 +9,12 @@ Usage:
     >>> print(settings.MCP_WEATHER_SERVER_URL)
 """
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator, BeforeValidator
-from typing import Literal, Annotated
 from functools import lru_cache
-import os
 from pathlib import Path
+from typing import Literal
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def parse_cors_origins(v: str | list[str]) -> list[str]:

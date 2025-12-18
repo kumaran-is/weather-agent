@@ -13,13 +13,14 @@ Provides Promptfoo-style evaluation capabilities:
 Target: Systematic prompt evaluation across providers
 """
 
-from typing import Any, Callable
-import logging
 import json
+import logging
 import time
-from datetime import datetime
+from collections.abc import Callable
 from enum import Enum
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +89,7 @@ class TestCase(BaseModel):
     threshold: float = 0.8
     options: dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class TestResult(BaseModel):

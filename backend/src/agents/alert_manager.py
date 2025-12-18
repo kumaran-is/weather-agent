@@ -24,31 +24,23 @@ Design Principles:
 
 from __future__ import annotations
 
-import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    AgentResponse,
-    MultiAgentState,
-)
 from backend.src.agents.prompts.alert_prompts import (
-    ALERT_MANAGER_SYSTEM_PROMPT,
     ALERT_GENERATION_PROMPT,
-    ALERT_SEVERITY_CLASSIFICATION_PROMPT,
+    ALERT_MANAGER_SYSTEM_PROMPT,
     ALERT_SEVERITY_LEVELS,
-    SMS_ALERT_TEMPLATE,
-    PUSH_NOTIFICATION_TEMPLATE,
-    EMAIL_SUBJECT_TEMPLATE,
-    EMAIL_BODY_TEMPLATE,
-    DELIVERY_CONFIRMATION_TEMPLATE,
+)
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
 )
 
 logger = structlog.get_logger(__name__)
@@ -143,7 +135,7 @@ class AlertManagerAgent:
         Returns:
             Updated state with alert response and delivery status
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         query = state["query"]
         alert_id = str(uuid.uuid4())[:8]
 
@@ -186,7 +178,7 @@ class AlertManagerAgent:
 
             # Calculate execution time
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Build final alert content
@@ -202,7 +194,7 @@ class AlertManagerAgent:
                 agent_role=AgentRole.ALERT_MANAGER,
                 content=final_alert_content,
                 confidence=1.0,  # Alerts are always delivered with full confidence
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "alert_id": alert_id,
@@ -245,7 +237,7 @@ class AlertManagerAgent:
             )
 
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Create fallback alert
@@ -255,7 +247,7 @@ class AlertManagerAgent:
                 agent_role=AgentRole.ALERT_MANAGER,
                 content=fallback_alert,
                 confidence=0.5,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "alert_id": alert_id,
@@ -508,7 +500,7 @@ class AlertManagerAgent:
         )
         prefix = severity_info["prefix"]
 
-        timestamp = datetime.now(timezone.utc).strftime("%I:%M %p EDT")
+        timestamp = datetime.now(UTC).strftime("%I:%M %p EDT")
 
         # In-app alert (full detail)
         in_app = f"""

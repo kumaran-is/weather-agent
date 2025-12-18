@@ -796,3 +796,66 @@ loki-logs:  ## Query recent logs from Loki
 		echo "$(YELLOW)Note: Loki log query requires promtail or docker logging driver.$(NC)"
 	@echo ""
 	@echo "$(YELLOW)View logs in Grafana: http://localhost:3001/explore?datasource=Loki$(NC)"
+
+# ============================================================================
+# Level 9: Semantic Cache Commands
+# ============================================================================
+
+cache-stats:  ## Show semantic cache statistics
+	@echo "$(BLUE)Fetching semantic cache statistics...$(NC)"
+	@curl -s http://localhost:8000/cache/stats 2>/dev/null | python3 -m json.tool || \
+		echo "$(RED)✗ Failed to fetch cache stats (is the API running?)$(NC)"
+
+cache-metrics:  ## Show cache Prometheus metrics
+	@echo "$(BLUE)Cache Prometheus Metrics:$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Cache Hit Rate:$(NC)"
+	@curl -s "http://localhost:9090/api/v1/query?query=sum(rate(weather_cache_hit_total[5m]))" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'  Hits/sec: {d.get(\"data\",{}).get(\"result\",[{}])[0].get(\"value\",[0,0])[1]}')" 2>/dev/null || true
+	@echo ""
+	@echo "$(YELLOW)Cache Miss Rate:$(NC)"
+	@curl -s "http://localhost:9090/api/v1/query?query=sum(rate(weather_cache_miss_total[5m]))" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'  Misses/sec: {d.get(\"data\",{}).get(\"result\",[{}])[0].get(\"value\",[0,0])[1]}')" 2>/dev/null || true
+	@echo ""
+	@echo "$(YELLOW)Cost Savings (USD):$(NC)"
+	@curl -s "http://localhost:9090/api/v1/query?query=sum(weather_cache_cost_savings_usd)" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'  Total: \$${d.get(\"data\",{}).get(\"result\",[{}])[0].get(\"value\",[0,0])[1]}')" 2>/dev/null || true
+	@echo ""
+	@echo "$(YELLOW)View full metrics: http://localhost:9090/graph?g0.expr=weather_cache$(NC)"
+
+cache-clear:  ## Clear all cache entries (Redis + Qdrant semantic)
+	@echo "$(YELLOW)⚠️  This will clear ALL cache entries!$(NC)"
+	@read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] && \
+		(curl -s -X POST http://localhost:8000/cache/clear 2>/dev/null && \
+		echo "$(GREEN)✓ Cache cleared$(NC)") || \
+		echo "$(YELLOW)Cache clear cancelled$(NC)"
+
+cache-test-semantic:  ## Test semantic cache similarity matching
+	@echo "$(BLUE)Testing semantic cache similarity...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Sending first query: 'Weather in San Francisco'$(NC)"
+	@curl -s -X POST http://localhost:8000/weather/query \
+		-H "Content-Type: application/json" \
+		-d '{"query": "Weather in San Francisco", "user_id": "test_semantic"}' 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Response: {d.get(\"response\",\"\")[:100]}...')" || true
+	@echo ""
+	@echo "$(YELLOW)2. Sending similar query: 'SF weather forecast'$(NC)"
+	@curl -s -X POST http://localhost:8000/weather/query \
+		-H "Content-Type: application/json" \
+		-d '{"query": "SF weather forecast", "user_id": "test_semantic"}' 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Response: {d.get(\"response\",\"\")[:100]}...\nCache tier: {d.get(\"cache_tier\", \"unknown\")}')" || true
+	@echo ""
+	@echo "$(GREEN)✓ If cache_tier shows Q3, semantic matching is working!$(NC)"
+
+cache-test-tool:  ## Test tool result caching
+	@echo "$(BLUE)Testing tool result caching...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Calling get_forecast for Miami (first call)...$(NC)"
+	@curl -s -X POST http://localhost:8000/weather/query \
+		-H "Content-Type: application/json" \
+		-d '{"query": "7-day forecast for Miami", "user_id": "test_tool"}' 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Duration: {d.get(\"duration_ms\",0):.2f}ms')" || true
+	@echo ""
+	@echo "$(YELLOW)2. Calling same query again (should be cached)...$(NC)"
+	@curl -s -X POST http://localhost:8000/weather/query \
+		-H "Content-Type: application/json" \
+		-d '{"query": "7-day forecast for Miami", "user_id": "test_tool"}' 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Duration: {d.get(\"duration_ms\",0):.2f}ms (should be faster)')" || true
+
+cache-qdrant-collections:  ## List Qdrant collections (semantic cache storage)
+	@echo "$(BLUE)Qdrant Collections:$(NC)"
+	@curl -s http://localhost:6333/collections 2>/dev/null | python3 -m json.tool || \
+		echo "$(RED)✗ Failed to connect to Qdrant$(NC)"

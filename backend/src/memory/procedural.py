@@ -50,7 +50,6 @@ Example:
     Expected success rate: 95.0%
 """
 
-import asyncio
 import hashlib
 import logging
 from datetime import datetime, timedelta

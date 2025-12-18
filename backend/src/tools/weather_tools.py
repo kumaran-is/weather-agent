@@ -17,8 +17,9 @@ MCP Tool Mapping:
 """
 
 from langchain_core.tools import tool
-from backend.src.mcp.weather_client import WeatherMCPClient
+
 from backend.config.settings import settings
+from backend.src.mcp.weather_client import WeatherMCPClient
 
 
 # ✅ Factory pattern (v1.x compliant - dependency injection)

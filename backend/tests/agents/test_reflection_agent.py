@@ -9,15 +9,16 @@ Test Coverage:
 - Weather-specific quality dimensions
 """
 
-import pytest
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.src.agents.reflection_agent import ReflectionAgent
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
 )
 
@@ -30,8 +31,8 @@ def base_state() -> MultiAgentState:
         query="Test hurricane query",
         user_id="test_user_123",
         session_id="test_session_456",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         timeout_ms=30000,
         current_agent=None,
         routing_decision=None,
@@ -250,7 +251,7 @@ class TestReflectAndImprove:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="High quality hurricane response with all details",
                 confidence=0.9,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -277,7 +278,7 @@ class TestReflectAndImprove:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Brief hurricane response",
                 confidence=0.7,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -308,7 +309,7 @@ class TestReflectAndImprove:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Low quality response that never improves",
                 confidence=0.5,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -427,7 +428,7 @@ class TestErrorHandling:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Test response",
                 confidence=0.8,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -460,7 +461,7 @@ class TestReflectionIntegration:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Hurricane Michael is approaching. Consider evacuating.",
                 confidence=0.75,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=200,
                 metadata={},
             )

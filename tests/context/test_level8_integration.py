@@ -13,19 +13,17 @@ Tests:
 6. API endpoint integration (/health/context)
 """
 
-import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 from statistics import mean, quantiles
-from typing import Any
 
 import pytest
 
 from backend.src.context import (
     ContextWindowOptimizer,
+    QueryType,
     detect_query_type,
     get_optimization_config,
-    QueryType,
 )
 from backend.src.context.context_optimizer import OptimizationResult
 

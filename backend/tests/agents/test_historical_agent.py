@@ -7,15 +7,14 @@ Test Coverage:
 - Trend analysis functionality
 """
 
-import pytest
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.src.agents.historical_agent import HistoricalAnalystAgent
 from backend.src.models.multi_agent import (
     AgentRole,
-    AgentResponse,
     MultiAgentState,
 )
 
@@ -28,8 +27,8 @@ def base_state() -> MultiAgentState:
         query="Test historical query",
         user_id="test_user_123",
         session_id="test_session_456",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         timeout_ms=30000,
         current_agent=None,
         routing_decision=None,

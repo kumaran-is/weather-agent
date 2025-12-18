@@ -10,17 +10,14 @@ Test Categories:
 4. Edge cases and boundary conditions
 """
 
-import pytest
 
 from backend.src.routing import (
     QueryClassifier,
     QueryTier,
-    RoutingDecision,
     classify_query,
     extract_context_signal,
     extract_query_signal,
 )
-from backend.src.routing.models import ContextSignal, QueryAnalysisSignal
 
 
 class TestQueryTierClassification:

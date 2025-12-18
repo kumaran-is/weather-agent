@@ -32,7 +32,7 @@ import logging
 import os
 import sys
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from opentelemetry import trace
@@ -76,7 +76,7 @@ class StructuredFormatter(logging.Formatter):
         """
         # Base log structure
         log_dict: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),

@@ -9,18 +9,10 @@ Tests:
 - Compliance reporting
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-from backend.src.guardrails.models import (
-    GuardrailConfig,
-    GuardrailLayer,
-    GuardrailResult,
-    GuardrailViolation,
-    ViolationSeverity,
-    PIIType,
-    ComplianceFramework,
-)
+import pytest
+
+from backend.src.guardrails.guardrail_manager import GuardrailManager
 from backend.src.guardrails.layers.l1_input_validation import InputValidationLayer
 from backend.src.guardrails.layers.l2_pii_detection import PIIDetectionLayer
 from backend.src.guardrails.layers.l4_prompt_injection import PromptInjectionLayer
@@ -28,7 +20,14 @@ from backend.src.guardrails.layers.l5_content_filtering import ContentFilteringL
 from backend.src.guardrails.layers.l6_hallucination_detection import HallucinationDetectionLayer
 from backend.src.guardrails.layers.l7_bias_mitigation import BiasMitigationLayer
 from backend.src.guardrails.layers.l8_output_validation import OutputValidationLayer
-from backend.src.guardrails.guardrail_manager import GuardrailManager
+from backend.src.guardrails.models import (
+    ComplianceFramework,
+    GuardrailConfig,
+    GuardrailLayer,
+    GuardrailResult,
+    GuardrailViolation,
+    ViolationSeverity,
+)
 
 
 class TestGuardrailConfig:

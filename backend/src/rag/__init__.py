@@ -19,16 +19,16 @@ Level 5a Enhancements:
 """
 
 from backend.src.rag.embeddings import create_embeddings
-from backend.src.rag.vector_store import get_vector_store
-from backend.src.rag.retriever import get_retriever, retrieve_weather_knowledge
 
 # L5a: Query decomposition
 from backend.src.rag.query_decomposer import (
-    QueryDecomposer,
     DecomposedQuery,
+    QueryDecomposer,
     decompose_query,
     get_query_decomposer,
 )
+from backend.src.rag.retriever import get_retriever, retrieve_weather_knowledge
+from backend.src.rag.vector_store import get_vector_store
 
 __all__ = [
     # Core RAG

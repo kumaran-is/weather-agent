@@ -10,15 +10,12 @@ NOTE: SemanticToolDiscovery class has been replaced with BigtoolRegistry's
 built-in semantic search capabilities using LangGraph-bigtool.
 """
 
-from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.tools import StructuredTool
 
 from backend.src.registry.bigtool_registry import (
     BigtoolRegistry,
     ToolCategory,
-    ToolMetadata,
     get_bigtool_registry,
     reset_bigtool_registry,
     retrieve_tools_for_query,

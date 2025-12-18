@@ -26,28 +26,28 @@ Design Principles:
 from __future__ import annotations
 
 import json
-import httpx
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    AgentResponse,
-    MultiAgentState,
-)
+from backend.config.settings import settings
 from backend.src.agents.prompts.hurricane_prompts import (
-    HURRICANE_SPECIALIST_SYSTEM_PROMPT,
     HURRICANE_FORECAST_PROMPT,
+    HURRICANE_SPECIALIST_SYSTEM_PROMPT,
+    NHC_DATA_TEMPLATE,
     SAFFIR_SIMPSON_SCALE,
     USER_CONTEXT_TEMPLATE,
-    NHC_DATA_TEMPLATE,
 )
-from backend.config.settings import settings
 from backend.src.mcp.hurricane_client import HurricaneMCPClient
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -153,7 +153,7 @@ class HurricaneSpecialistAgent:
         Returns:
             Updated state with hurricane specialist response
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         # Support both Pydantic model and dict state (L4a/L4b compatibility)
         is_pydantic = hasattr(state, 'query') and not isinstance(state, dict)
@@ -245,7 +245,7 @@ class HurricaneSpecialistAgent:
 
             # Calculate execution time
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Step 7: Create agent response
@@ -253,7 +253,7 @@ class HurricaneSpecialistAgent:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content=forecast_text,
                 confidence=confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "nhc_data_used": nhc_data is not None,
@@ -326,15 +326,15 @@ class HurricaneSpecialistAgent:
             )
 
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Create error response
             error_response = AgentResponse(
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
-                content=f"Unable to process hurricane query due to an error. Please try again or contact support.",
+                content="Unable to process hurricane query due to an error. Please try again or contact support.",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "error": str(e),
@@ -391,8 +391,8 @@ class HurricaneSpecialistAgent:
             return None
 
         # Generate correlation ID for structured logging (Gap #3)
-        correlation_id = f"nhc-{datetime.now(timezone.utc).timestamp()}"
-        start_time = datetime.now(timezone.utc)
+        correlation_id = f"nhc-{datetime.now(UTC).timestamp()}"
+        start_time = datetime.now(UTC)
 
         logger.info(
             "nhc_data_fetch_started",
@@ -432,9 +432,9 @@ class HurricaneSpecialistAgent:
                     return None
 
             # Call get_active_storms MCP tool
-            mcp_start_time = datetime.now(timezone.utc)
+            mcp_start_time = datetime.now(UTC)
             active_storms_response = await self.hurricane_client.get_active_storms()
-            mcp_duration_ms = (datetime.now(timezone.utc) - mcp_start_time).total_seconds() * 1000
+            mcp_duration_ms = (datetime.now(UTC) - mcp_start_time).total_seconds() * 1000
 
             logger.info(
                 "mcp_tool_called",
@@ -456,13 +456,13 @@ class HurricaneSpecialistAgent:
                     active_storms_count=0,
                     has_forecast=False,
                     total_duration_ms=round(
-                        (datetime.now(timezone.utc) - start_time).total_seconds() * 1000, 2
+                        (datetime.now(UTC) - start_time).total_seconds() * 1000, 2
                     ),
                 )
                 return {
                     "active_storms": [],
                     "forecast_data": {},
-                    "fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "fetched_at": datetime.now(UTC).isoformat(),
                     "source": "Hurricane MCP Server (MCP Protocol)",
                     "correlation_id": correlation_id,
                 }
@@ -474,12 +474,12 @@ class HurricaneSpecialistAgent:
                 first_storm_id = active_storms[0].get("id", "")
                 if first_storm_id:
                     try:
-                        mcp_start_time = datetime.now(timezone.utc)
+                        mcp_start_time = datetime.now(UTC)
                         storm_track_response = await self.hurricane_client.get_storm_track(
                             storm_id=first_storm_id
                         )
                         mcp_duration_ms = (
-                            datetime.now(timezone.utc) - mcp_start_time
+                            datetime.now(UTC) - mcp_start_time
                         ).total_seconds() * 1000
 
                         logger.info(
@@ -506,12 +506,12 @@ class HurricaneSpecialistAgent:
             nhc_data = {
                 "active_storms": active_storms,
                 "forecast_data": forecast_data,
-                "fetched_at": datetime.now(timezone.utc).isoformat(),
+                "fetched_at": datetime.now(UTC).isoformat(),
                 "source": "Hurricane MCP Server (MCP Protocol)",
                 "correlation_id": correlation_id,
             }
 
-            total_duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            total_duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
             logger.info(
                 "nhc_data_fetched",
                 correlation_id=correlation_id,
@@ -524,7 +524,7 @@ class HurricaneSpecialistAgent:
             return nhc_data
 
         except httpx.TimeoutException:
-            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_timeout",
                 correlation_id=correlation_id,
@@ -547,7 +547,7 @@ class HurricaneSpecialistAgent:
             return None
 
         except httpx.ConnectError:
-            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_connection_error",
                 correlation_id=correlation_id,
@@ -568,7 +568,7 @@ class HurricaneSpecialistAgent:
             return None
 
         except Exception as e:
-            duration_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
             logger.error(
                 "hurricane_mcp_error",
                 correlation_id=correlation_id,

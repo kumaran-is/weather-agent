@@ -61,11 +61,11 @@ Design Principles (STRICTLY ENFORCED):
 """
 
 # Weather models (v0.6.0: AgentLevel kept for internal use, not in API)
-from backend.src.models.weather import (
-    AgentLevel,  # Internal use only - API uses auto-routing now
-    EvaluationScores,  # Level 5b: 4-pillar evaluation scores
-    WeatherQuery,
-    WeatherResponse,
+# Health check models (Level 5c: Comprehensive service health)
+from backend.src.models.health import (
+    HealthCheckResponse,
+    ServiceHealth,
+    ServicesHealth,
 )
 
 # Hurricane alert models
@@ -76,21 +76,20 @@ from backend.src.models.hurricane import (
     HurricaneApprovalResponse,
 )
 
-# Health check models (Level 5c: Comprehensive service health)
-from backend.src.models.health import (
-    ServiceHealth,
-    ServicesHealth,
-    HealthCheckResponse,
-)
-
 # Multi-agent models (Level 4a)
 from backend.src.models.multi_agent import (
-    AgentRole,
-    QueryComplexity,
-    RoutingDecision,
     AgentResponse,
+    AgentRole,
     AgentState,
     MultiAgentState,
+    QueryComplexity,
+    RoutingDecision,
+)
+from backend.src.models.weather import (
+    AgentLevel,  # Internal use only - API uses auto-routing now
+    EvaluationScores,  # Level 5b: 4-pillar evaluation scores
+    WeatherQuery,
+    WeatherResponse,
 )
 
 # Tool registry models (Level 7 - migrated to langgraph-bigtool)

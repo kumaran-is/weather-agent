@@ -349,7 +349,7 @@ class MemoryManager:
             logger.debug(f"✅ User profile retrieved for user={user_id}")
             return profile
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 f"⚠️ User profile retrieval timed out after {timeout}s for user={user_id}. "
                 f"Continuing without profile data (graceful degradation)."
@@ -400,7 +400,7 @@ class MemoryManager:
             logger.debug(f"✅ Retrieved {len(episodes)} episodes for user={user_id}")
             return episodes
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 f"⚠️ Episodes search timed out after {timeout}s for user={user_id}. "
                 f"Continuing without episode data (graceful degradation)."

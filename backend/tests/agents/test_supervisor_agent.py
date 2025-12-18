@@ -9,19 +9,19 @@ Test Coverage:
 - Error handling and graceful degradation
 """
 
-import pytest
 import json
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.src.agents.supervisor_agent import (
-    SupervisorAgent,
     AgentCapabilityRegistry,
+    SupervisorAgent,
 )
 from backend.src.models.multi_agent import (
-    AgentRole,
-    QueryComplexity,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
 )
 
@@ -34,8 +34,8 @@ def base_state() -> MultiAgentState:
         query="Test query",
         user_id="test_user_123",
         session_id="test_session_456",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         timeout_ms=30000,
         current_agent=None,
         routing_decision=None,
@@ -300,7 +300,7 @@ class TestResponseSynthesis:
                 agent_role=AgentRole.FORECASTER,
                 content="Current weather is sunny, 75F",
                 confidence=0.9,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -321,7 +321,7 @@ class TestResponseSynthesis:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Hurricane is Category 3",
                 confidence=0.9,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             ),
@@ -329,7 +329,7 @@ class TestResponseSynthesis:
                 agent_role=AgentRole.HISTORICAL_ANALYST,
                 content="Similar to Hurricane Andrew trajectory",
                 confidence=0.85,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=150,
                 metadata={},
             ),

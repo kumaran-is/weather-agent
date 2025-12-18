@@ -19,7 +19,7 @@ Configuration:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -168,7 +168,7 @@ class CostBudget:
     alert_threshold: float = 80.0
     current_spend_usd: float = 0.0
     last_reset: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
     alerts_sent: int = 0
 
@@ -296,7 +296,7 @@ class CostOptimizer:
         # Create record
         record = CostRecord(
             agent_role=agent_role,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=cost_usd,
@@ -331,7 +331,7 @@ class CostOptimizer:
 
     def _check_daily_reset(self) -> None:
         """Reset daily counters if needed."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now.date() > self._budget.last_reset.date():
             self._budget.current_spend_usd = 0.0
             self._budget.alerts_sent = 0
@@ -401,7 +401,7 @@ class CostOptimizer:
             Dictionary with cost statistics.
         """
         # Calculate daily costs
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
         today_records = [
             r for r in self._cost_history
             if r.timestamp.date() == today

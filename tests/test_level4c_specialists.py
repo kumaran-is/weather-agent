@@ -6,24 +6,24 @@ This module tests the specialist agents including:
 - Personalization Agent
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.src.agents.emergency_agent import (
-    EmergencyResponseAgent,
-    create_emergency_agent,
-)
+import pytest
+
 from backend.src.agents.climate_agent import (
     ClimateAnalystAgent,
     create_climate_agent,
+)
+from backend.src.agents.emergency_agent import (
+    EmergencyResponseAgent,
+    create_emergency_agent,
 )
 from backend.src.agents.personalization_agent import (
     PersonalizationAgent,
     UserProfile,
     create_personalization_agent,
 )
-from backend.src.models.multi_agent import AgentRole, AgentResponse, MultiAgentState
-
+from backend.src.models.multi_agent import AgentRole, MultiAgentState
 
 # =============================================================================
 # Emergency Response Agent Tests

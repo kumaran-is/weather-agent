@@ -22,20 +22,18 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
+from backend.src.observability.metrics import get_metrics
 from backend.src.observability.tracing import (
     SpanAttributes,
     SpanNames,
-    create_span,
     get_tracer,
 )
-from backend.src.observability.metrics import get_metrics
 
 # Use centralized metrics module for consistent metric naming
 _PROMETHEUS_AVAILABLE = True

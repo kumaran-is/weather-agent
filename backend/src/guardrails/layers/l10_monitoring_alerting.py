@@ -18,12 +18,12 @@ Alert Types:
 - Safety threshold breach
 """
 
+import logging
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
-import logging
 
 from backend.src.guardrails.layers.base import BaseGuardrailLayer
 from backend.src.guardrails.models import (

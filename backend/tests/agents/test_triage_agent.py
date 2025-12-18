@@ -12,18 +12,18 @@ Test Coverage:
 - Structured logging verification
 """
 
-import pytest
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.src.agents.triage_agent import TriageAgent
 from backend.src.models.multi_agent import (
-    AgentRole,
-    QueryComplexity,
-    RoutingDecision,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
+    RoutingDecision,
 )
 
 
@@ -35,8 +35,8 @@ def base_state() -> MultiAgentState:
         "query": "Test query",
         "user_id": "test_user_123",
         "session_id": "test_session_456",
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC),
         "timeout_ms": 3000,
         "current_agent": None,
         "routing_decision": None,

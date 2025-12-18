@@ -174,8 +174,8 @@ def test_retriever() -> bool:
 
     except Exception as e:
         print(f"❌ Retriever test failed: {e}")
-        print(f"   Make sure Qdrant is running: docker-compose up -d")
-        print(f"   Make sure knowledge base is loaded: make rag-load")
+        print("   Make sure Qdrant is running: docker-compose up -d")
+        print("   Make sure knowledge base is loaded: make rag-load")
         return False
 
 

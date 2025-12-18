@@ -1,6 +1,6 @@
 [project]
 name = "weather-ai-agent-service"
-version = "1.6.1"  # Level 8: Signal Correlation
+version = "1.7.0"  # Level 9: Semantic Caching
 description = "Production-grade AI agent with 7-layer memory, advanced reasoning (ToT/GoT), emotional intelligence, and multi-layer caching"
 authors = [
     {name = "Kumaran Iyyasamy Srinivasan"}
@@ -126,12 +126,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-
-[tool.ruff.lint.flake8-import-conventions.banned-from]
-# Ban deprecated LangChain imports
-"langgraph.prebuilt" = [
-    "create_react_agent",  # Deprecated in v1.0+ - use langchain.agents.create_agent
-]
 
 [tool.mypy]
 python_version = "3.13"

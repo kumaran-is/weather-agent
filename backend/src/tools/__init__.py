@@ -36,6 +36,13 @@ References:
 """
 
 from backend.config.settings import settings
+
+# Import bigtool registry (replaces VectorToolStore)
+from backend.src.registry import (
+    BigtoolRegistry,
+    get_bigtool_registry,
+    reset_bigtool_registry,
+)
 from backend.src.tools.rag_tools import (
     analyze_trends,
     compare_conditions,
@@ -47,13 +54,6 @@ from backend.src.tools.weather_tools import (
     get_current_weather,
     get_forecast,
     weather_mcp_client,
-)
-
-# Import bigtool registry (replaces VectorToolStore)
-from backend.src.registry import (
-    BigtoolRegistry,
-    get_bigtool_registry,
-    reset_bigtool_registry,
 )
 
 __all__ = [

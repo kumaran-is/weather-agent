@@ -22,7 +22,6 @@ from typing import Any
 
 from backend.src.guardrails.layers.base import BaseGuardrailLayer
 from backend.src.guardrails.models import (
-    GuardrailConfig,
     GuardrailLayer,
     GuardrailViolation,
     ViolationSeverity,

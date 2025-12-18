@@ -15,7 +15,6 @@ References:
 - GitHub: https://github.com/langchain-ai/langgraph-bigtool
 """
 
-import pytest
 from langchain_core.tools import BaseTool  # ✅ P0: Correct v1.x import
 
 from backend.src.registry import (
@@ -28,8 +27,8 @@ from backend.src.registry import (
 )
 from backend.src.tools import (
     VectorToolStore,  # Backward-compatible shim
-    get_tool_store,
     create_tool_store,
+    get_tool_store,
 )
 
 

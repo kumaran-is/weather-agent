@@ -19,13 +19,14 @@ Usage:
     uv run python scripts/upload_golden_dataset.py --category retrieval
 """
 
-import yaml
-from pathlib import Path
-from langsmith import Client
-from datetime import datetime
-import sys
 import argparse
+import sys
+from datetime import datetime
+from pathlib import Path
+
+import yaml
 from dotenv import load_dotenv
+from langsmith import Client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -283,7 +284,7 @@ def main():
     print("UPLOAD COMPLETE")
     print("=" * 60)
     print(f"Dataset ID: {dataset_id}")
-    print(f"View at: https://smith.langchain.com/datasets")
+    print("View at: https://smith.langchain.com/datasets")
     print()
     print("Next Steps:")
     print("  1. Run batch evaluation: make eval-run-batch")

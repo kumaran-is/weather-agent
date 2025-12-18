@@ -45,7 +45,7 @@ def print_header(text):
 
 def check_python_version():
     """Verify Python 3.13+"""
-    print(f"🔎 Checking Python version...")
+    print("🔎 Checking Python version...")
     version = sys.version_info
     if version.major == 3 and version.minor >= 13:
         print(f"{GREEN}✅ Python 3.13+ detected:{RESET} {version.major}.{version.minor}.{version.micro}")
@@ -57,7 +57,7 @@ def check_python_version():
 
 def check_env_vars():
     """Verify required environment variables"""
-    print(f"\n🔎 Checking environment variables...")
+    print("\n🔎 Checking environment variables...")
 
     required_vars = {
         "OPENAI_API_KEY": False,  # Required
@@ -106,7 +106,7 @@ def check_env_vars():
 
 def check_openai_connection():
     """Test OpenAI API connection"""
-    print(f"\n🔎 Checking OpenAI API connection...")
+    print("\n🔎 Checking OpenAI API connection...")
 
     if not os.getenv("OPENAI_API_KEY"):
         print(f"{YELLOW}⚠️  OPENAI_API_KEY not set, skipping test{RESET}")
@@ -133,7 +133,7 @@ def check_openai_connection():
 
 def check_anthropic_connection():
     """Test Anthropic API connection (optional)"""
-    print(f"\n🔎 Checking Anthropic API connection (optional)...")
+    print("\n🔎 Checking Anthropic API connection (optional)...")
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -158,7 +158,7 @@ def check_anthropic_connection():
 
 def check_mcp_servers():
     """Check MCP Docker containers and health endpoints"""
-    print(f"\n🔎 Checking Docker containers...")
+    print("\n🔎 Checking Docker containers...")
 
     import subprocess
 
@@ -185,14 +185,14 @@ def check_mcp_servers():
                 status = [line for line in containers.split('\n') if 'weather-mcp-server' in line]
                 if status and 'Up' in status[0]:
                     print(f"{GREEN}✅ Weather MCP Server container running{RESET}")
-                    print(f"   Container: weather-mcp-server")
+                    print("   Container: weather-mcp-server")
                     print(f"   URL: {weather_url}")
                 else:
                     print(f"{YELLOW}⚠️  Weather MCP Server container exists but not running{RESET}")
                     all_good = False
             else:
                 print(f"{YELLOW}⚠️  Weather MCP Server container not found{RESET}")
-                print(f"   Run: docker-compose up -d")
+                print("   Run: docker-compose up -d")
                 all_good = False
 
             # Check Hurricane MCP container
@@ -200,14 +200,14 @@ def check_mcp_servers():
                 status = [line for line in containers.split('\n') if 'hurricane-tracker-mcp' in line]
                 if status and 'Up' in status[0]:
                     print(f"{GREEN}✅ Hurricane Tracker MCP container running{RESET}")
-                    print(f"   Container: hurricane-tracker-mcp")
+                    print("   Container: hurricane-tracker-mcp")
                     print(f"   URL: {hurricane_url}")
                 else:
                     print(f"{YELLOW}⚠️  Hurricane Tracker MCP container exists but not running{RESET}")
                     all_good = False
             else:
                 print(f"{YELLOW}⚠️  Hurricane Tracker MCP container not found{RESET}")
-                print(f"   Run: docker-compose up -d")
+                print("   Run: docker-compose up -d")
                 all_good = False
 
             # Check Weather AI API container (Level 1+)
@@ -215,30 +215,30 @@ def check_mcp_servers():
                 status = [line for line in containers.split('\n') if 'weather-ai-api' in line]
                 if status and 'Up' in status[0]:
                     print(f"{GREEN}✅ Weather AI API container running{RESET}")
-                    print(f"   Container: weather-ai-api")
+                    print("   Container: weather-ai-api")
                     print(f"   URL: {api_url}")
                 else:
                     print(f"{YELLOW}⚠️  Weather AI API container exists but not running{RESET}")
                     all_good = False
             else:
                 print(f"{YELLOW}⚠️  Weather AI API container not found (needed for Level 1+){RESET}")
-                print(f"   Run: docker-compose up -d")
+                print("   Run: docker-compose up -d")
                 all_good = False
         else:
             print(f"{YELLOW}⚠️  Could not check Docker containers{RESET}")
-            print(f"   Make sure Docker is running")
+            print("   Make sure Docker is running")
             all_good = False
 
     except Exception as e:
         print(f"{YELLOW}⚠️  Docker check failed:{RESET} {str(e)[:100]}")
-        print(f"   Run: docker-compose up -d")
+        print("   Run: docker-compose up -d")
         all_good = False
 
     # Try to hit health endpoints
     try:
         import requests
 
-        print(f"\n🔎 Checking MCP health endpoints...")
+        print("\n🔎 Checking MCP health endpoints...")
 
         # Weather MCP health check
         try:
@@ -249,7 +249,7 @@ def check_mcp_servers():
                 print(f"{YELLOW}⚠️  Weather MCP Server returned status {response.status_code}{RESET}")
         except requests.exceptions.RequestException:
             print(f"{YELLOW}⚠️  Weather MCP Server health endpoint not accessible{RESET}")
-            print(f"   Make sure containers are running: docker-compose ps")
+            print("   Make sure containers are running: docker-compose ps")
 
         # Hurricane MCP health check
         try:
@@ -260,7 +260,7 @@ def check_mcp_servers():
                 print(f"{YELLOW}⚠️  Hurricane Tracker MCP returned status {response.status_code}{RESET}")
         except requests.exceptions.RequestException:
             print(f"{YELLOW}⚠️  Hurricane Tracker MCP health endpoint not accessible{RESET}")
-            print(f"   Make sure containers are running: docker-compose ps")
+            print("   Make sure containers are running: docker-compose ps")
 
         # Weather AI API health check (Level 1+)
         try:
@@ -271,7 +271,7 @@ def check_mcp_servers():
                 print(f"{YELLOW}⚠️  Weather AI API returned status {response.status_code}{RESET}")
         except requests.exceptions.RequestException:
             print(f"{YELLOW}⚠️  Weather AI API health endpoint not accessible (needed for Level 1+){RESET}")
-            print(f"   Make sure containers are running: docker-compose ps")
+            print("   Make sure containers are running: docker-compose ps")
 
     except ImportError:
         print(f"{YELLOW}⚠️  requests library not installed, skipping health checks{RESET}")
@@ -280,7 +280,7 @@ def check_mcp_servers():
 
 def check_langsmith():
     """Verify LangSmith tracing is enabled"""
-    print(f"\n🔎 Checking LangSmith configuration...")
+    print("\n🔎 Checking LangSmith configuration...")
 
     tracing = os.getenv("LANGCHAIN_TRACING_V2")
     api_key = os.getenv("LANGCHAIN_API_KEY")
@@ -297,13 +297,13 @@ def check_langsmith():
         if tracing != "true":
             print(f"   LANGCHAIN_TRACING_V2={tracing} (should be 'true')")
         if not api_key:
-            print(f"   LANGCHAIN_API_KEY is missing (required)")
+            print("   LANGCHAIN_API_KEY is missing (required)")
         print(f"{YELLOW}   Get API key at: https://smith.langchain.com/{RESET}")
         return False
 
 def check_docker():
     """Verify Docker is installed"""
-    print(f"\n🔎 Checking Docker installation...")
+    print("\n🔎 Checking Docker installation...")
 
     try:
         import subprocess
@@ -347,7 +347,7 @@ def check_docker():
 
 def check_project_structure():
     """Verify project structure"""
-    print(f"\n🔎 Checking project structure...")
+    print("\n🔎 Checking project structure...")
 
     required_files = {
         "pyproject.toml": "Project configuration",
@@ -370,7 +370,7 @@ def check_project_structure():
 
 def check_langgraph_cli():
     """Verify LangGraph CLI is installed (for LangSmith Studio)"""
-    print(f"\n🔎 Checking LangGraph CLI installation...")
+    print("\n🔎 Checking LangGraph CLI installation...")
 
     try:
         import subprocess
@@ -433,21 +433,21 @@ def main():
         print(f"{GREEN}🎉 ALL {total} CHECKS PASSED! Level 1 environment ready!{RESET}")
         print(f"\n{GREEN}✅ Level 1 Complete:{RESET} ReAct Agent + HITL + MCP Integration")
         print(f"\n{BLUE}Next steps:{RESET}")
-        print(f"  • Test agent: langgraph dev (opens LangSmith Studio)")
-        print(f"  • Test API: curl http://localhost:8000/health")
-        print(f"  • View traces: https://smith.langchain.com/")
-        print(f"  • Start Level 2: Plan CoT + RAG implementation")
+        print("  • Test agent: langgraph dev (opens LangSmith Studio)")
+        print("  • Test API: curl http://localhost:8000/health")
+        print("  • View traces: https://smith.langchain.com/")
+        print("  • Start Level 2: Plan CoT + RAG implementation")
         return 0
     else:
         print(f"\n{YELLOW}⚠️  {passed}/{total} CHECKS PASSED ({total - passed} failed){RESET}")
         print(f"\n{RED}Please fix errors above before proceeding.{RESET}")
         print(f"\n{BLUE}Common fixes:{RESET}")
-        print(f"  • Copy .env.template to .env and add your API keys")
-        print(f"  • Get OpenAI API key: https://platform.openai.com/api-keys")
-        print(f"  • Get LangSmith API key: https://smith.langchain.com/")
-        print(f"  • Start Docker containers: docker-compose up -d")
-        print(f"  • Install Docker Desktop: https://www.docker.com/products/docker-desktop/")
-        print(f"  • Install LangGraph CLI: uv pip install 'langgraph-cli[inmem]'")
+        print("  • Copy .env.template to .env and add your API keys")
+        print("  • Get OpenAI API key: https://platform.openai.com/api-keys")
+        print("  • Get LangSmith API key: https://smith.langchain.com/")
+        print("  • Start Docker containers: docker-compose up -d")
+        print("  • Install Docker Desktop: https://www.docker.com/products/docker-desktop/")
+        print("  • Install LangGraph CLI: uv pip install 'langgraph-cli[inmem]'")
         return 1
 
 if __name__ == "__main__":

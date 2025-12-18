@@ -3,8 +3,9 @@
 This module provides shared fixtures for all test modules.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 
 @pytest.fixture(autouse=True)

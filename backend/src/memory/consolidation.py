@@ -45,9 +45,8 @@ Example:
 """
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import redis.asyncio as redis
@@ -60,10 +59,6 @@ from backend.config.settings import Settings
 from backend.src.memory.exceptions import GraphitiMemoryError, RedisMemoryError
 from backend.src.models.memory import (
     ConversationContext,
-    EpisodicMemory,
-    SessionState,
-    TemporalFact,
-    UserProfile,
 )
 
 logger = logging.getLogger(__name__)
@@ -461,7 +456,7 @@ Summary:"""
                         name=f"Session Fact: {session_id}",
                         episode_body=fact,
                         source_description="Session consolidation",
-                        reference_time=datetime.now(timezone.utc),
+                        reference_time=datetime.now(UTC),
                         group_id=f"user_facts_{user_id}",
                     )
                 except Exception as e:
@@ -495,7 +490,7 @@ Summary:"""
 
         except redis.RedisError as e:
             raise RedisMemoryError(f"Redis error during session consolidation: {e}") from e
-        except GraphitiMemoryError as e:
+        except GraphitiMemoryError:
             raise
         except Exception as e:
             logger.error(f"Failed to consolidate session: {e}")
@@ -586,7 +581,7 @@ Facts (one per line):"""
             await self._ensure_graphiti_initialized()
 
             # 1. Fetch episodes from Graphiti (last 7 days)
-            cutoff_time = datetime.now(timezone.utc) - timedelta(days=7)
+            cutoff_time = datetime.now(UTC) - timedelta(days=7)
 
             episodes = await self.graphiti.search(
                 query=f"user {user_id} conversation",
@@ -630,7 +625,7 @@ Facts (one per line):"""
                     name=f"Weekly Digest: {user_id}",
                     episode_body=digest,
                     source_description="Weekly consolidation",
-                    reference_time=datetime.now(timezone.utc),
+                    reference_time=datetime.now(UTC),
                     group_id=f"weekly_digest_{user_id}",
                 )
             except Exception as e:
@@ -659,7 +654,7 @@ Facts (one per line):"""
                 duration_seconds=duration,
             )
 
-        except GraphitiMemoryError as e:
+        except GraphitiMemoryError:
             raise
         except Exception as e:
             logger.error(f"Failed to consolidate weekly: {e}")
@@ -794,7 +789,7 @@ Weekly Summary:"""
         timestamp = memory_item.get("timestamp", current_time)
         if hasattr(timestamp, 'tzinfo') and timestamp.tzinfo is not None:
             if current_time.tzinfo is None:
-                current_time = current_time.replace(tzinfo=timezone.utc)
+                current_time = current_time.replace(tzinfo=UTC)
         age_hours = (current_time - timestamp).total_seconds() / 3600
         recency = max(0.0, 1.0 - (age_hours / 168.0))  # Decay over 1 week
 

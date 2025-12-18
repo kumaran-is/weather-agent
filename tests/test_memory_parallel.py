@@ -12,9 +12,10 @@ Test coverage:
 """
 
 import asyncio
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from backend.src.memory.manager import MemoryManager
 from backend.src.models.memory import ConversationContext, UserProfile

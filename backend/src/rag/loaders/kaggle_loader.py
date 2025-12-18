@@ -22,10 +22,12 @@ Supported datasets:
    - Schema: Cities as columns, time periods as rows
 """
 
-from langchain_core.documents import Document
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+from langchain_core.documents import Document
+
 from backend.src.rag.loaders.csv_to_narrative import csv_row_to_narrative
 
 
@@ -57,7 +59,7 @@ def load_daily_temperature_sample(
         print(f"⚠️  File not found: {csv_path}")
         return []
 
-    print(f"📂 Loading daily_temperature_major_cities.csv...")
+    print("📂 Loading daily_temperature_major_cities.csv...")
 
     try:
         # Load sample of data
@@ -131,7 +133,7 @@ def load_city_temperature_1980_2020_sample(max_cities: int = 50) -> list[Documen
         print(f"⚠️  File not found: {csv_path}")
         return []
 
-    print(f"📂 Loading city_temperature_1980_2020.csv (wide format)...")
+    print("📂 Loading city_temperature_1980_2020.csv (wide format)...")
 
     try:
         # Read CSV with more rows for temperature data
@@ -293,7 +295,7 @@ if __name__ == "__main__":
             :2
         ]
         for doc in daily_sample:
-            print(f"\nDaily Temperature Record:")
+            print("\nDaily Temperature Record:")
             print(f"  City: {doc.metadata['city']}")
             print(f"  Content: {doc.page_content[:150]}...")
 
@@ -302,7 +304,7 @@ if __name__ == "__main__":
             d for d in docs if d.metadata["type"] == "city_climate_profile"
         ][:2]
         for doc in city_sample:
-            print(f"\nCity Climate Profile:")
+            print("\nCity Climate Profile:")
             print(f"  City: {doc.metadata['city']}")
             print(f"  Avg Temp: {doc.metadata['avg_temp']:.1f}°F")
             print(f"  Content: {doc.page_content[:150]}...")

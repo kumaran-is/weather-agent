@@ -12,8 +12,9 @@ Metrics:
 Target: >0.90 faithfulness, >0.85 context precision/recall
 """
 
-from typing import Any
 import logging
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -79,14 +80,14 @@ class RagasEvaluator:
         # Try to import ragas
         self._ragas_available = False
         try:
+            from datasets import Dataset
+            from ragas import evaluate
             from ragas.metrics import (
-                faithfulness,
+                answer_relevancy,
                 context_precision,
                 context_recall,
-                answer_relevancy,
+                faithfulness,
             )
-            from ragas import evaluate
-            from datasets import Dataset
 
             self._ragas_faithfulness = faithfulness
             self._ragas_context_precision = context_precision

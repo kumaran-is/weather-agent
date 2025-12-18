@@ -9,6 +9,7 @@ Configuration is loaded from environment variables with sensible defaults.
 """
 
 import logging
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)

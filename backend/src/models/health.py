@@ -10,9 +10,10 @@ Level 5c Enhancement:
 - Detailed status for: Redis, Neo4j, Qdrant, PostgreSQL, MCP servers, Observability stack
 """
 
-from pydantic import BaseModel, Field
+from datetime import UTC, datetime
 from typing import Literal
-from datetime import datetime, timezone
+
+from pydantic import BaseModel, Field
 
 
 class ServiceHealth(BaseModel):
@@ -112,7 +113,7 @@ class HealthCheckResponse(BaseModel):
         description="Current implementation level (L4 Multi-Agent + L5a Caching)"
     )
     timestamp: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        default_factory=lambda: datetime.now(UTC).isoformat(),
         description="ISO 8601 timestamp in UTC"
     )
     healthy_services: int = Field(

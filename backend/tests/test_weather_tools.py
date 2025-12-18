@@ -11,11 +11,12 @@ Run: PYTHONPATH=. pytest backend/tests/test_weather_tools.py -v
 """
 
 import pytest
+
 from backend.src.tools.weather_tools import (
     get_current_weather,
     get_forecast,
-    retrieve_weather_context,
     get_weather_mcp_client,
+    retrieve_weather_context,
 )
 
 

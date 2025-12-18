@@ -12,10 +12,11 @@ Provides content filtering capabilities:
 Target: Zero harmful content in production
 """
 
-from typing import Any
 import logging
 import re
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

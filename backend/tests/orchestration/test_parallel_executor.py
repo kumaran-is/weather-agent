@@ -8,17 +8,16 @@ Test Coverage:
 - Performance metrics collection
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.src.orchestration.parallel_executor import (
+    ParallelExecutor,
     ParallelResult,
     TaskResult,
     execute_parallel,
     execute_with_fallback,
-    ParallelExecutor,
 )
 
 

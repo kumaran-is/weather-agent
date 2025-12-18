@@ -13,11 +13,13 @@ Provides response validation:
 Target: 99%+ response quality compliance
 """
 
-from typing import Any, Callable
+import json
 import logging
 import re
-import json
+from collections.abc import Callable
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

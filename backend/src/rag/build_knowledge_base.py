@@ -19,16 +19,17 @@ Usage:
     make rag-load
 """
 
-from backend.src.rag.vector_store import get_vector_store
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from backend.src.rag.embeddings import create_embeddings
 from backend.src.rag.loaders.curated_knowledge_loader import load_all_curated_documents
 from backend.src.rag.loaders.kaggle_loader import load_all_kaggle_documents
 from backend.src.rag.loaders.validate_kaggle_datasets import (
-    validate_all_kaggle_datasets,
     DatasetValidationError,
+    validate_all_kaggle_datasets,
 )
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
+from backend.src.rag.vector_store import get_vector_store
 
 
 def chunk_documents(
@@ -207,7 +208,7 @@ def build_and_load_knowledge_base(
     print("\n" + "=" * 70)
     print("✅ Knowledge Base Build Complete!")
     print("=" * 70)
-    print(f"📊 Statistics:")
+    print("📊 Statistics:")
     print(f"   Total source documents: {stats['total_documents']}")
     print(f"   - Curated knowledge documents: {stats['curated_documents']}")
     print(f"   - Kaggle documents: {stats['kaggle_documents']}")

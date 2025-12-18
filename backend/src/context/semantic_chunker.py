@@ -13,9 +13,9 @@ Key Features:
 - Weather-domain specific separators
 """
 
-from typing import Any
 import logging
 import re
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

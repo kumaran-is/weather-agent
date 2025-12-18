@@ -27,7 +27,6 @@ from backend.src.guardrails.models import (
     GuardrailConfig,
     GuardrailLayer,
     GuardrailViolation,
-    ViolationSeverity,
 )
 
 

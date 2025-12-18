@@ -12,9 +12,9 @@ Models:
 - PillarWeights: Configurable pillar weights (default: 40/20/20/20)
 """
 
-from pydantic import BaseModel, Field
-from typing import Any
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class SafetyViolationType(str, Enum):

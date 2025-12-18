@@ -19,9 +19,10 @@ Capabilities:
 Target: Unlimited tool access, safe upgrades, data-driven lifecycle
 """
 
-from typing import Any, Protocol
 import logging
 from datetime import datetime
+from typing import Any, Protocol
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

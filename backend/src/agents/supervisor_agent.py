@@ -23,23 +23,22 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    AgentResponse,
-    MultiAgentState,
-    QueryComplexity,
-)
 from backend.src.agents.prompts.supervisor_prompts import (
+    AGENT_CAPABILITIES,
     SUPERVISOR_SYSTEM_PROMPT,
     WORKFLOW_PLANNING_PROMPT,
-    AGENT_CAPABILITIES,
+)
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
 )
 
 logger = structlog.get_logger(__name__)
@@ -428,7 +427,7 @@ class SupervisorAgent:
                 agent_role=AgentRole.SUPERVISOR,
                 content=f"Workflow orchestration failed: {type(e).__name__}",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "error": str(e),
@@ -621,7 +620,7 @@ class SupervisorAgent:
                         agent_role=agent_role,
                         content=f"Agent {agent_role.value} failed: {type(result).__name__}",
                         confidence=0.0,
-                        timestamp=datetime.now(timezone.utc),
+                        timestamp=datetime.now(UTC),
                         execution_time_ms=0,
                         metadata={"error": str(result)},
                     )
@@ -702,7 +701,7 @@ class SupervisorAgent:
                     agent_role=role,
                     content=f"Agent {role.value} failed: {type(e).__name__}",
                     confidence=0.0,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=0,
                     metadata={"error": str(e)},
                 )
@@ -776,7 +775,7 @@ Provide a synthesized response that combines all relevant information."""
                 agent_role=AgentRole.SYNTHESIS,
                 content=response.content,
                 confidence=min(avg_confidence + 0.05, 0.95),  # Slight boost for synthesis
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "source_agents": [r.agent_role.value for r in responses_to_synthesize],
@@ -894,7 +893,7 @@ Check for accuracy and provide quality score."""
                 agent_role=AgentRole.VERIFICATION,
                 content=response.content,
                 confidence=0.95,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "verified_agent": latest.agent_role.value,

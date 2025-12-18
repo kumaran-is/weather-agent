@@ -3,12 +3,7 @@
 Tests the Human-in-the-Loop approval nodes for hurricane alerts.
 """
 
-import pytest
-from backend.src.hitl.approval_node import (
-    detect_hurricane_node,
-    send_alert_node,
-    cancel_alert_node
-)
+from backend.src.hitl.approval_node import cancel_alert_node, detect_hurricane_node, send_alert_node
 
 
 def test_detect_hurricane_node(sample_hurricane_cat2):

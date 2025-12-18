@@ -10,9 +10,11 @@ Tests cover:
 - Error handling
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
+import pytest
+
 from backend.src.mcp.weather_client import WeatherMCPClient
 
 

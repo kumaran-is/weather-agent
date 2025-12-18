@@ -39,26 +39,14 @@ Constitutional AI Usage:
     >>> print(f"Passes: {result.passes}, Score: {result.score}")
 """
 
-from backend.src.guardrails.models import (
-    GuardrailResult,
-    GuardrailViolation,
-    GuardrailLayer,
-    GuardrailConfig,
-    PIIType,
-    ViolationSeverity,
-    ComplianceFramework,
-    AuditLogEntry,
-)
-from backend.src.guardrails.guardrail_manager import GuardrailManager
-
 # Level 6c: Constitutional AI and Enhanced Guardrails
 from backend.src.guardrails.constitutional_ai import (
-    ConstitutionalAI,
     Constitution,
-    Principle,
-    PrincipleCategory,
+    ConstitutionalAI,
     ConstitutionalResult,
     CritiqueResult,
+    Principle,
+    PrincipleCategory,
     RevisionResult,
 )
 from backend.src.guardrails.content_filter import (
@@ -66,11 +54,22 @@ from backend.src.guardrails.content_filter import (
     ContentFilterResult,
     FilterCategory,
 )
+from backend.src.guardrails.guardrail_manager import GuardrailManager
+from backend.src.guardrails.models import (
+    AuditLogEntry,
+    ComplianceFramework,
+    GuardrailConfig,
+    GuardrailLayer,
+    GuardrailResult,
+    GuardrailViolation,
+    PIIType,
+    ViolationSeverity,
+)
 from backend.src.guardrails.output_validator import (
     OutputValidator,
+    RuleType,
     ValidationResult,
     ValidationRule,
-    RuleType,
 )
 
 __all__ = [

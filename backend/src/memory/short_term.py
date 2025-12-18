@@ -19,7 +19,6 @@ Example:
     # Result: "Weather in London?" (if London was mentioned)
 """
 
-import json
 from datetime import datetime, timedelta
 
 import redis.asyncio as redis

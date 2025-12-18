@@ -31,7 +31,6 @@ from backend.src.models.multi_agent import (
     AgentResponse,
     AgentRole,
     MultiAgentState,
-    QueryComplexity,
 )
 
 logger = structlog.get_logger()

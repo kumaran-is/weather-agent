@@ -13,8 +13,8 @@ Test Cases:
 Target: >95% injection resistance
 """
 
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # Test case definitions
 PROMPT_INJECTION_TESTS = [

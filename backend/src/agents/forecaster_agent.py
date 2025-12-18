@@ -21,21 +21,21 @@ Design Principles:
 
 from __future__ import annotations
 
-import httpx
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
+from backend.config.settings import settings
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
 )
-from backend.config.settings import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -152,7 +152,7 @@ class ForecasterAgent:
                 agent_role=self.agent_role,
                 content=forecast_text,
                 confidence=confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "location": location,
@@ -195,7 +195,7 @@ class ForecasterAgent:
                 agent_role=self.agent_role,
                 content=f"Unable to generate forecast: {type(e).__name__}",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "error": str(e),
@@ -244,7 +244,7 @@ class ForecasterAgent:
                     "current": current_response.json() if current_response.status_code == 200 else None,
                     "forecast": forecast_response.json() if forecast_response.status_code == 200 else None,
                     "location": location,
-                    "fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "fetched_at": datetime.now(UTC).isoformat(),
                 }
 
                 logger.info(

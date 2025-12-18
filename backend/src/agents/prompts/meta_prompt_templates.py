@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from backend.src.models.multi_agent import AgentRole
 
-
 # =============================================================================
 # META-PROMPT SYSTEM PROMPT
 # =============================================================================

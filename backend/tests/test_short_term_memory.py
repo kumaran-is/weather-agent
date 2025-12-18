@@ -10,13 +10,14 @@ Tests cover:
 - Connection cleanup
 """
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
+
+import pytest
 import redis.asyncio as redis
 
-from backend.src.memory.short_term import ShortTermMemory
 from backend.src.memory.exceptions import RedisMemoryError
+from backend.src.memory.short_term import ShortTermMemory
 from backend.src.models.memory import ConversationContext, SessionState
 
 

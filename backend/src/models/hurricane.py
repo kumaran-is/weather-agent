@@ -19,11 +19,12 @@ Future Levels:
 - Level 5+: Add evacuation zone validation and life-safety checks
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Literal, ClassVar
-from datetime import datetime, timezone
-import uuid
 import re
+import uuid
+from datetime import UTC, datetime
+from typing import ClassVar, Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class HurricaneAlertRequest(BaseModel):
@@ -187,7 +188,7 @@ class HurricaneAlertResponse(BaseModel):
         description="Alert message content"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the alert was created (UTC)"
     )
 

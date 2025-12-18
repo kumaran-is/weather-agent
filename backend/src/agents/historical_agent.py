@@ -22,16 +22,16 @@ Design Principles:
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
 )
 
@@ -229,7 +229,7 @@ class HistoricalAnalystAgent:
                 agent_role=self.agent_role,
                 content=analysis_text,
                 confidence=confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "analysis_type": analysis_request["type"],
@@ -270,7 +270,7 @@ class HistoricalAnalystAgent:
                 agent_role=self.agent_role,
                 content=f"Unable to complete historical analysis: {type(e).__name__}",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "error": str(e),

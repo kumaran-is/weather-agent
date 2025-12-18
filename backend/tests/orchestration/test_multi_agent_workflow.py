@@ -10,26 +10,26 @@ Test Coverage:
 - Error handling and recovery
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+)
 from backend.src.orchestration.multi_agent_workflow import (
-    create_multi_agent_workflow,
-    compile_workflow,
-    route_after_triage,
-    route_after_specialist,
-    triage_agent_node,
-    hurricane_specialist_node,
-    alert_manager_node,
-    invoke_workflow,
     WorkflowState,
     _assess_risk_level,
-)
-from backend.src.models.multi_agent import (
-    AgentRole,
-    RoutingDecision,
-    AgentResponse,
+    alert_manager_node,
+    compile_workflow,
+    create_multi_agent_workflow,
+    hurricane_specialist_node,
+    invoke_workflow,
+    route_after_specialist,
+    route_after_triage,
+    triage_agent_node,
 )
 
 
@@ -116,7 +116,7 @@ def specialist_state_high_risk() -> WorkflowState:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Category 4 Hurricane Michael with 140 mph winds. Evacuate zones A & B.",
                 confidence=0.9,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ],
         "next_agent": None,
@@ -140,7 +140,7 @@ def specialist_state_low_risk() -> WorkflowState:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Tropical Storm Amy in the Atlantic, Category 1, no threat to US.",
                 confidence=0.85,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ],
         "next_agent": None,
@@ -318,7 +318,7 @@ def test_assess_risk_level_extreme():
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Category 5 hurricane with catastrophic damage potential",
                 confidence=0.95,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ]
     }
@@ -335,7 +335,7 @@ def test_assess_risk_level_high():
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Category 4 hurricane - evacuate zones A and B",
                 confidence=0.9,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ]
     }
@@ -352,7 +352,7 @@ def test_assess_risk_level_medium():
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Category 3 major hurricane approaching. Prepare for impact.",
                 confidence=0.85,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ]
     }
@@ -369,7 +369,7 @@ def test_assess_risk_level_low():
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Tropical storm in the Atlantic, no threat expected",
                 confidence=0.8,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
         ]
     }
@@ -427,7 +427,7 @@ async def test_hurricane_specialist_node(triage_state_emergency):
                     agent_role=AgentRole.HURRICANE_SPECIALIST,
                     content="Hurricane analysis...",
                     confidence=0.9,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                 )
             ],
         })
@@ -576,7 +576,7 @@ async def test_workflow_simple_query_ends_at_direct_response():
                     agent_role=AgentRole.TRIAGE,
                     content="Simple weather query",
                     confidence=0.95,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                 )
             ],
         })
@@ -638,7 +638,7 @@ async def test_workflow_hurricane_query_invokes_specialist():
                     agent_role=AgentRole.HURRICANE_SPECIALIST,
                     content="Forecast details",
                     confidence=0.85,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                 )
             ],
         })

@@ -34,7 +34,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ==================== SHORT-TERM MEMORY ====================
 
 

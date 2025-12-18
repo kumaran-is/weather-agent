@@ -42,6 +42,7 @@ Example:
 """
 
 from pathlib import Path
+
 import pandas as pd
 
 
@@ -128,7 +129,7 @@ def validate_city_temperature_1980_2020() -> tuple[bool, list[str]]:
     # Check 6: Reasonable row count
     try:
         # Count rows without loading entire file
-        with open(csv_path, "r") as f:
+        with open(csv_path) as f:
             row_count = sum(1 for _ in f)
 
         if row_count < 10000:
@@ -139,13 +140,13 @@ def validate_city_temperature_1980_2020() -> tuple[bool, list[str]]:
     except Exception as e:
         errors.append(f"⚠️  Could not count rows: {e}")
 
-    print(f"✅ city_temperature_1980_2020.csv validation passed (wide format)")
-    print(f"   Format: Wide (cities as columns)")
+    print("✅ city_temperature_1980_2020.csv validation passed (wide format)")
+    print("   Format: Wide (cities as columns)")
     print(f"   Columns (cities): {num_cols:,}")
     try:
         print(f"   Rows (time periods): {row_count:,}")
     except:
-        print(f"   Rows: Could not determine")
+        print("   Rows: Could not determine")
     print(f"   Sample cities: {', '.join(str(c) for c in df.columns[1:6])}")
 
     return True, errors
@@ -184,7 +185,7 @@ def validate_daily_temperature_major_cities() -> tuple[bool, list[str]]:
             errors.append(f"❌ Missing required columns in {csv_path}")
             return False, errors
 
-        print(f"✅ daily_temperature_major_cities.csv validation passed")
+        print("✅ daily_temperature_major_cities.csv validation passed")
         return True, errors
 
     except Exception as e:

@@ -7,13 +7,11 @@ Tests cover:
 - LangChain callback handler
 """
 
-import pytest
 import json
 import logging
 import uuid
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime, timezone
 
+import pytest
 
 # =============================================================================
 # Metrics Tests
@@ -194,9 +192,9 @@ class TestStructuredLogging:
     def test_set_request_context(self):
         """Test setting request context."""
         from backend.src.observability.logging import (
-            set_request_context,
             clear_request_context,
             request_context,
+            set_request_context,
         )
 
         set_request_context(
@@ -216,9 +214,9 @@ class TestStructuredLogging:
     def test_clear_request_context(self):
         """Test clearing request context."""
         from backend.src.observability.logging import (
-            set_request_context,
             clear_request_context,
             request_context,
+            set_request_context,
         )
 
         set_request_context(user_id="test_user")
@@ -281,7 +279,7 @@ class TestOpenTelemetryTracing:
 
     def test_create_span_with_attributes(self):
         """Test create_span with custom attributes."""
-        from backend.src.observability.tracing import create_span, SpanAttributes
+        from backend.src.observability.tracing import SpanAttributes, create_span
 
         attributes = {
             SpanAttributes.REQUEST_USER_ID: "test_user",
@@ -405,8 +403,9 @@ class TestObservabilityCallbackHandler:
     @pytest.mark.asyncio
     async def test_on_llm_end(self):
         """Test on_llm_end callback."""
+        from langchain_core.outputs import Generation, LLMResult
+
         from backend.src.observability.callbacks import ObservabilityCallbackHandler
-        from langchain_core.outputs import LLMResult, Generation
 
         handler = ObservabilityCallbackHandler()
         run_id = uuid.uuid4()
@@ -566,24 +565,14 @@ class TestObservabilityIntegration:
     def test_all_exports_available(self):
         """Test that all expected exports are available from __init__."""
         from backend.src.observability import (
-            # Tracing
-            TracingManager,
-            get_tracer,
-            create_span,
-            SpanAttributes,
-            SpanNames,
-            # Callbacks
+            # Metrics
             ObservabilityCallbackHandler,
-            create_langchain_callbacks,
+            TracingManager,
+            create_span,
+            get_metrics,
             # Logging
             get_structured_logger,
-            add_trace_context,
-            set_request_context,
-            clear_request_context,
-            configure_structured_logging,
-            # Metrics
-            MetricsRegistry,
-            get_metrics,
+            get_tracer,
         )
 
         # All imports successful
@@ -597,10 +586,10 @@ class TestObservabilityIntegration:
     def test_metrics_and_logging_together(self):
         """Test metrics and logging work together."""
         from backend.src.observability import (
+            clear_request_context,
             get_metrics,
             get_structured_logger,
             set_request_context,
-            clear_request_context,
         )
 
         # Set up context
@@ -620,9 +609,9 @@ class TestObservabilityIntegration:
     def test_tracing_and_metrics_together(self):
         """Test tracing and metrics work together."""
         from backend.src.observability import (
+            SpanAttributes,
             create_span,
             get_metrics,
-            SpanAttributes,
         )
 
         metrics = get_metrics()
@@ -635,11 +624,12 @@ class TestObservabilityIntegration:
     @pytest.mark.asyncio
     async def test_callback_creates_metrics(self):
         """Test that callbacks create metrics."""
+        import uuid
+
         from backend.src.observability import (
             ObservabilityCallbackHandler,
             get_metrics,
         )
-        import uuid
 
         handler = ObservabilityCallbackHandler(user_id="test_user")
         metrics = get_metrics()
@@ -658,14 +648,14 @@ class TestObservabilityIntegration:
     def test_full_request_lifecycle(self):
         """Test a full request lifecycle with all observability components."""
         from backend.src.observability import (
-            TracingManager,
-            create_span,
-            get_structured_logger,
-            get_metrics,
-            set_request_context,
-            clear_request_context,
             SpanAttributes,
             SpanNames,
+            TracingManager,
+            clear_request_context,
+            create_span,
+            get_metrics,
+            get_structured_logger,
+            set_request_context,
         )
 
         # 1. Initialize tracing (in real app, done at startup)
@@ -763,8 +753,8 @@ class TestErrorHandling:
     def test_logging_handles_missing_context(self):
         """Test that logging handles missing context gracefully."""
         from backend.src.observability.logging import (
-            get_structured_logger,
             clear_request_context,
+            get_structured_logger,
         )
 
         clear_request_context()
@@ -786,9 +776,11 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_callback_handles_missing_run_data(self):
         """Test callbacks handle missing run data gracefully."""
-        from backend.src.observability.callbacks import ObservabilityCallbackHandler
-        from langchain_core.outputs import LLMResult, Generation
         import uuid
+
+        from langchain_core.outputs import Generation, LLMResult
+
+        from backend.src.observability.callbacks import ObservabilityCallbackHandler
 
         handler = ObservabilityCallbackHandler()
 

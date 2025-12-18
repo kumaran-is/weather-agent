@@ -20,7 +20,6 @@ Test Coverage:
 Critical Requirement: ZERO TOLERANCE for PII leaks in production responses.
 """
 
-import pytest
 
 from backend.src.safety.pii_sanitizer import PIISanitizer, PIIType, sanitize_text
 

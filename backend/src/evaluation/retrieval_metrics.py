@@ -12,10 +12,10 @@ Provides advanced evaluation metrics:
 Target: Comprehensive evaluation for RAG and generation tasks
 """
 
-from typing import Any
 import logging
 import math
 from collections import Counter
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -103,10 +103,10 @@ class MRRCalculator:
             raise ValueError("Mismatched number of queries")
 
         if not retrieved_docs:
-            return 0.0, {k: 0.0 for k in self.k_values}
+            return 0.0, dict.fromkeys(self.k_values, 0.0)
 
         reciprocal_ranks: list[float] = []
-        mrr_at_k_sums: dict[int, float] = {k: 0.0 for k in self.k_values}
+        mrr_at_k_sums: dict[int, float] = dict.fromkeys(self.k_values, 0.0)
 
         for retrieved, relevant in zip(retrieved_docs, relevant_docs):
             rr = self._reciprocal_rank(retrieved, relevant)
@@ -180,10 +180,10 @@ class NDCGCalculator:
             raise ValueError("Mismatched number of queries")
 
         if not retrieved_docs:
-            return 0.0, {k: 0.0 for k in self.k_values}
+            return 0.0, dict.fromkeys(self.k_values, 0.0)
 
         ndcg_scores: list[float] = []
-        ndcg_at_k_sums: dict[int, float] = {k: 0.0 for k in self.k_values}
+        ndcg_at_k_sums: dict[int, float] = dict.fromkeys(self.k_values, 0.0)
 
         for retrieved, scores in zip(retrieved_docs, relevance_scores):
             ndcg = self._ndcg(retrieved, scores)
@@ -579,12 +579,12 @@ class PrecisionRecallCalculator:
 
         if not retrieved_docs:
             return (
-                {k: 0.0 for k in self.k_values},
-                {k: 0.0 for k in self.k_values},
+                dict.fromkeys(self.k_values, 0.0),
+                dict.fromkeys(self.k_values, 0.0),
             )
 
-        precision_sums: dict[int, float] = {k: 0.0 for k in self.k_values}
-        recall_sums: dict[int, float] = {k: 0.0 for k in self.k_values}
+        precision_sums: dict[int, float] = dict.fromkeys(self.k_values, 0.0)
+        recall_sums: dict[int, float] = dict.fromkeys(self.k_values, 0.0)
 
         for retrieved, relevant in zip(retrieved_docs, relevant_docs):
             for k in self.k_values:
@@ -718,7 +718,7 @@ class MetricsCalculator:
         # NDCG (use binary relevance if no scores provided)
         if relevance_scores is None:
             relevance_scores = [
-                {doc: 1.0 for doc in docs} for docs in relevant_docs
+                dict.fromkeys(docs, 1.0) for docs in relevant_docs
             ]
         ndcg, ndcg_at_k = self.ndcg_calc.calculate(retrieved_docs, relevance_scores)
 

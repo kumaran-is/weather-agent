@@ -13,8 +13,9 @@ Metrics:
 Target: >0.85 on all metrics
 """
 
-from typing import Any
 import logging
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -79,14 +80,14 @@ class DeepEvalIntegration:
         # Try to import DeepEval
         self._deepeval_available = False
         try:
+            from deepeval import evaluate
             from deepeval.metrics import (
                 AnswerRelevancyMetric,
-                FaithfulnessMetric,
                 ContextualPrecisionMetric,
                 ContextualRecallMetric,
+                FaithfulnessMetric,
             )
             from deepeval.test_case import LLMTestCase
-            from deepeval import evaluate
 
             self._AnswerRelevancyMetric = AnswerRelevancyMetric
             self._FaithfulnessMetric = FaithfulnessMetric

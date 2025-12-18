@@ -52,7 +52,24 @@ class RedisQueryCache:
     Redis Key: "weather:cache:{cache_key_hash}"
     Redis Value: JSON string of response text
     Redis TTL: 30 minutes (1800 seconds)
+
+    Life-Safety Bypass:
+    Hurricane and emergency queries are NEVER cached to ensure fresh, accurate data.
     """
+
+    # 🔴 CRITICAL: Life-safety keywords that trigger cache bypass
+    LIFE_SAFETY_KEYWORDS = {
+        "hurricane", "hurricanes",
+        "evacuation", "evacuate", "evacuating",
+        "emergency", "emergencies",
+        "alert", "alerts", "warning", "warnings",
+        "storm surge", "landfall",
+        "category 3", "category 4", "category 5", "cat 3", "cat 4", "cat 5",
+        "evacuation zone", "evacuation order",
+        "shelter", "shelters",
+        "life-threatening", "life threatening",
+        "dangerous", "danger",
+    }
 
     def __init__(
         self,
@@ -76,10 +93,26 @@ class RedisQueryCache:
         self.hits = 0
         self.misses = 0
         self.errors = 0
+        self.bypasses = 0  # Life-safety bypass counter
 
         logger.info(
             f"✅ L2 cache initialized (url={redis_url}, ttl={ttl_seconds}s)"
         )
+
+    def _is_life_safety_query(self, query: str) -> bool:
+        """Check if query contains life-safety keywords that should bypass cache.
+
+        Hurricane and emergency queries must ALWAYS fetch fresh data to avoid
+        serving stale, potentially dangerous information.
+
+        Args:
+            query: User query text
+
+        Returns:
+            True if query contains life-safety keywords, False otherwise
+        """
+        query_lower = query.lower()
+        return any(keyword in query_lower for keyword in self.LIFE_SAFETY_KEYWORDS)
 
     async def connect(self) -> None:
         """Establish connection to Redis server.
@@ -165,6 +198,8 @@ class RedisQueryCache:
     ) -> str | None:
         """Get cached response if available and not expired.
 
+        🔴 CRITICAL: Life-safety queries (hurricane, emergency) are NEVER cached.
+
         Args:
             query: User query text
             user_id: User identifier
@@ -174,6 +209,14 @@ class RedisQueryCache:
         Returns:
             Cached response text if hit, None if miss or error
         """
+        # 🔴 LIFE-SAFETY BYPASS: Never return cached data for hurricane/emergency queries
+        if self._is_life_safety_query(query):
+            self.bypasses += 1
+            logger.warning(
+                f"🔴 L2 cache BYPASS (life-safety): Query contains hurricane/emergency keywords"
+            )
+            return None
+
         if not self.client:
             logger.warning("⚠️  L2 cache not connected, skipping")
             return None
@@ -216,6 +259,8 @@ class RedisQueryCache:
     ) -> None:
         """Cache response with TTL.
 
+        🔴 CRITICAL: Life-safety queries (hurricane, emergency) are NEVER cached.
+
         Args:
             query: User query text
             user_id: User identifier
@@ -223,6 +268,14 @@ class RedisQueryCache:
             enable_cot: Whether CoT is enabled
             response: Response text to cache
         """
+        # 🔴 LIFE-SAFETY BYPASS: Never cache hurricane/emergency responses
+        if self._is_life_safety_query(query):
+            self.bypasses += 1
+            logger.warning(
+                f"🔴 L2 cache BYPASS (life-safety): Refusing to cache hurricane/emergency response"
+            )
+            return  # Do not cache
+
         if not self.client:
             logger.warning("⚠️  L2 cache not connected, skipping write")
             return

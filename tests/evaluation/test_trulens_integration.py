@@ -14,9 +14,10 @@ Tests:
 """
 
 import pytest
+
 from backend.src.evaluation.trulens_integration import (
-    TruLensIntegration,
     TruLensFeedback,
+    TruLensIntegration,
     TruLensRecord,
 )
 

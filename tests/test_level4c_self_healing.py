@@ -9,17 +9,17 @@ This module tests the self-healing capabilities including:
 """
 
 import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from backend.src.agents.circuit_breaker import CircuitState
 from backend.src.agents.self_healing_agent import (
+    DEFAULT_FALLBACK_MAP,
     SelfHealingAgent,
     create_self_healing_agent,
     self_healing_agent,
-    DEFAULT_FALLBACK_MAP,
 )
-from backend.src.agents.circuit_breaker import CircuitBreakerRegistry, CircuitState
-from backend.src.models.multi_agent import AgentRole, AgentResponse, MultiAgentState
+from backend.src.models.multi_agent import AgentResponse, AgentRole, MultiAgentState
 
 
 class TestDefaultFallbackMap:

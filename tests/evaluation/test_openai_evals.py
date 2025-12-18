@@ -12,31 +12,28 @@ Tests cover:
 6. Weather-specific evaluations
 """
 
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
 from backend.src.evaluation.openai_evals import (
-    GraderType,
-    Sample,
-    EvalSpec,
+    CustomGrader,
     EvalResult,
     EvalRunResult,
-    BaseGrader,
-    MatchGrader,
-    IncludesGrader,
+    EvalSpec,
     FuzzyMatchGrader,
-    ModelGradedGrader,
+    GraderFactory,
+    GraderType,
+    IncludesGrader,
+    MatchGrader,
     ModelGradedClosedQAGrader,
     ModelGradedFactGrader,
-    CustomGrader,
-    GraderFactory,
+    ModelGradedGrader,
     OpenAIEvalsRunner,
+    Sample,
     WeatherEvals,
-    create_match_eval,
     create_includes_eval,
+    create_match_eval,
 )
-
 
 # ============================================================================
 # Fixtures

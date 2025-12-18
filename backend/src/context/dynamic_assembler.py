@@ -14,8 +14,8 @@ Key Features:
 - Weather domain-specific assembly rules
 """
 
-from typing import Any
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

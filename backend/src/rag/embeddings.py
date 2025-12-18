@@ -18,6 +18,7 @@ Future Optimizations (L5a):
 """
 
 from langchain_openai import OpenAIEmbeddings
+
 from backend.config.settings import settings
 
 

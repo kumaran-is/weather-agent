@@ -13,11 +13,12 @@ Tests:
 """
 
 import pytest
+
 from backend.src.guardrails.output_validator import (
     OutputValidator,
+    RuleType,
     ValidationResult,
     ValidationRule,
-    RuleType,
 )
 
 

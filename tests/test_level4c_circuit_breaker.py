@@ -9,9 +9,9 @@ This module tests the circuit breaker implementation including:
 """
 
 import asyncio
-import pytest
 import time
-from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from backend.src.agents.circuit_breaker import (
     CircuitBreaker,

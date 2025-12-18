@@ -20,23 +20,22 @@ Coverage Target: 90%+ (as per Level 3c requirements)
 
 import json
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch, ANY
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from pydantic import ValidationError
 
-from backend.src.memory.consolidation import MemoryConsolidator, ConsolidationResult
-from backend.src.memory.emotional import EmotionalMemoryDetector, EmotionalTrend
+from backend.src.memory.consolidation import ConsolidationResult, MemoryConsolidator
+from backend.src.memory.emotional import EmotionalMemoryDetector
 from backend.src.memory.procedural import ProceduralMemoryBackend
 from backend.src.memory.reflective import ReflectiveMemoryBackend
 from backend.src.models.memory import (
-    EpisodicMemory,
-    SemanticMemory,
-    ProceduralMemory,
     EmotionalMemory,
+    EpisodicMemory,
+    ProceduralMemory,
     ReflectiveMemory,
+    SemanticMemory,
 )
-
 
 # ============================================================================
 # Layer 3: Episodic Memory Tests (Redis, 7-day TTL)

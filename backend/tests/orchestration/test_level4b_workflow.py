@@ -8,26 +8,25 @@ Test Coverage:
 - End-to-end workflow execution
 """
 
-import pytest
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
-    QueryComplexity,
 )
 from backend.src.orchestration.multi_agent_workflow import (
-    create_level4b_workflow,
     compile_level4b_workflow,
-    invoke_workflow_v2,
-    supervisor_node,
+    create_level4b_workflow,
     forecaster_node,
     historical_analyst_node,
-    research_node,
+    invoke_workflow_v2,
     reflection_node,
+    research_node,
+    supervisor_node,
 )
 
 
@@ -39,8 +38,8 @@ def base_state() -> MultiAgentState:
         query="Test query",
         user_id="test_user_123",
         session_id="test_session_456",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         timeout_ms=30000,
         current_agent=None,
         routing_decision=None,
@@ -129,7 +128,7 @@ class TestForecasterNode:
                     agent_role=AgentRole.FORECASTER,
                     content="Weather forecast...",
                     confidence=0.9,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=100,
                     metadata={},
                 )
@@ -155,7 +154,7 @@ class TestForecasterNode:
                     agent_role=AgentRole.FORECASTER,
                     content="Forecast content",
                     confidence=0.85,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=150,
                     metadata={"forecast_type": "current"},
                 )
@@ -186,7 +185,7 @@ class TestHistoricalAnalystNode:
                     agent_role=AgentRole.HISTORICAL_ANALYST,
                     content="Historical analysis...",
                     confidence=0.88,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=200,
                     metadata={"storms_analyzed": 1},
                 )
@@ -217,7 +216,7 @@ class TestResearchNode:
                     agent_role=AgentRole.RESEARCH,
                     content="Research findings...",
                     confidence=0.85,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=250,
                     metadata={"research_areas": ["tropical_meteorology"]},
                 )
@@ -245,7 +244,7 @@ class TestReflectionNode:
                 agent_role=AgentRole.HURRICANE_SPECIALIST,
                 content="Initial response",
                 confidence=0.7,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -272,7 +271,7 @@ class TestReflectionNode:
                 agent_role=AgentRole.FORECASTER,
                 content="Forecast",
                 confidence=0.75,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=100,
                 metadata={},
             )
@@ -337,7 +336,7 @@ class TestStateManagement:
             agent_role=AgentRole.FORECASTER,
             content="Forecast",
             confidence=0.8,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             execution_time_ms=100,
             metadata={},
         )
@@ -345,7 +344,7 @@ class TestStateManagement:
             agent_role=AgentRole.HISTORICAL_ANALYST,
             content="History",
             confidence=0.85,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             execution_time_ms=150,
             metadata={},
         )

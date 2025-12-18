@@ -35,19 +35,18 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
 
 from opentelemetry import trace
 from prometheus_client import (
+    REGISTRY,
     CollectorRegistry,
     Counter,
     Gauge,
     Histogram,
     Info,
-    REGISTRY,
 )
-
 
 # ============================================================================
 # Exemplar Support for Trace Correlation (Level 8)
@@ -534,7 +533,7 @@ class MetricsRegistry:
     @contextmanager
     def track_request(
         self, tier: str, endpoint: str = "/weather/query"
-    ) -> Generator[None, None, None]:
+    ) -> Generator[None]:
         """Context manager for tracking request metrics.
 
         Args:

@@ -23,24 +23,24 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    AgentResponse,
-    MultiAgentState,
-)
 from backend.src.agents.prompts.reflection_prompts import (
+    IMPROVEMENT_PROMPT,
+    MAX_REFLECTION_ITERATIONS,
+    QUALITY_THRESHOLDS,
     REFLECTION_SYSTEM_PROMPT,
     SELF_CRITIQUE_PROMPT,
-    IMPROVEMENT_PROMPT,
-    QUALITY_THRESHOLDS,
-    MAX_REFLECTION_ITERATIONS,
+)
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
 )
 
 logger = structlog.get_logger(__name__)
@@ -199,7 +199,7 @@ class ReflectionAgent:
                     agent_role=self.agent_role,
                     content=improved_content,
                     confidence=improved_quality,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     execution_time_ms=0,  # Updated at end
                     metadata={
                         "iteration": iteration,
