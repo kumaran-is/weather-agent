@@ -58,6 +58,7 @@ Still Deferred:
 """
 
 import logging
+from typing import Any
 
 from langchain.agents import create_agent  # ✅ LangChain v1.x correct import
 from langchain_core.runnables import RunnableConfig
@@ -175,7 +176,7 @@ def create_weather_agent(
     enable_memory: bool = False,  # 🆕 Level 3a
     enable_tot: bool = False,  # 🆕 Level 3b
     enable_got: bool = False,  # 🆕 Level 3b
-    memory_context: dict[str, any] | None = None,  # 🆕 Level 3a
+    memory_context: dict[str, Any] | None = None,  # 🆕 Level 3a
     user_query: str | None = None,  # 🆕 Level 8a: For context optimization
     enable_context_optimization: bool = True,  # 🆕 Level 8a: Toggle optimization
 ):

@@ -146,7 +146,5 @@ pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v"
-# Coverage options temporarily disabled for testing
-# addopts = "-v --cov=backend --cov-report=term-missing --cov-report=html"
+addopts = "-v --cov=backend --cov-report=term-missing --cov-report=html"
 asyncio_mode = "auto"
