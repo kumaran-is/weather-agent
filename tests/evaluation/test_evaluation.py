@@ -8,21 +8,18 @@ Tests:
 - TrajectoryEvaluator (orchestration)
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-from backend.src.evaluation.models import (
-    EvaluationResult,
-    EffectivenessResult,
-    EfficiencyResult,
-    RobustnessResult,
-    SafetyResult,
-    SafetyViolationType,
-    PillarWeights,
-    GoldenTestCase,
-    EvaluationBatchResult,
-)
+import pytest
+
 from backend.src.evaluation.efficiency_scorer import EfficiencyScorer
+from backend.src.evaluation.models import (
+    EvaluationBatchResult,
+    EvaluationResult,
+    GoldenTestCase,
+    PillarWeights,
+    SafetyViolationType,
+)
 from backend.src.evaluation.robustness_checker import RobustnessChecker
 from backend.src.evaluation.safety_validator import SafetyValidator
 

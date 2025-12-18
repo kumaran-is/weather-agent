@@ -28,15 +28,15 @@ Target Metrics:
 """
 
 from backend.src.context.context_optimizer import ContextWindowOptimizer
-from backend.src.context.semantic_chunker import SemanticChunker
-from backend.src.context.relevance_filter import RelevanceFilter
 from backend.src.context.dynamic_assembler import DynamicAssembler
 from backend.src.context.hierarchical_loader import HierarchicalLoader
 from backend.src.context.query_type_detector import (  # 🆕 Level 8a
+    QueryType,
     detect_query_type,
     get_optimization_config,
-    QueryType,
 )
+from backend.src.context.relevance_filter import RelevanceFilter
+from backend.src.context.semantic_chunker import SemanticChunker
 
 __all__ = [
     # Core optimizer

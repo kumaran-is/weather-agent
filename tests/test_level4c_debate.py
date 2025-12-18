@@ -8,16 +8,17 @@ This module tests the debate pattern implementation including:
 - Response synthesis
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from backend.src.agents.debate_agent import (
     DebateAgent,
-    Proposal,
     DebateResult,
+    Proposal,
     create_debate_agent,
 )
-from backend.src.models.multi_agent import AgentRole, AgentResponse, MultiAgentState
+from backend.src.models.multi_agent import AgentRole, MultiAgentState
 
 
 class TestProposal:

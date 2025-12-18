@@ -11,11 +11,12 @@ Tests:
 """
 
 import pytest
+
 from backend.src.prompts.auto_prompt_optimizer import (
     AutoPromptOptimizer,
     OptimizationResult,
-    VariationResult,
     OptimizationStatus,
+    VariationResult,
 )
 
 

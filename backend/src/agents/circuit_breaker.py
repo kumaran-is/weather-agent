@@ -23,7 +23,7 @@ Configuration via environment variables:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -77,7 +77,7 @@ class CircuitBreaker:
     success_count: int = field(default=0)
     last_failure_time: datetime | None = field(default=None)
     last_state_change: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
 
     # Statistics
@@ -99,7 +99,7 @@ class CircuitBreaker:
             # Check if recovery timeout has passed
             if self.last_failure_time:
                 time_since_failure = (
-                    datetime.now(timezone.utc) - self.last_failure_time
+                    datetime.now(UTC) - self.last_failure_time
                 )
                 if time_since_failure > timedelta(
                     seconds=self.recovery_timeout_seconds
@@ -139,7 +139,7 @@ class CircuitBreaker:
         """
         self.failure_count += 1
         self.total_failures += 1
-        self.last_failure_time = datetime.now(timezone.utc)
+        self.last_failure_time = datetime.now(UTC)
 
         if self.state == CircuitState.HALF_OPEN:
             # Any failure in HALF_OPEN immediately opens circuit
@@ -167,7 +167,7 @@ class CircuitBreaker:
         """
         old_state = self.state
         self.state = new_state
-        self.last_state_change = datetime.now(timezone.utc)
+        self.last_state_change = datetime.now(UTC)
 
         # Reset counters based on new state
         if new_state == CircuitState.CLOSED:
@@ -192,7 +192,7 @@ class CircuitBreaker:
         self.failure_count = 0
         self.success_count = 0
         self.last_failure_time = None
-        self.last_state_change = datetime.now(timezone.utc)
+        self.last_state_change = datetime.now(UTC)
 
         logger.info("circuit_breaker_reset", name=self.name)
 

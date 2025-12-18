@@ -1,7 +1,8 @@
 """Shared test fixtures and mocks for unit tests."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 class MockOpenAIEmbeddings:

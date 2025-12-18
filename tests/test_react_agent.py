@@ -4,9 +4,8 @@ Tests the weather agent creation and query functionality.
 Note: These tests use mocked LLM to avoid actual API calls.
 """
 
-import pytest
-from backend.src.agents.weather_agent import create_weather_agent
 from backend.src.agents.prompts import WEATHER_ASSISTANT_SYSTEM_PROMPT
+from backend.src.agents.weather_agent import create_weather_agent
 
 
 def test_create_weather_agent():

@@ -44,9 +44,7 @@ Example:
     ['anxious', 'anxious', 'curious', 'neutral']
 """
 
-import asyncio
 import logging
-import re
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -146,6 +144,7 @@ class EmotionalMemoryDetector:
             self.redis_client = redis_client
         else:
             import redis.asyncio as redis
+
             from backend.config.memory_config import memory_config
 
             self.redis_client = redis.from_url(

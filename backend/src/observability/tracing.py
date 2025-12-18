@@ -35,9 +35,10 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, Generator
+from typing import Any
 
 from opentelemetry import trace
 from opentelemetry.context import Context
@@ -189,7 +190,7 @@ def create_span(
     attributes: dict[str, Any] | None = None,
     kind: SpanKind = SpanKind.INTERNAL,
     parent: Context | None = None,
-) -> Generator[Span, None, None]:
+) -> Generator[Span]:
     """Create and manage an OpenTelemetry span.
 
     Creates a span with automatic error recording and timing. Supports

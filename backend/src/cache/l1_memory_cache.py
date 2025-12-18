@@ -44,7 +44,24 @@ class QueryCache:
     {
         cache_key: (response_text, cached_at_timestamp)
     }
+
+    Life-Safety Bypass:
+    Hurricane and emergency queries are NEVER cached to ensure fresh, accurate data.
     """
+
+    # 🔴 CRITICAL: Life-safety keywords that trigger cache bypass
+    LIFE_SAFETY_KEYWORDS = {
+        "hurricane", "hurricanes",
+        "evacuation", "evacuate", "evacuating",
+        "emergency", "emergencies",
+        "alert", "alerts", "warning", "warnings",
+        "storm surge", "landfall",
+        "category 3", "category 4", "category 5", "cat 3", "cat 4", "cat 5",
+        "evacuation zone", "evacuation order",
+        "shelter", "shelters",
+        "life-threatening", "life threatening",
+        "dangerous", "danger",
+    }
 
     def __init__(self, max_size: int = 1000, ttl_seconds: int = 300):
         """Initialize LRU cache with configurable size and TTL.
@@ -62,10 +79,26 @@ class QueryCache:
         self.hits = 0
         self.misses = 0
         self.evictions = 0
+        self.bypasses = 0  # Life-safety bypass counter
 
         logger.info(
             f"✅ L1 cache initialized (max_size={max_size}, ttl={ttl_seconds}s)"
         )
+
+    def _is_life_safety_query(self, query: str) -> bool:
+        """Check if query contains life-safety keywords that should bypass cache.
+
+        Hurricane and emergency queries must ALWAYS fetch fresh data to avoid
+        serving stale, potentially dangerous information.
+
+        Args:
+            query: User query text
+
+        Returns:
+            True if query contains life-safety keywords, False otherwise
+        """
+        query_lower = query.lower()
+        return any(keyword in query_lower for keyword in self.LIFE_SAFETY_KEYWORDS)
 
     def _generate_cache_key(
         self,
@@ -118,6 +151,8 @@ class QueryCache:
     ) -> str | None:
         """Get cached response if available and not expired.
 
+        🔴 CRITICAL: Life-safety queries (hurricane, emergency) are NEVER cached.
+
         Args:
             query: User query text
             user_id: User identifier
@@ -127,6 +162,14 @@ class QueryCache:
         Returns:
             Cached response text if hit, None if miss or expired
         """
+        # 🔴 LIFE-SAFETY BYPASS: Never return cached data for hurricane/emergency queries
+        if self._is_life_safety_query(query):
+            self.bypasses += 1
+            logger.warning(
+                f"🔴 L1 cache BYPASS (life-safety): Query contains hurricane/emergency keywords"
+            )
+            return None
+
         cache_key = self._generate_cache_key(query, user_id, enable_rag, enable_cot)
 
         if cache_key in self.cache:
@@ -164,6 +207,8 @@ class QueryCache:
     ) -> None:
         """Cache response with LRU eviction if cache is full.
 
+        🔴 CRITICAL: Life-safety queries (hurricane, emergency) are NEVER cached.
+
         Args:
             query: User query text
             user_id: User identifier
@@ -171,6 +216,14 @@ class QueryCache:
             enable_cot: Whether CoT is enabled
             response: Response text to cache
         """
+        # 🔴 LIFE-SAFETY BYPASS: Never cache hurricane/emergency responses
+        if self._is_life_safety_query(query):
+            self.bypasses += 1
+            logger.warning(
+                f"🔴 L1 cache BYPASS (life-safety): Refusing to cache hurricane/emergency response"
+            )
+            return  # Do not cache
+
         cache_key = self._generate_cache_key(query, user_id, enable_rag, enable_cot)
 
         # Evict oldest entry if cache is full

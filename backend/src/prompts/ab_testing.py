@@ -12,12 +12,14 @@ Capabilities:
 Target: Data-driven prompt selection with statistical rigor
 """
 
-from typing import Any, Callable
 import logging
-import random
 import math
+import random
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -524,8 +526,8 @@ class MultiArmedBandit:
         self.variants = variants
 
         # Beta distribution parameters (successes, failures)
-        self.alpha = {v: 1 for v in variants}  # Prior successes
-        self.beta = {v: 1 for v in variants}   # Prior failures
+        self.alpha = dict.fromkeys(variants, 1)  # Prior successes
+        self.beta = dict.fromkeys(variants, 1)   # Prior failures
 
         self.total_pulls = 0
         self.selection_history: list[str] = []
@@ -626,8 +628,8 @@ class MultiArmedBandit:
 
     def reset(self) -> None:
         """Reset bandit to initial state."""
-        self.alpha = {v: 1 for v in self.variants}
-        self.beta = {v: 1 for v in self.variants}
+        self.alpha = dict.fromkeys(self.variants, 1)
+        self.beta = dict.fromkeys(self.variants, 1)
         self.total_pulls = 0
         self.selection_history = []
         logger.info("MultiArmedBandit reset")

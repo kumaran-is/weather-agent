@@ -22,8 +22,8 @@ Usage:
 
 from langchain_core.tools import tool
 
-from backend.src.rag.retriever import retrieve_weather_knowledge
 from backend.src.rag.hybrid_search import hybrid_search
+from backend.src.rag.retriever import retrieve_weather_knowledge
 
 
 @tool
@@ -234,7 +234,7 @@ async def compare_conditions(
         docs_b = retrieve_weather_knowledge(query_b, k=3)
 
         # Build comparison result
-        result = f"**Weather Comparison**\n\n"
+        result = "**Weather Comparison**\n\n"
         result += f"**Locations:** {location_a} vs {location_b}\n"
         result += f"**Aspect:** {aspect.capitalize()}\n\n"
 
@@ -325,7 +325,7 @@ async def retrieve_weather_knowledge_tool(query: str, num_results: int = 5) -> s
 
         # Format results
         result = f"**Weather Knowledge: {query}**\n\n"
-        result += f"**Retrieved Information:**\n\n"
+        result += "**Retrieved Information:**\n\n"
 
         for i, doc in enumerate(docs, 1):
             content = doc.page_content.strip()
@@ -385,7 +385,7 @@ async def hybrid_search_weather_knowledge(
 
     # Format results
     result = f"**Hybrid Search Results: {query}**\n\n"
-    result += f"**Retrieved Information (Semantic + Keyword):**\n\n"
+    result += "**Retrieved Information (Semantic + Keyword):**\n\n"
 
     for i, doc in enumerate(docs, 1):
         content = doc.page_content.strip()
@@ -394,7 +394,7 @@ async def hybrid_search_weather_knowledge(
         result += f"{i}. {content}\n"
         result += f"   (Source: {source}, Category: {category})\n\n"
 
-    result += f"\n*Note: Results combine 70% semantic search + 30% keyword matching*"
+    result += "\n*Note: Results combine 70% semantic search + 30% keyword matching*"
 
     return result
 

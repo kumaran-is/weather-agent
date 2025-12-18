@@ -67,12 +67,23 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from langgraph.errors import GraphInterrupt
 from langgraph.types import Command
+
+# 🆕 Level 5c: Prometheus metrics
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 
 from backend.config.cache_config import cache_config  # 🆕 L5a: Cache configuration
 from backend.src.agents.weather_agent import create_weather_agent
@@ -81,6 +92,12 @@ from backend.src.cache import (  # 🆕 L5a: Cache imports
     QueryCache,
     RedisQueryCache,
 )
+
+# 🆕 L5b: Evaluation framework for trajectory-based evaluation
+from backend.src.evaluation import TrajectoryEvaluator
+
+# 🆕 L5c: MCP health monitoring
+from backend.src.mcp.health_monitor import MCPHealthMonitor
 from backend.src.memory.manager import MemoryManager  # Level 3a: Memory support
 from backend.src.models import (
     EvaluationScores,  # 🆕 L5b: Evaluation scores
@@ -89,46 +106,36 @@ from backend.src.models import (
     HurricaneAlertResponse,
     HurricaneApprovalRequest,
     HurricaneApprovalResponse,
-    ServiceHealth,
     ServicesHealth,
     WeatherQuery,
     WeatherResponse,
 )
-# 🆕 Level 5c: Health check utilities for all services
-from backend.src.utils.health_checks import (
-    check_all_services,
-    calculate_overall_status,
-)
-# 🆕 L5b: Evaluation framework for trajectory-based evaluation
-from backend.src.evaluation import TrajectoryEvaluator
-# 🆕 L5b: PII sanitization for agent responses (Priority 2 Fix - 2025-12-14)
-from backend.src.safety.pii_sanitizer import PIISanitizer
-# 🆕 L5c: MCP health monitoring
-from backend.src.mcp.health_monitor import MCPHealthMonitor
-# 🆕 v0.6.0: Auto-routing classifier (replaces explicit agent_level)
-from backend.src.routing import classify_query, QueryTier
-# 🆕 Level 4: Multi-agent workflow imports
-from backend.src.orchestration.multi_agent_workflow import (
-    compile_workflow,
-    compile_level4b_workflow,
-    invoke_workflow,
-    invoke_workflow_v2,
-)
-from backend.src.workflows.weather_graph import get_weather_hitl_workflow
-from fastapi.responses import PlainTextResponse
-
-# 🆕 Level 5c: Prometheus metrics
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-    REGISTRY,
-)
 
 # 🆕 Level 8: Structured JSON logging with trace context
 from backend.src.observability.logging import configure_structured_logging
+
+# 🆕 Level 9: Semantic cache metrics
+from backend.src.observability.cache_metrics import get_cache_metrics
+
+# 🆕 Level 4: Multi-agent workflow imports
+from backend.src.orchestration.multi_agent_workflow import (
+    compile_level4b_workflow,
+    compile_workflow,
+    invoke_workflow_v2,
+)
+
+# 🆕 v0.6.0: Auto-routing classifier (replaces explicit agent_level)
+from backend.src.routing import QueryTier, classify_query
+
+# 🆕 L5b: PII sanitization for agent responses (Priority 2 Fix - 2025-12-14)
+from backend.src.safety.pii_sanitizer import PIISanitizer
+
+# 🆕 Level 5c: Health check utilities for all services
+from backend.src.utils.health_checks import (
+    calculate_overall_status,
+    check_all_services,
+)
+from backend.src.workflows.weather_graph import get_weather_hitl_workflow
 
 # Configure structured JSON logging with trace context
 configure_structured_logging()
@@ -284,10 +291,15 @@ async def lifespan(app: FastAPI):
         else:
             app.state.l3_cache_metrics = None
             logger.info("⏭️  L3 cache disabled (config)")
+
+        # 🆕 Level 9: Initialize cache metrics collector (Prometheus)
+        app.state.cache_metrics = get_cache_metrics()
+        logger.info("✅ Cache metrics collector initialized (Prometheus)")
     else:
         app.state.l1_cache = None
         app.state.l2_cache = None
         app.state.l3_cache_metrics = None
+        app.state.cache_metrics = None
         logger.info("⏭️  ALL caching disabled (config)")
 
     # Initialize memory manager in app.state (NOT global variable)
@@ -345,6 +357,7 @@ async def lifespan(app: FastAPI):
     logger.info("📊 Initializing trajectory evaluator (L5b: 4-pillar evaluation)...")
     try:
         from langchain_openai import ChatOpenAI
+
         from backend.config.settings import settings as config_settings
 
         # Use GPT-4o-mini for LLM-as-Judge (cost-effective)
@@ -520,6 +533,12 @@ async def get_l3_metrics(request: Request) -> AnthropicCacheMetrics | None:
     return getattr(request.app.state, "l3_cache_metrics", None)
 
 
+# 🆕 Level 9: Cache metrics dependency injection
+async def get_cache_metrics_collector(request: Request):
+    """Dependency injection for cache metrics collector."""
+    return getattr(request.app.state, "cache_metrics", None)
+
+
 # 🆕 L5b: Evaluation framework dependency injection
 async def get_evaluator(request: Request) -> TrajectoryEvaluator | None:
     """Dependency injection for trajectory evaluator."""
@@ -616,6 +635,7 @@ async def weather_query_endpoint(
     l1_cache: QueryCache | None = Depends(get_l1_cache),
     l2_cache: RedisQueryCache | None = Depends(get_l2_cache),
     l3_metrics: AnthropicCacheMetrics | None = Depends(get_l3_metrics),
+    cache_metrics=Depends(get_cache_metrics_collector),  # 🆕 Level 9
     evaluator: TrajectoryEvaluator | None = Depends(get_evaluator),  # 🆕 L5b
     workflow_l4a=Depends(get_workflow_l4a),
     workflow_l4b=Depends(get_workflow_l4b),
@@ -759,31 +779,49 @@ async def weather_query_endpoint(
         response_text = None
 
         if l1_cache:
+            l1_start = time.time()
             response_text = l1_cache.get(
                 query=query.query,
                 user_id=query.user_id,
                 enable_rag=effective_rag,
                 enable_cot=effective_cot,
             )
+            l1_latency_ms = (time.time() - l1_start) * 1000
+
             if response_text:
                 cache_hit = True
                 cache_layer = "L1"
-                CACHE_HITS_TOTAL.labels(layer="L1").inc()  # 🆕 L5c: Prometheus cache metric
-                logger.info(f"💾 L1 cache HIT | user_id: {query.user_id}")
+                CACHE_HITS_TOTAL.labels(layer="L1").inc()  # Legacy metric
+                if cache_metrics:  # 🆕 Level 9: Comprehensive cache metrics
+                    cache_metrics.record_hit(
+                        cache_type="query",
+                        tier="tier1",
+                        latency_ms=l1_latency_ms,
+                    )
+                logger.info(f"💾 L1 cache HIT | user_id: {query.user_id} | latency: {l1_latency_ms:.2f}ms")
 
         # 🆕 L5a: Try L2 cache if L1 miss (Redis, <10ms)
         if not cache_hit and l2_cache:
+            l2_start = time.time()
             response_text = await l2_cache.get(
                 query=query.query,
                 user_id=query.user_id,
                 enable_rag=effective_rag,
                 enable_cot=effective_cot,
             )
+            l2_latency_ms = (time.time() - l2_start) * 1000
+
             if response_text:
                 cache_hit = True
                 cache_layer = "L2"
-                CACHE_HITS_TOTAL.labels(layer="L2").inc()  # 🆕 L5c: Prometheus cache metric
-                logger.info(f"💾 L2 cache HIT | user_id: {query.user_id}")
+                CACHE_HITS_TOTAL.labels(layer="L2").inc()  # Legacy metric
+                if cache_metrics:  # 🆕 Level 9: Comprehensive cache metrics
+                    cache_metrics.record_hit(
+                        cache_type="query",
+                        tier="tier2",
+                        latency_ms=l2_latency_ms,
+                    )
+                logger.info(f"💾 L2 cache HIT | user_id: {query.user_id} | latency: {l2_latency_ms:.2f}ms")
 
                 # 🆕 L5a: Backfill L1 cache on L2 hit
                 if l1_cache:
@@ -794,7 +832,7 @@ async def weather_query_endpoint(
                         enable_cot=effective_cot,
                         response=response_text,
                     )
-                    logger.debug(f"💾 L1 cache BACKFILL from L2")
+                    logger.debug("💾 L1 cache BACKFILL from L2")
 
         # 🆕 Level 4: Initialize multi-agent metadata
         agents_invoked: list[str] = []
@@ -804,7 +842,9 @@ async def weather_query_endpoint(
 
         # 🆕 L5a: Cache miss - invoke agent (L3 Anthropic caching automatic)
         if not cache_hit:
-            CACHE_MISSES_TOTAL.inc()  # 🆕 L5c: Prometheus cache miss metric
+            CACHE_MISSES_TOTAL.inc()  # Legacy metric
+            if cache_metrics:  # 🆕 Level 9: Comprehensive cache metrics
+                cache_metrics.record_miss(cache_type="query")
             logger.info(f"❌ Cache MISS (L1+L2) | user_id: {query.user_id} | Invoking agent...")
 
             start_time = time.time()
@@ -1069,7 +1109,7 @@ async def weather_query_endpoint(
                     enable_cot=effective_cot,
                     response=response_text,
                 )
-                logger.debug(f"💾 L1 cache WRITE")
+                logger.debug("💾 L1 cache WRITE")
 
             if l2_cache:
                 await l2_cache.set(
@@ -1079,7 +1119,7 @@ async def weather_query_endpoint(
                     enable_cot=effective_cot,
                     response=response_text,
                 )
-                logger.debug(f"💾 L2 cache WRITE")
+                logger.debug("💾 L2 cache WRITE")
 
             # 🆕 Level 3a: Save interaction to memory if enabled (ASYNC - non-blocking)
             # 🆕 P1 FIX: Memory save runs in background (fire-and-forget) to prevent blocking response
@@ -1198,7 +1238,7 @@ async def weather_query_endpoint(
         return WeatherResponse(
             response=sanitized_response,
             user_id=query.user_id,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             # 🆕 Level 4: Multi-agent metadata
             agents_invoked=agents_invoked,
             agent_level=final_agent_level,
@@ -1541,7 +1581,7 @@ async def health_check():
     return HealthCheckResponse(
         status=overall_status,
         level="L4+L5a",  # Level 4 Multi-Agent + L5a Caching
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         healthy_services=healthy_count,
         total_services=total_count,
         services=ServicesHealth(**service_health),
@@ -2017,7 +2057,7 @@ async def cache_clear(
         "cleared_layers": [],
         "l1": None,
         "l2": None,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
     # Clear L1 cache (if layer is None or "l1")
@@ -2152,7 +2192,7 @@ async def cache_invalidate(
         "query": query,
         "user_id": user_id,
         "invalidated": {"l1": False, "l2": False},
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
     # Invalidate L1

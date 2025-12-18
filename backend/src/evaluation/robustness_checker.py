@@ -26,8 +26,8 @@ Usage:
     >>> print(f"Score: {result.score}")
 """
 
-import re
 import logging
+import re
 from typing import Any
 
 from backend.src.evaluation.models import RobustnessResult

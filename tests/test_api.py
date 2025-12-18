@@ -3,8 +3,8 @@
 Tests all REST API endpoints for the Weather AI Agent service.
 """
 
-import pytest
 from fastapi.testclient import TestClient
+
 from backend.src.api.main import app
 
 # Create test client

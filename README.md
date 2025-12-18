@@ -6,15 +6,15 @@
 [![LangGraph 1.0+](https://img.shields.io/badge/langgraph-1.0+-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-Dual%20Servers-orange)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](./CHANGELOG.md)
 
-**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, multi-layer caching (L1+L2+L3), real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, comprehensive golden dataset evaluation with ZERO safety violations, guardrails, context window optimization and observability.
+**Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, **two-tier semantic caching** (40-60% cost reduction), multi-layer caching (L1+L2+L3+Semantic), Prometheus metrics and observability, real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, self-evolving AI with constitutional guardrails, comprehensive golden dataset evaluation (185 test cases, ZERO safety violations) and Two-Tier Semantic Caching -LLM resposne and Tool caching.
 
-**From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), full observability stack (Prometheus, Grafana, Loki), adversarial testing, LLM-as-Judge, Advanced Evaluation(Ragas, DeepEval, Context Optimization, Property/Snapshot Testing, Promptfoo, OpenAI Evals) and  Self-Improvement(TruLens, LangChain Benchmark, Auto-Prompt), constitutional AI (12-layer safety guardrails), LangGraph-bigtool Tool Registry & Semantic Discovery, Context Window Optimization, and **[planned]** Semantic Caching for AI Agents, self-evolving agentic dual-loop architecture for continuous improvement.
+**From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), **semantic caching** (65-85% hit rate with similarity matching), full observability stack (Prometheus, Grafana, OpenTelemetry), adversarial testing (RAGAS/DeepEval), constitutional AI (12-layer safety guardrails), LangGraph-bigtool Dynamic Tool Registry & Semantic Discovery, Context Window Optimization, Two-Tier Semantic Caching and **[planned]** self-evolving agentic dual-loop architecture that continuously learns, adapts, and improves based on real-world performance.
 
-**How It Works:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), multi-layer caching (L1+L2+L3 for 60-75% cost reduction), Comprehensive golden dataset evaluation and full observability stack (Prometheus, Grafana, Loki
+**How It Works:** This project follows a progressive complexity model—each module builds on the previous one, making it accessible to beginners while scaling toward advanced concepts.
 
-**Current Stage**: ✅ **Level 8 Complete** — Context Window Optimization & Full Observability Stack - Tracing, Structured Logging, Metrics and Alerts (100% LangChain v1.x/LangGraph v1.x Compliant)
+**Current Stage**: ✅ **Level 9 Complete** — Two-Tier Semantic Caching: Query/Tool/LLM Response Caching with Similarity Matching, Life-Safety Bypass, Prometheus Metrics (100% LangChain v1.x/LangGraph v1.x Compliant)
 
 [Read the Medium Blog Post Series](https://medium.com/@yourusername)
 
@@ -94,16 +94,6 @@
 - [**NOAA/NHC**](https://www.nhc.noaa.gov/) - Hurricane tracking data
 - [**NWS API**](https://www.weather.gov/documentation/services-web-api) - Weather alerts & forecasts
 
-**Knowledge Base (Level 2 RAG)**:
-- **Mock Curated Data** (3 files) - Authoritative weather safety information
-  - Saffir-Simpson hurricane scale
-  - Evacuation zones (A-E)
-  - Heat index guidelines
-- [**Kaggle: Daily Temperature (Major Cities)**](https://www.kaggle.com/datasets/sudalairajkumar/daily-temperature-of-major-cities) - 2.9M daily temps (500 sampled)
-- [**Kaggle: City Temperature (1980-2020)**](https://www.kaggle.com/datasets/sudalairajkumar/daily-temperature-of-major-cities) - 1,000 cities × 14,897 time periods (100 city profiles)
-
-*Total Knowledge Base*: 603 documents, 632 chunks, embedded in Qdrant vector store
-
 ---
 
 ## Testing Tools & Interfaces
@@ -157,7 +147,7 @@ Quick reference for testing and debugging the Weather AI Agent:
 | **Level 6** | [Self-Evolving Guide](./docs/test-guide/LEVEL_6_TEST_GUIDE.md) | Context optimization, RAGAS, Constitutional AI, 185 test cases | ✅ Complete |
 | **Level 7** | [MCP Tool Dynamic Registry](./docs/test-guide/LEVEL_7_TEST_GUIDE.md)| LangGraph-bigtool Dynamic Tool Registry & Semantic Discovery | ✅ Complete |
 | **Level 8** | [Context Engineering & Optimization](./docs/test-guide/LEVEL_8_TEST_GUIDE.md)| Context Window Optimization & Full Observability Stack(Tracing, Structured Logging, Metrics and Alerts)  | ✅ Complete  |
-| **Level 9** | Semantic Caching for AI Agents| Semantic Caching - Tool Result Caching and LLM Response Caching| 📋 Planned |
+| **Level 9** | [Semantic Caching for AI Agents](./docs/test-guide/LEVEL_9_TEST_GUIDE.md)| Two-Tier Semantic Caching: Query/Tool/LLM Response Caching with Similarity Matching | ✅ Complete |
 | **Level 10** | Self Evolving Agenitc Dual-Loop Architecture | Self-evolving agentic systems that continuously learns, adapts, and improves based on real-world performance. | 📋 Planned |
 | **Level 11** | Advanced HITL |  | 📋 Planned |
 
@@ -238,9 +228,8 @@ Edit `.env` with your configuration. Below are all available settings organized 
 
 | Variable | Required | Get From | Description |
 |----------|----------|----------|-------------|
-| `OPENAI_API_KEY` | **YES** | [OpenAI Platform](https://platform.openai.com/api-keys) | Used for GPT-4o-mini LLM and text-embedding-3-small |
-| `ANTHROPIC_API_KEY` | **Nice-to-have** | [Anthropic Platform](https://console.anthropic.com/settings/keys) | Used for claude-3-5-sonnet LLM as Judge |
-| `LANGCHAIN_API_KEY` | **YES** | [LangSmith](https://smith.langchain.com/) | Enable tracing and debugging (optional for local dev) |
+| `OPENAI_API_KEY` | ✅ **YES** | [OpenAI Platform](https://platform.openai.com/api-keys) | Used for GPT-4o-mini LLM and text-embedding-3-small |
+| `LANGCHAIN_API_KEY` | ⚠️ **Recommended** | [LangSmith](https://smith.langchain.com/) | Enable tracing and debugging (optional for local dev) |
 
 ### MCP Server Configuration
 
@@ -270,8 +259,8 @@ Edit `.env` with your configuration. Below are all available settings organized 
 
 | Variable | Default | Description | Can Override at Runtime? |
 |----------|---------|-------------|--------------------------|
-| `ENABLE_RAG` | `true` | Enable RAG retrieval (8 tools: 3 MCP + 5 RAG) | Yes (via `?enable_rag=true/false`) |
-| `ENABLE_COT` | `true` | Enable Chain-of-Thought reasoning (5-step framework) | Yes (via `?enable_cot=true/false`) |
+| `ENABLE_RAG` | `true` | Enable RAG retrieval (8 tools: 3 MCP + 5 RAG) | ✅ Yes (via `?enable_rag=true/false`) |
+| `ENABLE_COT` | `true` | Enable Chain-of-Thought reasoning (5-step framework) | ✅ Yes (via `?enable_cot=true/false`) |
 
 **Example**: `/weather/query?enable_rag=true&enable_cot=true` (full Level 2 capabilities)
 
@@ -280,7 +269,7 @@ Edit `.env` with your configuration. Below are all available settings organized 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LANGCHAIN_TRACING_V2` | `false` | Enable LangSmith tracing (set to `true` to activate) |
-| `LANGCHAIN_PROJECT` | `weather-ai-agent-service` | LangSmith project name for organizing traces |
+| `LANGCHAIN_PROJECT` | `weather-agent` | LangSmith project name for organizing traces |
 | `LANGCHAIN_ENDPOINT` | `https://api.smith.langchain.com` | LangSmith API endpoint |
 
 **Access LangSmith Studio**: http://localhost:8123 (after running `make docker-up-dev`)
@@ -387,7 +376,7 @@ uv pip list | grep -E "langchain|langgraph|fastapi"
 | `make version` | Show installed package versions |
 | `make clean` | Clean up cache and temporary files |
 | `make test` | Run all tests with pytest (quick, no restart) |
-| `make test-dev` | **Unified testing** - Restart dev environment + run complete test suite + compliance check (progressive: currently tests Level 1+2+3 complete) |
+| `make test-dev` | 🌟 **Unified testing** - Restart dev environment + run complete test suite + compliance check (progressive: currently tests Level 1+2+3 complete) |
 | `make lint` | Run ruff linter |
 | `make format` | Format code with black and ruff |
 | `make type-check` | Run mypy type checker |
@@ -526,7 +515,6 @@ make rag-test
 
 **Note:** Production and development use separate volumes (`weather-ai-qdrant-data` vs `weather-ai-qdrant-data-dev`), so you may need to load data separately for each environment.
 
-
 **Docker Troubleshooting**
 
 | Issue | Symptom | Solution |
@@ -585,50 +573,54 @@ make memory-neo4j-browser
 make docker-down-dev
 ```
 
-**Observability Commands (Level 5c: Prometheus + Grafana + Loki)**
+**Observability Commands (Level 8: Prometheus + Grafana + Loki + Tempo)**
 
 | Command | Description |
 |---------|-------------|
-| `make observability-status` | Check Prometheus/Grafana/Loki status |
+| `make observability-status` | Check Prometheus/Grafana/Loki/Tempo status |
 | `make grafana-open` | Open Grafana dashboard (http://localhost:3001) |
 | `make prometheus-open` | Open Prometheus UI (http://localhost:9090) |
 | `make prometheus-reload` | Reload Prometheus configuration (hot reload) |
 | `make loki-logs` | Query recent logs from Loki |
 | `make observability-logs` | Follow logs from observability stack |
+| `make verify-signal-correlation` | Verify signal correlation components (Level 8) |
 
 **Typical Observability Workflow:**
 ```bash
-# 1. Start dev containers (includes observability stack)
+# 1. Start dev containers (includes observability stack + Tempo)
 make docker-up-dev
 
-# 2. Check observability status
+# 2. Check observability status (includes Tempo)
 make observability-status
 
-# 3. Open Grafana dashboards
+# 3. Verify signal correlation (Level 8)
+make verify-signal-correlation
+
+# 4. Open Grafana dashboards (Signal Correlation dashboard)
 make grafana-open
 # Login: admin / weatherai2025
 
-# 4. View Prometheus metrics
+# 5. View Prometheus metrics (with exemplars)
 make prometheus-open
 
-# 5. Query logs via Loki (in Grafana)
+# 6. Query logs via Loki (in Grafana) - click trace_id to jump to Tempo
 make loki-logs
 ```
 
-**Evaluation Commands (Level 5b: Golden Dataset Testing & Quality Gates)**
+**Evaluation Commands (Level 5b + Level 6: Golden Dataset Testing & Quality Gates)**
 
 All 8 evaluation commands validated and working correctly:
 
 | # | Command | Description | Duration | Output File | Status |
 |---|---------|-------------|----------|-------------|--------|
-| 1 | `make eval-upload-dataset` | Upload golden dataset to LangSmith (105 test cases) | ~5 seconds | N/A (uploads to LangSmith) | ✅ Validated |
+| 1 | `make eval-upload-dataset` | Upload golden dataset to LangSmith (185 test cases) | ~5 seconds | N/A (uploads to LangSmith) | ✅ Validated |
 | 2 | `make eval-quick` | Quick smoke test (10 random cases) | ~1-2 minutes | `evaluation_quick.json` | ✅ Validated |
-| 3 | `make eval-category CATEGORY=simple` | Test simple weather queries (40 cases) | ~5-6 minutes | `evaluation_simple.json` | ✅ Validated |
-| 4 | `make eval-category CATEGORY=hurricane` | Test hurricane safety-critical queries (20 cases) | ~4-5 minutes | `evaluation_hurricane.json` | ✅ Validated |
-| 5 | `make eval-category CATEGORY=complex` | Test complex multi-location queries (30 cases) | ~6-7 minutes | `evaluation_complex.json` | ✅ Validated |
-| 6 | `make eval-category CATEGORY=edge` | Test edge cases and error handling (15 cases) | ~2-3 minutes | `evaluation_edge.json` | ✅ Validated |
+| 3 | `make eval-category CATEGORY=simple` | Test simple weather queries (70 cases) | ~8-10 minutes | `evaluation_simple.json` | ✅ Validated |
+| 4 | `make eval-category CATEGORY=hurricane` | Test hurricane safety-critical queries (35 cases) | ~7-9 minutes | `evaluation_hurricane.json` | ✅ Validated |
+| 5 | `make eval-category CATEGORY=complex` | Test complex multi-location queries (50 cases) | ~10-12 minutes | `evaluation_complex.json` | ✅ Validated |
+| 6 | `make eval-category CATEGORY=edge` | Test edge cases and error handling (30 cases) | ~5-6 minutes | `evaluation_edge.json` | ✅ Validated |
 | 7 | `make eval-check-gates` | Check quality gates on evaluation results | ~2 seconds | N/A (reads `evaluation_results.json`) | ✅ Validated |
-| 8 | `make eval-full` | **Full pipeline**: Upload → Run all 105 cases → Check gates | ~17-20 minutes | `evaluation_results.json` | ✅ Validated |
+| 8 | `make eval-full` | **Full pipeline**: Upload → Run all 185 cases → Check gates | ~30-35 minutes | `evaluation_results.json` | ✅ Validated |
 
 **Quality Gates** (5 gates, all must pass for deployment):
 
@@ -648,11 +640,11 @@ make eval-quick
 # Test specific category
 make eval-category CATEGORY=hurricane
 
-# Full evaluation pipeline (all 105 cases)
+# Full evaluation pipeline (all 185 cases)
 make eval-full
 
 # View results in LangSmith
-# https://smith.langchain.com/datasets/14c92fff-0c08-49a3-976c-9084544327cb
+# https://smith.langchain.com/datasets
 ```
 
 **Quality Gates Guide**: See [docs/knowledgebase/quality-gates-guide.md](docs/knowledgebase/quality-gates-guide.md) for comprehensive details on what quality gates are, how they work, and what to do when they fail.
@@ -673,7 +665,15 @@ weather-agent/
 │   ├── src/                     # Source code
 │   │   ├── agents/              # 15 specialized agents (weather, triage, hurricane, etc.)
 │   │   ├── api/main.py          # FastAPI app (13 endpoints + Prometheus metrics)
-│   │   ├── cache/               # Multi-layer caching (L1/L2/L3)
+│   │   ├── cache/               # Multi-layer + Semantic Caching (Level 9)
+│   │   │   ├── l1_memory_cache.py        # L1 in-process LRU (<1ms, life-safety bypass)
+│   │   │   ├── l2_redis_cache.py         # L2 Redis distributed (<10ms, life-safety bypass)
+│   │   │   ├── l3_anthropic_cache.py     # L3 Anthropic prompt cache (transparent)
+│   │   │   ├── query_normalizer.py       # Query normalization (aliases, case, whitespace)
+│   │   │   ├── semantic_matcher.py       # Semantic similarity matching (Qdrant)
+│   │   │   ├── two_tier_cache.py         # Two-tier architecture (exact + semantic)
+│   │   │   ├── tool_cache.py             # Tool result caching with bypass
+│   │   │   └── llm_cache.py              # LLM response caching
 │   │   ├── context/             # Context Window Optimization (Level 8)
 │   │   │   ├── context_optimizer.py      # 5-phase optimization pipeline (50-60% reduction)
 │   │   │   ├── query_type_detector.py    # Auto-classification (EMERGENCY/COMPLEX/SIMPLE)
@@ -687,10 +687,11 @@ weather-agent/
 │   │   ├── mcp/                 # MCP client integration
 │   │   ├── memory/              # 7-layer memory system
 │   │   ├── models/              # Pydantic models (weather, hurricane, health, tool_registry)
-│   │   ├── observability/       # Full Observability Stack (Level 8)
+│   │   ├── observability/       # Full Observability Stack (Level 8 + Level 9)
 │   │   │   ├── callbacks.py             # LangSmith tracing callbacks
 │   │   │   ├── logging.py               # Structured JSON logging with trace context
 │   │   │   ├── metrics.py               # Prometheus metrics (context optimization + LLM)
+│   │   │   ├── cache_metrics.py         # Cache metrics (Level 9: hit/miss/latency/similarity/cost)
 │   │   │   └── tracing.py               # OpenTelemetry tracing integration
 │   │   ├── orchestration/       # Multi-agent workflow orchestration
 │   │   ├── rag/                 # RAG pipeline (embeddings, hybrid search)
@@ -710,25 +711,15 @@ weather-agent/
 ├── docs/                        # Documentation
 │   ├── setup/                   # Setup and configuration guides
 │   ├── test-guide/              # Test guides by level (9 guides)
-│   │   ├── LEVEL_7_TEST_GUIDE.md   # Level 7 comprehensive test guide (20 scenarios)
-│   │   └── LEVEL_8_TEST_GUIDE.md   # Level 8 comprehensive test guide (18 scenarios)
 ├── observability/               # Observability stack configuration (Level 8)
 │   ├── grafana/                 # Grafana dashboards and datasources (signal correlation)
 │   ├── loki/                    # Loki log aggregation config
 │   ├── prometheus/              # Prometheus metrics config (exemplar storage)
 │   └── tempo/                   # Tempo distributed tracing config (Level 8)
 ├── scripts/                     # Evaluation and automation scripts
-│   ├── check_quality_gates.py   # CI/CD quality gate validation
-│   ├── run_batch_evaluation.py  # LangSmith batch evaluation runner
-│   └── upload_golden_dataset.py # Golden dataset upload to LangSmith
 ├── tests/                       # Test suite (27 test files)
 │   ├── unit/                    # Unit tests
-│   │   ├── test_tool_registry.py       # Tool Registry unit tests (Level 7)
-│   │   ├── test_semantic_discovery.py  # Semantic Discovery unit tests (Level 7)
-│   │   └── test_context_optimizer.py   # Context Optimizer unit tests (Level 8)
 │   └── integration/             # Integration tests
-│       ├── test_mcp_integration.py      # MCP integration tests (20 scenarios, Level 7)
-│       └── test_level8_integration.py   # Level 8 integration tests (18 scenarios)
 ├── .env.template                # Environment variables template
 ├── CHANGELOG.md                 # Version history and release notes
 ├── Dockerfile                   # Multi-stage production container
@@ -737,33 +728,24 @@ weather-agent/
 ├── langgraph.json               # LangGraph Studio (4 graphs)
 ├── LICENSE                      # MIT License
 ├── Makefile                     # Development and deployment commands
-├── pyproject.toml               # Project config (v1.6.1)
+├── pyproject.toml               # Project config (v1.7.0)
 └── README.md                    # This file
 ```
 
 **Key Directories**:
 - **backend/src/agents/**: 15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
-  - **routing/**: Auto-routing system v0.6.0 (~500 lines, <1ms classification)
-  - **agents/**:  15 specialized agents for weather intelligence (supervisor, triage, hurricane, emergency, forecaster, climate, historical, research, personalization, meta-prompt, critique, debate, reflection, self-healing, alert manager)
-  - **memory/**: 7-layer memory (conversation, session, episodic, semantic, procedural, emotional, reflective)
-  - **registry/**: Tool Registry & Semantic Discovery (Level 7) - Thread-safe singleton, AI-powered search
-  - **reasoning/**: Tree/Graph-of-Thought (27 parallel paths, network reasoning)
-  - **orchestration/**: Multi-agent workflows (supervisor, parallel execution, auto-routing)
-  - **evaluation/**: 4-pillar evaluation framework (effectiveness, efficiency, robustness, safety)
-  - **cache/**: Multi-layer caching - L1 (in-process), L2 (Redis), L3 (Anthropic) caching (60-75% cost reduction potential)
-  - **context/**: Context Window Optimization (Level 8) - 5-phase pipeline achieving 50-60% token reduction
-  - **rag/**: Complete RAG pipeline (embeddings, vector store, hybrid search)
-  - **tools/**: LangChain tool wrappers (weather MCP, hurricane MCP, RAG retrieval). 7 tools total (3 MCP + 4 RAG-enhanced)
-- **backend/config/**: 3 config classes (Settings, MemoryConfig, CacheConfig) = 80+ env vars
-- **backend/data/**: 603 documents, 632 chunks embedded in Qdrant (3 mock + 600 Kaggle)
-- **docs/setup/**:7 comprehensive guides (Dependency management, MCP, Studio, Docker, RAG datasets, Neo4j Desktop, Redis Insight)
-- **tests/**: 20 test modules covering MCP, RAG, HITL, API, memory, reasoning, routing, cache, Level 4c agents
+- **backend/src/cache/**: L1 (in-process), L2 (Redis), L3 (Anthropic) caching
+- **backend/src/context/**: Context Window Optimization (Level 8) - 5-phase pipeline achieving 50-60% token reduction
+- **backend/src/memory/**: 7-layer memory (conversation, session, episodic, semantic, procedural, emotional, reflective)
+- **backend/src/observability/**: Full Observability Stack (Level 8) - Tracing, Structured JSON Logging, Metrics, Alerts
+- **backend/src/registry/**: Tool Registry & Semantic Discovery (Level 7) - Thread-safe singleton, AI-powered search
+- **backend/src/orchestration/**: Multi-agent workflows (supervisor, parallel execution, auto-routing)
+- **backend/src/evaluation/**: 4-pillar evaluation framework (effectiveness, efficiency, robustness, safety)
+- **backend/src/tools/**: LangChain tool wrappers (weather MCP, hurricane MCP, RAG retrieval)
+- **docs/test-guide/**: 9 test guides (L0-L8, 18 scenarios for Level 8)
 - **observability/**: Prometheus, Grafana, Loki, Tempo configuration (Level 8 signal correlation)
 - **scripts/**: Evaluation automation (quality gates, batch evaluation, dataset upload)
-- **langgraph.json**: 2 graphs configured (weather_agent, weather_hitl_workflow)
-- **Makefile**: Commands (setup, RAG, Docker, Evaluating, testing)
-  
-**Note:** We use both `pyproject.toml` (defines what dependencies you want) and `uv.lock` (locks exact versions) to ensure reproducible builds across all environments.
+- **tests/**: 27 test files (unit + integration, including 2 new Level 8 test files)
 
 ### Progressive Learning Path
 - **Level 0** (v0.1.0): Setup ✅ COMPLETE
@@ -772,25 +754,32 @@ weather-agent/
 - **Level 3a** (v0.4.0): 2-Layer Memory (Conversation + Session) ✅ COMPLETE
 - **Level 3b** (v0.5.0): Advanced Reasoning (Tree-of-Thoughts + Graph-of-Thoughts) ✅ COMPLETE
 - **Level 3c** (v0.6.0): Full 7-Layer Memory + Emotional Intelligence + Personalization ✅ COMPLETE
-- **Level 4a-c** (v0.7.0): Multi-Agent Orchestration (3 → 15 agents) ✅ COMPLETE
-- **Level 5a-c** (v0.10.0-1.0.0): Production (RAG optimization, guardrails, observability) ✅ COMPLETE
+- **Level 4** (v0.7.0): Multi-Agent Orchestration + Auto-Routing ✅ COMPLETE
+  - Auto-Routing v0.6.0: Intent-based query classification (<1ms) ✅ COMPLETE
+  - Level 4a: 3-Agent Foundation (Triage + Specialist + Alert) ✅ COMPLETE
+  - Level 4b: 8-Agent Orchestration (+ Supervisor + parallel) ✅ COMPLETE
+  - Level 4c: 15-Agent Production (+ Meta-Prompt + Debate + Self-Healing + Circuit Breakers) ✅ COMPLETE
+- **Level 5a** (v0.8.0): Multi-Layer Caching (L1+L2+L3) ✅ COMPLETE
+- **Level 5b** (v0.9.0): Evaluation Framework + 12-Layer Guardrails ✅ COMPLETE
+- **Level 5c** (v0.10.0): Full Production + Observability Stack ✅ COMPLETE
 - **Level 6** (v1.3.0): Self-Evolving AI Platform ✅ COMPLETE
   - Level 6a: Context Optimization + Ragas/DeepEval Evaluation ✅ COMPLETE
   - Level 6b: TruLens + AgentBench + Auto-Prompt Engineering ✅ COMPLETE
   - Level 6c: Constitutional AI + Production Testing Infrastructure ✅ COMPLETE
 - **Level 7** (v1.5.0): LangGraph-bigtool Tool Registry & Semantic Discovery ✅ COMPLETE
-  - Blog Series: 4 blogs, 36 files, OCEAN 97.25/100 ✅ COMPLETE
 - **Level 8** (v1.6.0): Context Window Optimization & Full Observability Stack ✅ COMPLETE
   - Level 8a: Query Type Detection + 5-Phase Optimization Pipeline ✅ COMPLETE
   - Level 8b: OpenTelemetry Tracing + Structured JSON Logging ✅ COMPLETE
   - Level 8c: Prometheus Metrics + Grafana Dashboards + Alert Rules ✅ COMPLETE
   - Test Coverage: 114/114 tests passing (18 scenarios) ✅ COMPLETE
-- **Level 9**: Semantic Caching (Tool Result Caching and LLM Response Caching) for AI Agents 🔜 NEXT
-- **Level 10**: Self Evolving Agentic Architecture: Self-evolving agentic systems that continuously learns, adapts, and improves based on real-world performance. 🔜 FUTURE
+- **Level 9** (v1.7.0): Two-Tier Semantic Caching Architecture ✅ COMPLETE
+  - Level 9a: TwoTierCache Base Class + QueryNormalizer + SemanticMatcher ✅ COMPLETE
+  - Level 9b: Tool Result Cache with Life-Safety Bypass ✅ COMPLETE
+  - Level 9c: LLM Response Cache + Prometheus Metrics ✅ COMPLETE
+- **Level 10**: Self Evolving Agentic Architecture: Self-evolving agentic systems that continuously learns, adapts, and improves based on real-world performance. 🔜 NEXT
 - **Level 11**: Advanced HITL 🔜 FUTURE
 
-**Current Status**: Level 7 (v1.5.0) - LangGraph-bigtool Tool Registry & Semantic Discovery (100% LangChain v1.x/LangGraph v1.x Compliant) | Test with `make test-dev`
-
+**Current Status**: Level 9 (v1.7.0) - Two-Tier Semantic Caching Architecture (100% LangChain v1.x/LangGraph v1.x Compliant) | Test with `make test-dev`
 
 ## API Endpoints Reference
 
@@ -813,9 +802,9 @@ All REST endpoints (13 total):
 | **GET** | `/metrics` | Prometheus metrics endpoint (text format for scraping) - includes context optimization metrics (Level 8) |
 
 **Access Points**:
-- **Swagger UI**: http://localhost:8000/docs (interactive testing)
-- **ReDoc**: http://localhost:8000/redoc (documentation)
-- **Base URL**: http://localhost:8000
+- **Swagger UI**: http://localhost:8000/docs (interactive testing with 37 example scenarios)
+- **ReDoc**: http://localhost:8000/redoc (comprehensive API documentation)
+- **Prometheus Metrics**: http://localhost:8000/metrics (plain text format)
 
 **Example Usage**:
 ```bash
@@ -876,11 +865,11 @@ curl http://localhost:8000/metrics
 
 ## Testing (Progressive Build Approach)
 
-**Current Test Coverage**: 49 test files + 185 golden dataset test cases covering ALL levels
+**Current Test Coverage**: 49 test files + 185 golden dataset test cases + Level 9 semantic caching integration tests covering ALL levels (L1-L9)
 
 **Unified Testing Command** (Recommended):
 ```bash
-# Test ALL implemented features for current level (Level 1+2+3)
+# Test ALL implemented features (Level 1-9: 49 unit tests + 185 golden dataset cases + semantic caching tests)
 make test-dev
 ```
 
@@ -892,6 +881,7 @@ This single command:
    - **Level 3** (15 tests): 7-Layer Memory, ToT/GoT reasoning, 3-Layer Caching (L1+L2+L3)
    - **Level 4** (20 tests): 15-Agent Multi-Agent Orchestration, Supervisor, Parallel Execution
    - **Level 5** (3 tests): Production API, Guardrails, Evaluation Framework
+   - **Level 9** (5 tests): Semantic Caching (Query Normalization, Semantic Matching, Life-Safety Bypass, Metrics Export)
 3. ✅ Verifies LangChain v1.x compliance (100% required, zero deprecated imports)
 
 **Golden Dataset Evaluation** (Level 6):
@@ -915,7 +905,8 @@ make eval-category CATEGORY=edge        # 30 edge cases
 - **[Level 5 Test Guide](./docs/test-guide/LEVEL_5_TEST_GUIDE.md)** - Production Deployment + Observability
 - **[Level 6 Test Guide](./docs/test-guide/LEVEL_6_TEST_GUIDE.md)** - Advanced Evals + 185 Golden Dataset Cases
 - **[Level 7 Test Guide](./docs/test-guide/LEVEL_7_TEST_GUIDE.md)** - LangGraph-bigtool Tool Registry & Semantic Discovery
-- **[Level 8 Test Guide](./docs/test-guide/LEVEL_8_TEST_GUIDE.md)** - ontext Window Optimization & Full Observability Stack(Tracing, Structured Logging, Metrics and Alerts) 
+- **[Level 8 Test Guide](./docs/test-guide/LEVEL_8_TEST_GUIDE.md)** - Context Window Optimization & Full Observability Stack (Tracing, Structured Logging, Metrics and Alerts)
+- **[Level 9 Test Guide](./docs/test-guide/LEVEL_9_TEST_GUIDE.md)** - Two-Tier Semantic Caching (Query/Tool/LLM Response Caching, Life-Safety Bypass, Prometheus Metrics) 
   
 **Prerequisites:** Docker services running (10 services in dev mode)
 ```bash
@@ -954,4 +945,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built for teams exploring agentic AI systems**
 
-**Version**: 1.6.1 | **Last Updated**: 2025-12-17
+**Version**: 1.7.0 | **Last Updated**: 2025-12-17

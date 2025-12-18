@@ -20,13 +20,12 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import structlog
 
 from backend.src.agents.circuit_breaker import (
-    CircuitBreaker,
-    CircuitState,
     circuit_registry,
     get_system_health,
 )
@@ -193,8 +192,8 @@ class SelfHealingAgent:
 
                 return result
 
-            except asyncio.TimeoutError:
-                last_error = asyncio.TimeoutError(
+            except TimeoutError:
+                last_error = TimeoutError(
                     f"Agent {agent_role.value} timed out after {self.agent_timeout}s"
                 )
                 logger.warning(

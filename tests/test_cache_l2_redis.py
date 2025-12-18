@@ -18,8 +18,9 @@ Note: These tests use mock Redis to avoid external dependencies.
 For integration tests with real Redis, see test_cache_integration.py
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.src.cache.l2_redis_cache import RedisQueryCache
 

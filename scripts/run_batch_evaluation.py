@@ -24,12 +24,13 @@ Usage:
     uv run python scripts/run_batch_evaluation.py --level6-only
 """
 
-import asyncio
 import argparse
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file

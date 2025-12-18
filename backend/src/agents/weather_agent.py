@@ -59,7 +59,7 @@ Still Deferred:
 
 import logging
 
-from langchain.agents import create_agent
+from langchain.agents import create_agent  # ✅ LangChain v1.x correct import
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
@@ -71,18 +71,21 @@ from backend.src.agents.prompts import (  # Level 2: CoT prompts, Level 3b: ToT/
     TOT_WEATHER_SYSTEM_PROMPT,  # 🆕 Level 3b
     WEATHER_ASSISTANT_SYSTEM_PROMPT,
 )
-from backend.src.tools.rag_tools import get_rag_tools  # Level 2: RAG-enhanced tools
-from backend.src.registry import get_bigtool_registry  # Level 7: langgraph-bigtool semantic discovery
-from backend.src.tools.weather_tools import (
-    get_current_weather,
-    get_forecast,
-    retrieve_weather_context,
-)
+
 # 🆕 Level 8a: Context Window Optimization (50-60% token reduction)
 from backend.src.context import (
     ContextWindowOptimizer,
     detect_query_type,
     get_optimization_config,
+)
+from backend.src.registry import (
+    get_bigtool_registry,  # Level 7: langgraph-bigtool semantic discovery
+)
+from backend.src.tools.rag_tools import get_rag_tools  # Level 2: RAG-enhanced tools
+from backend.src.tools.weather_tools import (
+    get_current_weather,
+    get_forecast,
+    retrieve_weather_context,
 )
 
 # 🆕 Level 8c: Prometheus metrics (optional - only if available)
@@ -310,7 +313,7 @@ def create_weather_agent(
         else:
             # Memory only, no RAG - use base MCP tools
             logger.info(
-                f"🧠 Level 3a: Memory enabled - Using 3 base MCP tools only"
+                "🧠 Level 3a: Memory enabled - Using 3 base MCP tools only"
             )
     else:
         # Level 2 / Level 1 behavior: Use all tools
@@ -669,8 +672,9 @@ def create_weather_agent_graph(config: RunnableConfig = None):  # noqa: ARG001
           # Uses ENABLE_RAG=true, ENABLE_COT=true from .env
         }
     """
-    from langgraph.graph import StateGraph, MessagesState, START, END
-    from langchain_core.messages import SystemMessage, AIMessage
+    from langchain_core.messages import AIMessage, SystemMessage
+    from langgraph.graph import END, START, MessagesState, StateGraph
+
     from backend.config.settings import settings
 
     # Define state (extends MessagesState with config overrides)

@@ -25,7 +25,7 @@ Example:
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from graphiti_core import Graphiti
 
@@ -174,7 +174,7 @@ class LongTermMemory:
                 name=f"User Profile: {user_id}",
                 episode_body=episode_body,
                 source_description="User profile creation",
-                reference_time=datetime.now(timezone.utc),
+                reference_time=datetime.now(UTC),
                 group_id=group_id,
             )
             logger.info(f"[GRAPHITI] ✅ Successfully created profile episode for {user_id}")
@@ -295,7 +295,7 @@ class LongTermMemory:
                                     # 🆕 Mark as found if it's a high-priority pattern (prefers)
                                     if "prefers" in pattern:
                                         found_preferred_location = True
-                                        logger.info(f"[S3B DEBUG] 🔒 Locked to preferred location (won't overwrite)")
+                                        logger.info("[S3B DEBUG] 🔒 Locked to preferred location (won't overwrite)")
                                     break
                         if user_data["home_location"]:
                             break  # Found location, stop looking at patterns for this fact
@@ -324,10 +324,10 @@ class LongTermMemory:
                 # New format: exact match
                 if "celsius" in fact:
                     user_data["preferred_units"] = "celsius"
-                    logger.info(f"[S3B DEBUG] ✅ Extracted units: celsius")
+                    logger.info("[S3B DEBUG] ✅ Extracted units: celsius")
                 elif "fahrenheit" in fact:
                     user_data["preferred_units"] = "fahrenheit"
-                    logger.info(f"[S3B DEBUG] ✅ Extracted units: fahrenheit")
+                    logger.info("[S3B DEBUG] ✅ Extracted units: fahrenheit")
             elif "prefers" in fact and ("celsius" in fact or "fahrenheit" in fact):
                 # Fallback for old formats
                 # BUT: Make sure it's not "lives in fahrenheit" or "trip to fahrenheit" (nonsense)
@@ -342,13 +342,13 @@ class LongTermMemory:
                 # New format: "User X prefers moderate level of detail in weather forecasts."
                 if "moderate" in fact:
                     user_data["preferred_detail_level"] = "moderate"
-                    logger.info(f"[S3B DEBUG] ✅ Extracted detail level: moderate")
+                    logger.info("[S3B DEBUG] ✅ Extracted detail level: moderate")
                 elif "detailed" in fact:
                     user_data["preferred_detail_level"] = "detailed"
-                    logger.info(f"[S3B DEBUG] ✅ Extracted detail level: detailed")
+                    logger.info("[S3B DEBUG] ✅ Extracted detail level: detailed")
                 elif "brief" in fact:
                     user_data["preferred_detail_level"] = "brief"
-                    logger.info(f"[S3B DEBUG] ✅ Extracted detail level: brief")
+                    logger.info("[S3B DEBUG] ✅ Extracted detail level: brief")
 
         # 🔍 DEBUG: Log final extracted data
         logger.info(f"[S3B DEBUG] Final extracted data: {user_data}")
@@ -358,7 +358,7 @@ class LongTermMemory:
             logger.info(f"[S3B DEBUG] ✅ Returning profile: name={user_data['name']}, location={user_data['home_location']}")
             return UserProfile(**user_data)
 
-        logger.warning(f"[S3B DEBUG] ❌ No profile data found, returning None")
+        logger.warning("[S3B DEBUG] ❌ No profile data found, returning None")
         return None
 
     async def update_user_preference(
@@ -390,7 +390,7 @@ class LongTermMemory:
                 name=f"Preference Update: {user_id}",
                 episode_body=episode_body,
                 source_description="User preference update",
-                reference_time=datetime.now(timezone.utc),
+                reference_time=datetime.now(UTC),
                 group_id=f"user_profile_{user_id}",  # 🆕 User-specific group ID
             )
         except Exception as e:
@@ -558,7 +558,7 @@ class LongTermMemory:
                         confidence = 1.0
 
                     # Use edge timestamps
-                    valid_from = edge.valid_at if edge.valid_at else datetime.now(timezone.utc)
+                    valid_from = edge.valid_at if edge.valid_at else datetime.now(UTC)
                     valid_to = edge.invalid_at if edge.invalid_at else None
 
                     # Check temporal validity if requested
@@ -646,9 +646,9 @@ Context: User '{user_id}' in session '{session_id}'"""
 
             await asyncio.wait_for(
                 self.graphiti.add_episode(
-                    name=f"conversation_{user_id}_{session_id}_{datetime.now(timezone.utc).isoformat()}",
+                    name=f"conversation_{user_id}_{session_id}_{datetime.now(UTC).isoformat()}",
                     episode_body=episode_content,
-                    reference_time=datetime.now(timezone.utc),
+                    reference_time=datetime.now(UTC),
                     source_description=f"Weather AI conversation with user {user_id}",
                     group_id=user_group_id,  # ✅ CRITICAL FIX: Isolate user's episodes in dedicated group
                 ),
@@ -659,7 +659,7 @@ Context: User '{user_id}' in session '{session_id}'"""
                 f"Saved episode to Graphiti for user={user_id}, session={session_id}"
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 f"⚠️ Episode save timed out after {effective_timeout}s for user={user_id}. "
                 f"Episode NOT saved. Continuing without blocking query. "
@@ -744,7 +744,7 @@ Context: User '{user_id}' in session '{session_id}'"""
             )
             return episodes
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 f"⚠️ Episode search timed out after {timeout_seconds}s for user={user_id}. "
                 f"Returning empty list to prevent query blocking. "

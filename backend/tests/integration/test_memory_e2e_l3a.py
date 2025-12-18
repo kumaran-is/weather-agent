@@ -21,8 +21,6 @@ Prerequisites:
 - Or use in-memory alternatives for CI/CD
 """
 
-import asyncio
-from datetime import datetime, timedelta
 
 import pytest
 

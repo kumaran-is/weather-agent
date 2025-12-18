@@ -16,9 +16,8 @@ AUTO-ROUTING (v0.6.0+):
 CRITICAL RULE: ENHANCE existing models, NEVER create versioned models (WeatherQueryV2)
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -240,7 +239,7 @@ class WeatherResponse(BaseModel):
         description="User identifier from the request"
     )
     timestamp: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        default_factory=lambda: datetime.now(UTC).isoformat(),
         description="ISO 8601 timestamp in UTC"
     )
 

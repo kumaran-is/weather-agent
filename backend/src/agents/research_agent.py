@@ -21,21 +21,21 @@ Design Principles:
 
 from __future__ import annotations
 
-import httpx
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
+from backend.config.settings import settings
 from backend.src.models.multi_agent import (
-    AgentRole,
     AgentResponse,
+    AgentRole,
     MultiAgentState,
 )
-from backend.config.settings import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -146,7 +146,7 @@ class ResearchAgent:
                 agent_role=self.agent_role,
                 content=research_text,
                 confidence=confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "research_areas": research_areas,
@@ -187,7 +187,7 @@ class ResearchAgent:
                 agent_role=self.agent_role,
                 content=f"Unable to complete research: {type(e).__name__}",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "error": str(e),

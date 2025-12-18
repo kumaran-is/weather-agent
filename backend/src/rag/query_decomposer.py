@@ -29,8 +29,6 @@ from dataclasses import dataclass, field
 from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel, Field
 
-from backend.config.settings import settings
-
 logger = logging.getLogger(__name__)
 
 

@@ -48,7 +48,7 @@ Design Principles:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -146,7 +146,7 @@ class RoutingDecision(BaseModel):
         description="Explanation for routing decision"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When routing decision was made"
     )
     query_category: str = Field(
@@ -214,7 +214,7 @@ class AgentResponse(BaseModel):
         description="Confidence in the response (0.0 to 1.0)"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When response was generated"
     )
     execution_time_ms: float | None = Field(
@@ -304,11 +304,11 @@ class AgentState(BaseModel):
         description="Session identifier for conversation continuity"
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the agent state was created"
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the agent state was last updated"
     )
     timeout_ms: int = Field(
@@ -531,7 +531,7 @@ class MultiAgentState(AgentState):
         self.agent_responses.append(response)
         if response.execution_time_ms:
             self.total_execution_time_ms += response.execution_time_ms
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def get_latest_response(self) -> AgentResponse | None:
         """Get the most recent agent response.
@@ -562,7 +562,7 @@ class MultiAgentState(AgentState):
         """
         self.workflow_complete = True
         self.final_response = final_response
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def mark_error(self, error_message: str) -> None:
         """Mark the workflow as failed with an error message.
@@ -572,4 +572,4 @@ class MultiAgentState(AgentState):
         """
         self.workflow_complete = True
         self.error = error_message
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)

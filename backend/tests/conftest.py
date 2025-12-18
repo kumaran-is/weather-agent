@@ -3,8 +3,10 @@
 This module provides shared fixtures for multi-agent system tests.
 """
 
-import pytest
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -105,14 +107,15 @@ def sample_routing_decision():
     Returns:
         dict: Mock routing decision
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     from backend.src.models.multi_agent import AgentRole, RoutingDecision
 
     return RoutingDecision(
         next_agent=AgentRole.HURRICANE_SPECIALIST,
         confidence=0.92,
         rationale="Hurricane-specific query requiring domain expertise",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         query_category="hurricane_forecast"
     )
 
@@ -124,14 +127,14 @@ def sample_multi_agent_state():
     Returns:
         dict: Initial workflow state
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     return {
         "query": "When will Hurricane Milton make landfall in Tampa?",
         "user_id": "test_user_123",
         "session_id": "test_session_456",
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC),
         "timeout_ms": 3000,
         "current_agent": None,
         "routing_decision": None,

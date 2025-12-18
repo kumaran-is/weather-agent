@@ -13,13 +13,13 @@ Provides OpenAI Evals-style evaluation capabilities:
 Target: Systematic evaluation using OpenAI Evals patterns
 """
 
-from typing import Any, Callable
 import logging
-import json
-import re
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
-from abc import ABC, abstractmethod
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

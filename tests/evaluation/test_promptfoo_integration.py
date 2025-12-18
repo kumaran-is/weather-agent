@@ -11,21 +11,19 @@ Tests cover:
 5. Model grading functionality
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
 from backend.src.evaluation.promptfoo_integration import (
-    AssertionType,
     Assertion,
     AssertionResult,
-    TestCase,
-    TestResult,
+    AssertionType,
+    EvaluationSummary,
     PromptfooEvaluator,
     ProviderConfig,
-    EvaluationSummary,
+    TestCase,
 )
-
 
 # ============================================================================
 # Fixtures

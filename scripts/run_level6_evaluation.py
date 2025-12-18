@@ -20,20 +20,20 @@ Usage:
     uv run python scripts/run_level6_evaluation.py --eval-type agentbench
 """
 
-import asyncio
 import argparse
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 import yaml
-from langsmith import Client, traceable
-from langsmith.run_helpers import get_current_run_tree
+from langsmith import traceable
 
 # Level 6 evaluation types and their thresholds
 # NOTE: Thresholds adjusted based on production testing (2024-12)

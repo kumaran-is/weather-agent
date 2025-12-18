@@ -143,8 +143,8 @@ class TestMCPFailoverStandalone:
 
     def test_failover_handler_weather(self):
         """Verify MCPFailoverHandler for weather."""
-        from backend.src.mcp.logger import MCPLogger
         from backend.src.mcp.failover import MCPFailoverHandler
+        from backend.src.mcp.logger import MCPLogger
 
         logger = MCPLogger("weather")
         handler = MCPFailoverHandler("weather", logger, enable_failover=True)
@@ -155,8 +155,8 @@ class TestMCPFailoverStandalone:
 
     def test_failover_handler_hurricane(self):
         """Verify MCPFailoverHandler for hurricane."""
-        from backend.src.mcp.logger import MCPLogger
         from backend.src.mcp.failover import MCPFailoverHandler
+        from backend.src.mcp.logger import MCPLogger
 
         logger = MCPLogger("hurricane")
         handler = MCPFailoverHandler("hurricane", logger, enable_failover=True)
@@ -167,8 +167,8 @@ class TestMCPFailoverStandalone:
 
     def test_circuit_breaker_configuration(self):
         """Verify circuit breaker has correct configuration."""
-        from backend.src.mcp.logger import MCPLogger
         from backend.src.mcp.failover import MCPFailoverHandler
+        from backend.src.mcp.logger import MCPLogger
 
         logger = MCPLogger("weather")
         handler = MCPFailoverHandler("weather", logger, enable_failover=True)
@@ -197,9 +197,10 @@ class TestBigtoolRegistryStandalone:
 
     def test_registry_manual_registration(self):
         """Verify manual tool registration."""
+        from langchain_core.tools import StructuredTool
+
         from backend.src.registry import BigtoolRegistry, reset_bigtool_registry
         from backend.src.registry.bigtool_registry import ToolCategory
-        from langchain_core.tools import StructuredTool
 
         # Reset
         reset_bigtool_registry()
@@ -226,9 +227,10 @@ class TestBigtoolRegistryStandalone:
 
     def test_registry_statistics(self):
         """Verify registry statistics."""
+        from langchain_core.tools import StructuredTool
+
         from backend.src.registry import BigtoolRegistry, reset_bigtool_registry
         from backend.src.registry.bigtool_registry import ToolCategory
-        from langchain_core.tools import StructuredTool
 
         # Reset
         reset_bigtool_registry()
@@ -266,7 +268,10 @@ class TestAutoRegistration:
 
     def test_get_bigtool_registry_triggers_auto_registration(self):
         """Verify get_bigtool_registry() triggers auto-registration."""
-        from backend.src.registry import BigtoolRegistry, get_bigtool_registry, reset_bigtool_registry
+        from backend.src.registry import (
+            get_bigtool_registry,
+            reset_bigtool_registry,
+        )
 
         # Reset registry
         reset_bigtool_registry()
@@ -290,7 +295,10 @@ class TestHurricaneToolsConditional:
     def test_hurricane_tools_registration_flag(self):
         """Verify hurricane registration depends on MCP_HURRICANE_SERVER_ENABLED."""
         from backend.config.settings import settings
-        from backend.src.registry import BigtoolRegistry, get_bigtool_registry, reset_bigtool_registry
+        from backend.src.registry import (
+            get_bigtool_registry,
+            reset_bigtool_registry,
+        )
 
         # Reset registry
         reset_bigtool_registry()
@@ -304,16 +312,19 @@ class TestHurricaneToolsConditional:
             assert "get_storm_forecast" in tool_names, "get_storm_forecast should be registered"
             assert "get_hurricane_alerts" in tool_names, "get_hurricane_alerts should be registered"
             assert "get_storm_history" in tool_names, "get_storm_history should be registered"
-            print(f"✅ Hurricane tools registered: 4 tools")
+            print("✅ Hurricane tools registered: 4 tools")
         else:
             # Should NOT have hurricane tools
             assert "get_active_storms" not in tool_names, "get_active_storms should NOT be registered when disabled"
-            print(f"✅ Hurricane tools NOT registered (MCP_HURRICANE_SERVER_ENABLED=false)")
+            print("✅ Hurricane tools NOT registered (MCP_HURRICANE_SERVER_ENABLED=false)")
 
     def test_tool_count_with_hurricane_enabled(self):
         """Verify tool count when hurricane is enabled."""
         from backend.config.settings import settings
-        from backend.src.registry import BigtoolRegistry, get_bigtool_registry, reset_bigtool_registry
+        from backend.src.registry import (
+            get_bigtool_registry,
+            reset_bigtool_registry,
+        )
 
         # Reset registry
         reset_bigtool_registry()
@@ -336,7 +347,10 @@ class TestEndToEndAPIFormat:
 
     def test_statistics_endpoint_compatible_output(self):
         """Verify registry statistics can be serialized for API response."""
-        from backend.src.registry import BigtoolRegistry, get_bigtool_registry, reset_bigtool_registry
+        from backend.src.registry import (
+            get_bigtool_registry,
+            reset_bigtool_registry,
+        )
 
         # Reset registry
         reset_bigtool_registry()
@@ -382,13 +396,13 @@ class TestBackwardCompatibility:
 
     def test_tool_registry_alias(self):
         """Verify ToolRegistry alias points to BigtoolRegistry."""
-        from backend.src.registry import ToolRegistry, BigtoolRegistry
+        from backend.src.registry import BigtoolRegistry, ToolRegistry
 
         assert ToolRegistry is BigtoolRegistry
 
     def test_get_tool_registry_alias(self):
         """Verify get_tool_registry alias works."""
-        from backend.src.registry import get_tool_registry, BigtoolRegistry, reset_bigtool_registry
+        from backend.src.registry import BigtoolRegistry, get_tool_registry, reset_bigtool_registry
 
         reset_bigtool_registry()
         registry = get_tool_registry()

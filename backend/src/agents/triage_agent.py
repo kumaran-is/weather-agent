@@ -25,24 +25,24 @@ Design Principles:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    RoutingDecision,
-    MultiAgentState,
-    AgentResponse,
-)
 from backend.src.agents.prompts.triage_prompts import (
-    TRIAGE_SYSTEM_PROMPT,
     TRIAGE_CLASSIFICATION_PROMPT,
     TRIAGE_FALLBACK_PROMPT,
+    TRIAGE_SYSTEM_PROMPT,
     USER_CONTEXT_TEMPLATE,
+)
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
+    RoutingDecision,
 )
 
 logger = structlog.get_logger(__name__)
@@ -122,7 +122,7 @@ class TriageAgent:
         Raises:
             No exceptions raised - all errors handled with fallback logic
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         # Support both Pydantic model and dict state (L4a/L4b compatibility)
         is_pydantic = hasattr(state, 'query') and not isinstance(state, dict)
@@ -175,7 +175,7 @@ class TriageAgent:
                 next_agent=AgentRole(routing_data["target_agent"]),
                 confidence=routing_data["confidence"],
                 rationale=routing_data["reasoning"],
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 query_category=routing_data.get("complexity", "moderate"),
             )
 
@@ -193,7 +193,7 @@ class TriageAgent:
 
             # Step 6: Update state with routing decision
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Create Triage Agent response
@@ -201,7 +201,7 @@ class TriageAgent:
                 agent_role=AgentRole.TRIAGE,
                 content=f"Query classified as {routing_data['complexity']}. Routing to {routing_decision.next_agent.value}.",
                 confidence=routing_decision.confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "complexity": routing_data["complexity"],
@@ -257,20 +257,20 @@ class TriageAgent:
                 next_agent=AgentRole.HURRICANE_SPECIALIST,
                 confidence=0.5,
                 rationale=f"Routing to Hurricane Specialist as fallback due to triage error: {type(e).__name__}",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 query_category="moderate",
             )
 
             execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
+                datetime.now(UTC) - start_time
             ).total_seconds() * 1000
 
             # Create error response
             error_response = AgentResponse(
                 agent_role=AgentRole.TRIAGE,
-                content=f"Triage classification error. Routing to Hurricane Specialist as fallback.",
+                content="Triage classification error. Routing to Hurricane Specialist as fallback.",
                 confidence=0.5,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=execution_time_ms,
                 metadata={
                     "error": str(e),

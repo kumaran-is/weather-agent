@@ -11,13 +11,14 @@ Run: PYTHONPATH=. pytest backend/tests/test_rag_tools.py -v
 """
 
 import pytest
+
 from backend.src.tools.rag_tools import (
     analyze_trends,
-    identify_patterns,
     compare_conditions,
-    retrieve_weather_knowledge_tool,
-    hybrid_search_weather_knowledge,
     get_rag_tools,
+    hybrid_search_weather_knowledge,
+    identify_patterns,
+    retrieve_weather_knowledge_tool,
 )
 
 

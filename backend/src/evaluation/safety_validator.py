@@ -34,8 +34,8 @@ Usage:
     >>> # result.is_safe = False (Cat 5 requires 157+ mph)
 """
 
-import re
 import logging
+import re
 from typing import Any
 
 from backend.src.evaluation.models import SafetyResult, SafetyViolationType

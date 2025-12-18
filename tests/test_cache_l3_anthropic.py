@@ -15,16 +15,15 @@ Expected Performance:
 - TTL: 5 minutes (automatic, managed by Anthropic)
 """
 
-import pytest
 from unittest.mock import Mock
 
 from backend.src.cache.l3_anthropic_cache import (
+    AnthropicCacheMetrics,
     add_cache_control,
     extract_cache_stats,
     prepare_cached_messages,
     prepare_cached_system_prompt,
     prepare_cached_tools,
-    AnthropicCacheMetrics,
 )
 
 

@@ -3,7 +3,6 @@
 Tests the Level 1 workflow orchestration with HITL approval.
 """
 
-import pytest
 from backend.src.workflows.weather_graph import build_weather_hitl_workflow
 
 

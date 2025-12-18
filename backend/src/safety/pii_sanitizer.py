@@ -22,9 +22,8 @@ Usage:
     >>> # Returns: "Call [REDACTED_PHONE] for updates"
 """
 
-import re
 import logging
-from typing import Any
+import re
 from enum import Enum
 
 logger = logging.getLogger(__name__)

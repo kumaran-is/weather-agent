@@ -14,20 +14,21 @@ Tests:
 """
 
 import pytest
+
 from backend.src.evaluation.retrieval_metrics import (
-    MRRCalculator,
-    NDCGCalculator,
     BLEUCalculator,
-    ROUGECalculator,
-    PrecisionRecallCalculator,
+    CombinedMetrics,
+    GenerationMetrics,
     MAPCalculator,
     MetricsCalculator,
+    MRRCalculator,
+    NDCGCalculator,
+    PrecisionRecallCalculator,
     RetrievalMetrics,
-    GenerationMetrics,
-    CombinedMetrics,
+    ROUGECalculator,
+    calculate_bleu,
     calculate_mrr,
     calculate_ndcg,
-    calculate_bleu,
     calculate_rouge,
 )
 

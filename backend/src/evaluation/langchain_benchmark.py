@@ -14,10 +14,11 @@ Available Tasks:
 Target: >0.80 accuracy on all benchmarks
 """
 
-from typing import Any
+import asyncio
 import logging
 import time
-import asyncio
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -360,15 +361,15 @@ class LangChainBenchmark:
         # Include expected terms in response
         for term in expected_contains:
             if "temperature" in term.lower():
-                response_parts.append(f"The temperature is 85°F.")
+                response_parts.append("The temperature is 85°F.")
             elif "forecast" in term.lower():
-                response_parts.append(f"The forecast shows sunny conditions.")
+                response_parts.append("The forecast shows sunny conditions.")
             elif "hurricane" in term.lower():
-                response_parts.append(f"Hurricane conditions are being monitored.")
+                response_parts.append("Hurricane conditions are being monitored.")
             elif "evacuation" in term.lower():
-                response_parts.append(f"Evacuation guidance: Follow local orders.")
+                response_parts.append("Evacuation guidance: Follow local orders.")
             elif "surge" in term.lower():
-                response_parts.append(f"Storm surge expected to be 6-9 feet.")
+                response_parts.append("Storm surge expected to be 6-9 feet.")
             else:
                 response_parts.append(f"Information about {term} is available.")
 

@@ -13,14 +13,15 @@ Tests:
 """
 
 import pytest
+
 from backend.src.tools.tool_marketplace import (
+    ComposioToolSource,
+    LocalToolSource,
+    MastraToolSource,
+    SmitheryToolSource,
     ToolMarketplace,
     ToolMetadata,
     ToolSearchResult,
-    LocalToolSource,
-    ComposioToolSource,
-    MastraToolSource,
-    SmitheryToolSource,
 )
 
 

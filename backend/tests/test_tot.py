@@ -8,10 +8,12 @@ Tests cover:
 - Edge cases and boundary conditions
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock
-from backend.src.reasoning.tot import TreeOfThoughts
+
+import pytest
+
 from backend.src.models.reasoning import ThoughtNode, ThoughtTree, ThoughtType
+from backend.src.reasoning.tot import TreeOfThoughts
 
 
 @pytest.fixture

@@ -18,11 +18,13 @@ Safety Requirements:
 - Category 3+ MUST have human approval
 """
 
-from typing import Literal
-from langgraph.types import interrupt, Command
-from backend.src.agents.state import WeatherAgentState
-from datetime import datetime, timezone
 import logging
+from datetime import UTC, datetime
+from typing import Literal
+
+from langgraph.types import Command, interrupt
+
+from backend.src.agents.state import WeatherAgentState
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ def hurricane_approval(state: WeatherAgentState) -> Command[Literal["send", "can
         "category": category,
         "message": state.get("alert_message", ""),
         "location": state.get("current_query", "Unknown location"),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "user_id": state.get("user_id", "unknown"),
         "session_id": state.get("session_id", "unknown")
     }
@@ -167,12 +169,12 @@ def send_alert_node(state: WeatherAgentState) -> dict:
     # For Level 1, just print to console
     # In production, this would trigger actual alert systems
     print(f"\n{'='*60}")
-    print(f"🚨 HURRICANE ALERT SENT")
+    print("🚨 HURRICANE ALERT SENT")
     print(f"{'='*60}")
     print(f"Category: {category}")
     print(f"Message: {message}")
     print(f"User: {user_id}")
-    print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
+    print(f"Timestamp: {datetime.now(UTC).isoformat()}")
     print(f"{'='*60}\n")
 
     return {
@@ -218,13 +220,13 @@ def cancel_alert_node(state: WeatherAgentState) -> dict:
     # For Level 1, just print to console
     # In production, this would log to audit systems
     print(f"\n{'='*60}")
-    print(f"❌ HURRICANE ALERT CANCELLED")
+    print("❌ HURRICANE ALERT CANCELLED")
     print(f"{'='*60}")
     print(f"Category: {category}")
     print(f"Message: {message}")
     print(f"User: {user_id}")
-    print(f"Reason: Rejected by human reviewer")
-    print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
+    print("Reason: Rejected by human reviewer")
+    print(f"Timestamp: {datetime.now(UTC).isoformat()}")
     print(f"{'='*60}\n")
 
     return {

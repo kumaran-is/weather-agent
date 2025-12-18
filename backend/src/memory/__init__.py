@@ -11,9 +11,9 @@ Usage:
     >>> context = await manager.get_context(user_id, session_id)
 """
 
-from backend.src.memory.short_term import ShortTermMemory
 from backend.src.memory.long_term import LongTermMemory
 from backend.src.memory.manager import MemoryManager
+from backend.src.memory.short_term import ShortTermMemory
 
 __all__ = [
     "ShortTermMemory",

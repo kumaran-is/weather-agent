@@ -13,10 +13,11 @@ Tests:
 """
 
 import pytest
+
 from backend.src.evaluation.langchain_benchmark import (
-    LangChainBenchmark,
     BenchmarkResult,
     BenchmarkTask,
+    LangChainBenchmark,
 )
 
 

@@ -30,7 +30,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from backend.src.agents.prompts.debate_prompts import (
-    DEBATE_CONFIG,
     DEBATE_SYSTEM_PROMPT,
     JUDGE_EVALUATION_PROMPT,
     JUDGE_SYSTEM_PROMPT,

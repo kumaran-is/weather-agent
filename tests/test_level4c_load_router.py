@@ -8,17 +8,15 @@ This module tests the load-aware routing capabilities including:
 - Latency optimization
 """
 
-import pytest
-from unittest.mock import MagicMock
 
+from backend.src.models.multi_agent import AgentRole, MultiAgentState, QueryComplexity
 from backend.src.orchestration.load_aware_router import (
-    LoadAwareRouter,
+    DEFAULT_AGENT_METRICS,
     AgentMetrics,
     CostTier,
-    DEFAULT_AGENT_METRICS,
+    LoadAwareRouter,
     create_load_aware_router,
 )
-from backend.src.models.multi_agent import AgentRole, MultiAgentState, QueryComplexity
 
 
 class TestCostTier:

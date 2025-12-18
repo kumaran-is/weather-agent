@@ -12,13 +12,15 @@ Server using the Model Context Protocol (MCP) over HTTP transport with JSON-RPC 
 """
 
 import asyncio
-import httpx
-import logging
-from datetime import datetime, timezone
-from backend.config.settings import settings
-from backend.src.mcp.logger import MCPLogger
-from backend.src.mcp.failover import MCPFailoverHandler
 import json
+import logging
+from datetime import UTC, datetime
+
+import httpx
+
+from backend.config.settings import settings
+from backend.src.mcp.failover import MCPFailoverHandler
+from backend.src.mcp.logger import MCPLogger
 
 logger = logging.getLogger(__name__)
 
@@ -354,7 +356,7 @@ class HurricaneMCPClient:
                 headers=headers,
                 json={
                     "jsonrpc": "2.0",
-                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "id": str(datetime.now(UTC).timestamp()),
                     "method": "tools/call",
                     "params": {
                         "name": "get_active_storms",
@@ -414,7 +416,7 @@ class HurricaneMCPClient:
                 headers=headers,
                 json={
                     "jsonrpc": "2.0",
-                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "id": str(datetime.now(UTC).timestamp()),
                     "method": "tools/call",
                     "params": {
                         "name": "get_storm_cone",
@@ -475,7 +477,7 @@ class HurricaneMCPClient:
                 headers=headers,
                 json={
                     "jsonrpc": "2.0",
-                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "id": str(datetime.now(UTC).timestamp()),
                     "method": "tools/call",
                     "params": {
                         "name": "get_storm_track",
@@ -547,7 +549,7 @@ class HurricaneMCPClient:
                 headers=headers,
                 json={
                     "jsonrpc": "2.0",
-                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "id": str(datetime.now(UTC).timestamp()),
                     "method": "tools/call",
                     "params": {
                         "name": "get_local_hurricane_alerts",
@@ -661,7 +663,7 @@ class HurricaneMCPClient:
                 headers=headers,
                 json={
                     "jsonrpc": "2.0",
-                    "id": str(datetime.now(timezone.utc).timestamp()),
+                    "id": str(datetime.now(UTC).timestamp()),
                     "method": "tools/call",
                     "params": {
                         "name": "search_historical_tracks",

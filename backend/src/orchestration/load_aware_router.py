@@ -19,7 +19,7 @@ Configuration:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -69,7 +69,7 @@ class AgentMetrics:
     max_load: int = 10
     total_requests: int = 0
     last_updated: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
 
 
@@ -291,7 +291,7 @@ class LoadAwareRouter:
 
         # Record routing decision
         self._routing_history.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "complexity": query_complexity.value,
             "selected": [s.value for s in selected],
             "excluded": [e.value for e in excluded],
@@ -398,7 +398,7 @@ class LoadAwareRouter:
         else:
             metrics.success_rate = max(0.5, metrics.success_rate - 0.05)
 
-        metrics.last_updated = datetime.now(timezone.utc)
+        metrics.last_updated = datetime.now(UTC)
 
         logger.debug(
             "agent_metrics_updated",

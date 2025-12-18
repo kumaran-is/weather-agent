@@ -12,6 +12,7 @@ Components:
 Target: 20-40% improvement in prompt effectiveness through automatic optimization
 """
 
+from backend.src.prompts.ab_testing import ABTestResult, ABTestRunner
 from backend.src.prompts.auto_prompt_optimizer import (
     AutoPromptOptimizer,
     OptimizationResult,
@@ -21,7 +22,6 @@ from backend.src.prompts.prompt_variations import (
     PromptVariationGenerator,
     VariationTechnique,
 )
-from backend.src.prompts.ab_testing import ABTestRunner, ABTestResult
 
 __all__ = [
     "AutoPromptOptimizer",

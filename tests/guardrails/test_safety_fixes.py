@@ -10,8 +10,8 @@ Level 5b evaluation testing (v0.10.6).
 
 import pytest
 
-from backend.src.guardrails.layers.l8_output_validation import OutputValidationLayer
 from backend.src.guardrails.layers.l2_pii_detection import PIIDetectionLayer
+from backend.src.guardrails.layers.l8_output_validation import OutputValidationLayer
 from backend.src.guardrails.models import GuardrailConfig, PIIType, ViolationSeverity
 
 

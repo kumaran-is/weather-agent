@@ -11,15 +11,15 @@ Rule Priority (highest to lowest):
 5. Default → SIMPLE (Basic)
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from backend.src.routing.models import (
+    TIER_TO_AGENT_LEVEL,
     AgentLevelMapping,
     ContextSignal,
     QueryAnalysisSignal,
     QueryTier,
-    TIER_TO_AGENT_LEVEL,
 )
 
 

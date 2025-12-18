@@ -13,7 +13,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.tools import StructuredTool
 
 from backend.src.registry.bigtool_registry import (

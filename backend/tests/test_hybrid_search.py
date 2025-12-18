@@ -9,15 +9,15 @@ Tests cover:
 - Error handling
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from langchain_core.documents import Document
 
 from backend.src.rag.hybrid_search import (
-    reciprocal_rank_fusion,
+    get_all_documents_from_vectorstore,
     hybrid_search,
-    _initialize_retrievers,
-    get_all_documents_from_vectorstore
+    reciprocal_rank_fusion,
 )
 
 

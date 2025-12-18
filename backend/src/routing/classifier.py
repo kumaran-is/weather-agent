@@ -17,9 +17,6 @@ import logging
 from typing import Any
 
 from backend.src.routing.models import (
-    ContextSignal,
-    QueryAnalysisSignal,
-    QueryTier,
     RoutingDecision,
 )
 from backend.src.routing.rules import evaluate_rules, get_agent_level

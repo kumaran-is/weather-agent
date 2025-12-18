@@ -4,7 +4,6 @@ Tests the WeatherMCPClient async HTTP client implementation.
 """
 
 import pytest
-from backend.src.mcp.weather_client import WeatherMCPClient
 
 
 @pytest.mark.asyncio

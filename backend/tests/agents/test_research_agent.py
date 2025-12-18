@@ -7,15 +7,14 @@ Test Coverage:
 - Knowledge base integration
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-import json
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.src.agents.research_agent import ResearchAgent
 from backend.src.models.multi_agent import (
     AgentRole,
-    AgentResponse,
     MultiAgentState,
 )
 
@@ -28,8 +27,8 @@ def base_state() -> MultiAgentState:
         query="Test research query",
         user_id="test_user_123",
         session_id="test_session_456",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         timeout_ms=30000,
         current_agent=None,
         routing_decision=None,

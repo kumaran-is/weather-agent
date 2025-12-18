@@ -30,6 +30,7 @@ Usage:
 """
 
 import logging
+
 from backend.src.evaluation.models import EfficiencyResult
 
 logger = logging.getLogger(__name__)

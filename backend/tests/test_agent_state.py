@@ -8,9 +8,8 @@ Tests cover:
 - Type safety and edge cases
 """
 
-import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
 from backend.src.agents.state import WeatherAgentState
 

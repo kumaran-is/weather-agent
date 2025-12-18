@@ -10,14 +10,15 @@ Tests validate the query decomposition for:
 - Statistics tracking
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, Mock, patch
 
 from backend.src.rag.query_decomposer import (
-    QueryDecomposer,
     DecomposedQuery,
-    get_query_decomposer,
+    QueryDecomposer,
     decompose_query,
+    get_query_decomposer,
 )
 
 

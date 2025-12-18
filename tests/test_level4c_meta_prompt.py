@@ -7,20 +7,21 @@ This module tests the meta-prompting capabilities including:
 - Performance tracking
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from backend.src.agents.meta_prompt_agent import (
     MetaPromptAgent,
     create_meta_prompt_agent,
 )
 from backend.src.agents.prompts.meta_prompt_templates import (
+    AGENT_PROMPT_TEMPLATES,
+    FEW_SHOT_EXAMPLES,
     META_PROMPT_SYSTEM,
     PROMPT_GENERATION_TEMPLATE,
-    FEW_SHOT_EXAMPLES,
-    AGENT_PROMPT_TEMPLATES,
 )
-from backend.src.models.multi_agent import AgentRole, AgentResponse, MultiAgentState
+from backend.src.models.multi_agent import AgentRole, MultiAgentState
 
 
 class TestMetaPromptTemplates:

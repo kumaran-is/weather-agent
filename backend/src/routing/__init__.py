@@ -30,12 +30,12 @@ from backend.src.routing.classifier import (
     get_classifier,
 )
 from backend.src.routing.models import (
+    TIER_TO_AGENT_LEVEL,
     AgentLevelMapping,
     ContextSignal,
     QueryAnalysisSignal,
     QueryTier,
     RoutingDecision,
-    TIER_TO_AGENT_LEVEL,
 )
 from backend.src.routing.rules import evaluate_rules, get_agent_level
 from backend.src.routing.signals import extract_context_signal, extract_query_signal

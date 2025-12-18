@@ -17,14 +17,14 @@ Usage:
 """
 
 from backend.src.testing.property_testing import (
-    PropertyTestRunner,
     PropertyTestResult,
+    PropertyTestRunner,
     WeatherPropertyTests,
 )
 from backend.src.testing.snapshot_testing import (
+    SnapshotComparison,
     SnapshotManager,
     SnapshotResult,
-    SnapshotComparison,
 )
 
 __all__ = [

@@ -35,10 +35,10 @@ Usage:
     Saffir-Simpson Hurricane Wind Scale...
 """
 
-from langchain_core.documents import Document
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from pathlib import Path
-import os
+
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_core.documents import Document
 
 
 def load_curated_category(category: str) -> list[Document]:
@@ -197,5 +197,5 @@ if __name__ == "__main__":
         print(f"Category: {sample.metadata['category']}")
         print(f"Topic: {sample.metadata.get('topic', 'N/A')}")
         print(f"Content length: {len(sample.page_content)} characters")
-        print(f"\nFirst 200 characters:")
+        print("\nFirst 200 characters:")
         print(sample.page_content[:200] + "...")

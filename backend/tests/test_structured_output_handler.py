@@ -11,18 +11,18 @@ Tests cover:
 8. <2% fallback rate target (Level 2 requirement)
 """
 
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
-from pydantic import BaseModel, Field, ValidationError
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from datetime import date as Date
+from unittest.mock import Mock
 
+import pytest
+from pydantic import BaseModel, Field, ValidationError
+
+from backend.src.models import ForecastResponse, HurricaneAlert
 from backend.src.models.output_handler import (
     StructuredOutputHandler,
     invoke_structured,
 )
-from backend.src.models import ForecastResponse, DailyForecast, HurricaneAlert
-
 
 # ============================================================================
 # Helper Functions
@@ -431,7 +431,7 @@ async def test_integration_hurricane_alert():
                 "category": 3,
                 "wind_speed_mph": 120,
                 "location": "Gulf Coast",
-                "issued_at": datetime.now(timezone.utc).isoformat(),
+                "issued_at": datetime.now(UTC).isoformat(),
                 "affected_population": 250000,
                 "evacuation_zone": "A",
             }

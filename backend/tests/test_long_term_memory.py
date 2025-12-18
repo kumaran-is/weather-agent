@@ -9,12 +9,13 @@ Tests cover:
 - Connection initialization and cleanup
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
-from backend.src.memory.long_term import LongTermMemory
+import pytest
+
 from backend.src.memory.exceptions import GraphitiMemoryError
+from backend.src.memory.long_term import LongTermMemory
 from backend.src.models.memory import TemporalFact, UserProfile
 
 
@@ -53,9 +54,9 @@ def sample_temporal_fact():
         confidence=0.95,
         source="conversation",
         metadata={},
-        valid_from=datetime.now(timezone.utc),
+        valid_from=datetime.now(UTC),
         valid_to=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -237,7 +238,7 @@ class TestTrackWeatherEvent:
                 location="London",
                 weather_type="rain",
                 conditions={"temp": 18, "humidity": 85},
-                valid_from=datetime.now(timezone.utc),
+                valid_from=datetime.now(UTC),
                 valid_to=None,
             )
 
@@ -260,7 +261,7 @@ class TestTrackWeatherEvent:
                     location="London",
                     weather_type="rain",
                     conditions={},
-                    valid_from=datetime.now(timezone.utc),
+                    valid_from=datetime.now(UTC),
                 )
 
 
@@ -301,9 +302,9 @@ class TestGetTemporalFacts:
         mock_edge = Mock()
         mock_edge.fact = "User test_user: prefers detailed forecasts (type: preference, confidence: 0.95, valid from 2025-01-21)"
         mock_edge.uuid = "fact_123"
-        mock_edge.valid_at = datetime.now(timezone.utc)
+        mock_edge.valid_at = datetime.now(UTC)
         mock_edge.invalid_at = None
-        mock_edge.created_at = datetime.now(timezone.utc)
+        mock_edge.created_at = datetime.now(UTC)
         mock_graphiti.search.return_value = [mock_edge]
 
         with patch("backend.src.memory.long_term.Graphiti", return_value=mock_graphiti):

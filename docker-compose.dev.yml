@@ -10,18 +10,25 @@
 #   - Auto-reload on code changes
 #   - Source code mounted for hot reload
 #
-# LEVEL 8 Services:
+# LEVEL 9 Services:
 #   - Weather MCP Server (port 8080)
 #   - Hurricane Tracker MCP (port 8081)
 #   - Weather AI Agent API (port 8000) - DEV MODE
-#   - Qdrant Vector Database (port 6333)
-#   - Redis (port 6379)
-#   - Neo4j (ports 7474, 7687)
-#   - PostgreSQL (port 5432)
-#   - Tempo (port 3200, 4317, 4318) - Level 8: Distributed Tracing
-#   - Prometheus (port 9090)
-#   - Grafana (port 3001)
-#   - Loki (port 3100)
+#   - Qdrant Vector Database (port 6333) - Level 2 + Level 9 (semantic cache)
+#   - Redis (port 6379) - Level 3a + Level 9 (exact match cache)
+#   - Neo4j (ports 7474, 7687) - Level 3a (long-term memory)
+#   - PostgreSQL (port 5432) - Level 3c (procedural memory)
+#   - Tempo (port 3200, 4317, 4318) - Level 8 (distributed tracing)
+#   - Prometheus (port 9090) - Level 5c/9c (metrics + cache metrics)
+#   - Grafana (port 3001) - Level 5c/8/9c (dashboards)
+#   - Loki (port 3100) - Level 5c (log aggregation)
+#
+# Level 9 Semantic Caching:
+#   - Q1: In-memory LRU cache (user-specific, <1ms)
+#   - Q2: Redis exact match (shared, <10ms)
+#   - Q3: Qdrant semantic cache (similarity matching, <50ms)
+#   - Tool cache: T1 (Redis) + T2 (Qdrant semantic)
+#   - LLM cache: R1 (Redis) + R2 (Qdrant semantic)
 #
 # Run with: docker-compose -f docker-compose.dev.yml up -d
 # Stop with: docker-compose -f docker-compose.dev.yml down
@@ -120,8 +127,10 @@ services:
           memory: 128M
 
   # ==========================================================================
-  # Qdrant Vector Database (Port 6333) - Level 2
+  # Qdrant Vector Database (Port 6333) - Level 2 + Level 9 Semantic Cache
   # ==========================================================================
+  # Level 2: RAG document embeddings
+  # Level 9: Semantic query cache (Q3), tool cache (T2), LLM cache (R2)
   qdrant:
     image: qdrant/qdrant:latest
     container_name: weather-ai-qdrant
@@ -148,8 +157,10 @@ services:
           memory: 128M
 
   # ==========================================================================
-  # Redis (Port 6379) - Level 3a: Short-Term Memory
+  # Redis (Port 6379) - Level 3a + Level 9: Short-Term Memory & Exact Cache
   # ==========================================================================
+  # Level 3a: Short-term conversation memory
+  # Level 9: Exact match cache (Q2/L2, T1 tool cache, R1 LLM cache)
   redis:
     image: redis:8.4.0-alpine
     container_name: weather-ai-redis
@@ -287,6 +298,13 @@ services:
       - REDIS_MAX_CONVERSATION_TURNS=${REDIS_MAX_CONVERSATION_TURNS:-10}
       # L2 Cache (Redis Distributed Cache - ALWAYS use service name in containers)
       - L2_CACHE_REDIS_URL=redis://redis:6379/0
+      # Level 9 Semantic Cache Configuration (DEV)
+      - SEMANTIC_CACHE_ENABLED=${SEMANTIC_CACHE_ENABLED:-true}
+      - SEMANTIC_CACHE_THRESHOLD=${SEMANTIC_CACHE_THRESHOLD:-0.85}
+      - SEMANTIC_CACHE_TTL=${SEMANTIC_CACHE_TTL:-1800}
+      - TOOL_CACHE_ENABLED=${TOOL_CACHE_ENABLED:-true}
+      - LLM_CACHE_ENABLED=${LLM_CACHE_ENABLED:-true}
+      - CACHE_METRICS_ENABLED=${CACHE_METRICS_ENABLED:-true}
       # Neo4j/Graphiti (Level 3a - Long-Term Memory - ALWAYS use service name in containers)
       - GRAPHITI_URL=bolt://neo4j:7687
       - GRAPHITI_USER=${GRAPHITI_USER:-neo4j}

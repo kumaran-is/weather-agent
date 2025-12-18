@@ -25,11 +25,13 @@ Deferred to Level 5a:
 # BM25Retriever from langchain_community is acceptable for Level 2
 # No direct equivalent in langchain_core yet (as of v1.0)
 # This is the recommended approach until a core BM25 retriever exists
+import logging
+
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
-from backend.src.rag.vector_store import get_vector_store
+
 from backend.config.settings import settings
-import logging
+from backend.src.rag.vector_store import get_vector_store
 
 logger = logging.getLogger(__name__)
 

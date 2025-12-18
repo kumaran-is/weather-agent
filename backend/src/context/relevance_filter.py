@@ -13,8 +13,9 @@ Key Features:
 - Configurable minimum relevance threshold
 """
 
-from typing import Any
 import logging
+from typing import Any
+
 import numpy as np
 
 logger = logging.getLogger(__name__)

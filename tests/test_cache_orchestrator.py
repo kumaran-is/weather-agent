@@ -9,16 +9,16 @@ Tests validate the cache orchestrator for:
 - Graceful degradation when cache layers unavailable
 """
 
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
-import time
+from unittest.mock import AsyncMock, Mock
 
+import pytest
+
+from backend.src.cache.l1_memory_cache import QueryCache
 from backend.src.cache.orchestrator import (
     CacheOrchestrator,
     CacheResult,
     CacheStats,
 )
-from backend.src.cache.l1_memory_cache import QueryCache
 
 
 class TestCacheOrchestrator:

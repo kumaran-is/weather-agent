@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import structlog
 
@@ -182,7 +183,7 @@ async def execute_parallel(
                     duration_ms=duration_ms,
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 duration_ms = (time.perf_counter() - task_start) * 1000
                 error = TimeoutError(f"Task {task_id} exceeded {timeout_seconds}s timeout")
 

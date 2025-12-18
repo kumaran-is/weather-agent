@@ -8,10 +8,12 @@ Tests cover:
 - Edge cases and failure modes
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+from backend.src.models.reasoning import ThoughtGraph, ThoughtNode, ThoughtType
 from backend.src.reasoning.got import GraphOfThoughts
-from backend.src.models.reasoning import ThoughtNode, ThoughtGraph, ThoughtType
 
 
 @pytest.fixture

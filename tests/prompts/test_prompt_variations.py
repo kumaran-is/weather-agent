@@ -12,10 +12,11 @@ Tests:
 """
 
 import pytest
+
 from backend.src.prompts.prompt_variations import (
+    GeneratedVariation,
     PromptVariationGenerator,
     VariationTechnique,
-    GeneratedVariation,
 )
 
 

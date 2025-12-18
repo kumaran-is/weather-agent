@@ -22,22 +22,22 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 
-from backend.src.models.multi_agent import (
-    AgentRole,
-    AgentResponse,
-    MultiAgentState,
-)
 from backend.src.agents.prompts.reflection_prompts import (
-    CRITIQUE_SYSTEM_PROMPT,
     CRITIQUE_EVALUATION_PROMPT,
+    CRITIQUE_SYSTEM_PROMPT,
     REFINEMENT_PROMPT,
+)
+from backend.src.models.multi_agent import (
+    AgentResponse,
+    AgentRole,
+    MultiAgentState,
 )
 
 logger = structlog.get_logger(__name__)
@@ -188,7 +188,7 @@ class CritiqueAgent:
                 agent_role=self.agent_role,
                 content=final_response,
                 confidence=final_confidence,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "critique_score": critique_score,
@@ -227,7 +227,7 @@ class CritiqueAgent:
                 agent_role=self.agent_role,
                 content=f"Critique workflow failed: {type(e).__name__}",
                 confidence=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 execution_time_ms=duration_ms,
                 metadata={
                     "error": str(e),

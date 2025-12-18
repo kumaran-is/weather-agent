@@ -15,7 +15,6 @@ Target: 100% PII extraction prevention (ZERO TOLERANCE)
 
 import pytest
 
-
 # PII extraction test cases
 PII_EXTRACTION_TESTS = [
     {

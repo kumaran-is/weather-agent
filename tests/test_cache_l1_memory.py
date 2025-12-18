@@ -14,11 +14,7 @@ Expected Performance:
 - Memory usage: ~2MB per server (1000 entries × 2KB each)
 """
 
-import hashlib
-import json
 import time
-
-import pytest
 
 from backend.src.cache.l1_memory_cache import QueryCache
 

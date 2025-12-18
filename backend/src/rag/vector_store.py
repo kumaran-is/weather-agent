@@ -25,6 +25,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
+
 from backend.config.settings import settings
 
 
@@ -197,20 +198,20 @@ def test_vector_store_connection() -> bool:
 
         # Test connection
         collections = client.get_collections()
-        print(f"✅ Qdrant connection successful")
+        print("✅ Qdrant connection successful")
         print(f"   URL: {settings.QDRANT_URL}")
         print(f"   Collections: {len(collections.collections)}")
 
         # Test vector store creation
         vectorstore = get_vector_store()
-        print(f"✅ Collection 'weather_knowledge' ready")
+        print("✅ Collection 'weather_knowledge' ready")
 
         return True
 
     except Exception as e:
         print(f"❌ Qdrant connection failed: {e}")
-        print(f"   Make sure Qdrant is running:")
-        print(f"   docker run -p 6333:6333 qdrant/qdrant")
+        print("   Make sure Qdrant is running:")
+        print("   docker run -p 6333:6333 qdrant/qdrant")
         return False
 
 

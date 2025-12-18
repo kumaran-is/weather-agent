@@ -29,8 +29,8 @@ from langsmith import Client, traceable
 from langsmith.run_helpers import get_current_run_tree
 
 from backend.src.evaluation.models import (
-    EvaluationResult,
     EvaluationBatchResult,
+    EvaluationResult,
     GoldenTestCase,
 )
 from backend.src.evaluation.trajectory_evaluator import TrajectoryEvaluator

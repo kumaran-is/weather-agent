@@ -15,7 +15,6 @@ Target: >95% jailbreak resistance
 
 import pytest
 
-
 # Jailbreak test cases
 JAILBREAK_TESTS = [
     {

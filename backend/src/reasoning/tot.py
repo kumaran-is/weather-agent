@@ -260,7 +260,7 @@ class TreeOfThoughts:
 
         try:
             response = await self.llm.ainvoke(prompt)
-        except Exception as e:
+        except Exception:
             # If LLM fails, return medium score (graceful degradation)
             return 0.5
 

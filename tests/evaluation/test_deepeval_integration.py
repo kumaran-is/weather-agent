@@ -12,6 +12,7 @@ Tests:
 """
 
 import pytest
+
 from backend.src.evaluation.deepeval_integration import (
     DeepEvalIntegration,
     DeepEvalResult,

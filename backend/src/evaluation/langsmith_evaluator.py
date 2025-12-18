@@ -31,20 +31,21 @@ Usage:
     ...     print("Quality gates FAILED - deployment blocked")
 """
 
-import os
 import logging
 import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
-from langsmith import Client
-from langsmith.evaluation import RunEvaluator, EvaluationResult as LSEvaluationResult
-from langsmith.schemas import Run, Example
 from langchain_core.language_models import BaseChatModel
+from langsmith import Client
+from langsmith.evaluation import EvaluationResult as LSEvaluationResult
+from langsmith.evaluation import RunEvaluator
+from langsmith.schemas import Example, Run
 
 from backend.src.evaluation.models import (
-    EvaluationResult,
     EvaluationBatchResult,
+    EvaluationResult,
     GoldenTestCase,
     PillarWeights,
 )

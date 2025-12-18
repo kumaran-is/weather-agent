@@ -12,6 +12,7 @@ Tests:
 """
 
 import pytest
+
 from backend.src.guardrails.content_filter import (
     ContentFilter,
     ContentFilterResult,

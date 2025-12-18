@@ -11,9 +11,10 @@ Tests:
 """
 
 import pytest
+
 from backend.src.testing.property_testing import (
-    PropertyTestRunner,
     PropertyTestResult,
+    PropertyTestRunner,
     WeatherGenerators,
     WeatherPropertyTests,
     run_weather_properties,

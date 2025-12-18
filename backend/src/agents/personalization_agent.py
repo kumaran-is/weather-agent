@@ -151,7 +151,7 @@ class UserProfile:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "UserProfile":
+    def from_dict(cls, data: dict[str, Any]) -> UserProfile:
         """Create profile from dictionary."""
         profile = cls(
             user_id=data.get("user_id", "unknown"),

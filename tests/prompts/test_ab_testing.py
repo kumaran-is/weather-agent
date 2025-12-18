@@ -12,9 +12,10 @@ Tests:
 """
 
 import pytest
+
 from backend.src.prompts.ab_testing import (
-    ABTestRunner,
     ABTestResult,
+    ABTestRunner,
     MultiArmedBandit,
     TestStatus,
     VariantStats,
