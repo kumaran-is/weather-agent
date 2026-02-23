@@ -8,6 +8,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](./CHANGELOG.md)
 
+[![Blog: Multi-Agent Architecture](https://img.shields.io/badge/Medium-3--Layer%20Multi--Agent%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/from-zero-to-production-ready-ai-agent-the-3-layer-multi-agent-architecture-4f22206bde7d)
+[![Blog: Multi-Agent Orchestration](https://img.shields.io/badge/Medium-Multi--Agent%20Orchestration%20with%20Self--Healing-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/15-agents-zero-downtime-multi-agent-orchestration-with-self-healing-52a91394fc57)
+[![Blog: Memory Architecture](https://img.shields.io/badge/Medium-7--Layer%20Memory%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/teaching-ai-to-remember-7-layer-memory-architecture-and-token-compression-c52f9c5db6ea)
+[![Blog: AI Guardrails](https://img.shields.io/badge/Medium-12--Layer%20AI%20Guardrails%20%26%20Evaluation-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/building-safe-ai-systems-12-layer-ai-guardrails-and-evaluation-736c62bded4c)
+[![Blog: Semantic Caching](https://img.shields.io/badge/Medium-Semantic%20Caching%20%26%20LLM%20Cost%20Optimization-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/ai-safety-first-semantic-caching-llm-cost-optimization-f637d847cbc8)
+[![Blog: Design Patterns](https://img.shields.io/badge/Medium-20%20AI%20Agent%20Design%20Patterns-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/20-ai-agent-design-patterns-organized-as-a-stack-not-a-menu-8e0df0ee99c3)
+[![Blog: Production Patterns](https://img.shields.io/badge/Medium-11%20Operational%20Patterns%20for%20Production-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/the-11-operational-patterns-that-keep-ai-agents-running-in-production-889b054f24a4)
+
 **Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, **two-tier semantic caching** (40-60% cost reduction), multi-layer caching (L1+L2+L3+Semantic), Prometheus metrics and observability, real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, self-evolving AI with constitutional guardrails, comprehensive golden dataset evaluation (185 test cases, ZERO safety violations) and Two-Tier Semantic Caching -LLM resposne and Tool caching.
 
 **From zero to production:** Progressive implementation showcasing enterprise AI patterns including multi-agent orchestration (3→8→15 agents), auto-routing architecture, 7-layer memory systems (99.7% storage reduction), context window optimization (50-60% token reduction for <4K tokens/query), **semantic caching** (65-85% hit rate with similarity matching), full observability stack (Prometheus, Grafana, OpenTelemetry), adversarial testing (RAGAS/DeepEval), constitutional AI (12-layer safety guardrails), LangGraph-bigtool Dynamic Tool Registry & Semantic Discovery, Context Window Optimization, Two-Tier Semantic Caching and **[planned]** self-evolving agentic dual-loop architecture that continuously learns, adapts, and improves based on real-world performance.
@@ -16,7 +24,7 @@
 
 **Current Stage**: ✅ **Level 9 Complete** — Two-Tier Semantic Caching: Query/Tool/LLM Response Caching with Similarity Matching, Life-Safety Bypass, Prometheus Metrics (100% LangChain v1.x/LangGraph v1.x Compliant)
 
-[Read the Medium Blog Post Series](https://medium.com/@yourusername)
+[Read the Medium Blog Post Series](https://medium.com/@kumaran.isk)
 
 ---
 
