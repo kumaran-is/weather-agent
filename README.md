@@ -15,6 +15,16 @@
 [![Blog: Semantic Caching](https://img.shields.io/badge/Medium-Semantic%20Caching%20%26%20LLM%20Cost%20Optimization-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/ai-safety-first-semantic-caching-llm-cost-optimization-f637d847cbc8)
 [![Blog: Design Patterns](https://img.shields.io/badge/Medium-20%20AI%20Agent%20Design%20Patterns-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/20-ai-agent-design-patterns-organized-as-a-stack-not-a-menu-8e0df0ee99c3)
 [![Blog: Production Patterns](https://img.shields.io/badge/Medium-11%20Operational%20Patterns%20for%20Production-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/the-11-operational-patterns-that-keep-ai-agents-running-in-production-889b054f24a4)
+[![Blog: Middleware Layers](https://img.shields.io/badge/Medium-8%20Middleware%20Layers%20for%20Production-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/8-middleware-layers-between-your-agent-and-production-92c7880b4d08)
+[![Blog: LLM Model Routing](https://img.shields.io/badge/Medium-LLM%20Model%20Routing-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/d868a0b1af0e)
+[![Blog: Context Engineering](https://img.shields.io/badge/Medium-Context%20Engineering%20for%20LLM%20Agents-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/95de11ff2ba4)
+[![Blog: LLM Parameters](https://img.shields.io/badge/Medium-Why%20Agents%20Need%20Different%20LLM%20Parameters-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/why-your-agents-need-different-llm-parameters-f1feaffc2910)
+[![Blog: LLM Caching](https://img.shields.io/badge/Medium-4--Tier%20Caching%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-i-cut-llm-api-costs-with-a-4-tier-caching-architecture-06193a2824c0)
+[![Blog: RAG Types](https://img.shields.io/badge/Medium-16%20RAG%20Types-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/18b48385016d)
+
+<p align="center">
+  <img src="img/hero.png" alt="Weather AI Agent Service" width="100%">
+</p>
 
 **Production-grade AI agent for weather forecast intelligence:** Built with LangChain 1.0, LangGraph 1.0, FastAPI and OpenAI. Features 15-agent multi-agent orchestration, auto-routing (intent-based query classification), 7-layer memory architecture, advanced reasoning (Tree/Graph-of-Thought), emotional intelligence, **two-tier semantic caching** (40-60% cost reduction), multi-layer caching (L1+L2+L3+Semantic), Prometheus metrics and observability, real-time weather data via dual MCP servers, RAG-enhanced knowledge base, Chain-of-Thought reasoning, Human-in-the-Loop (HITL) approval workflows, self-evolving AI with constitutional guardrails, comprehensive golden dataset evaluation (185 test cases, ZERO safety violations) and Two-Tier Semantic Caching -LLM resposne and Tool caching.
 
