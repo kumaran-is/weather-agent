@@ -21,6 +21,7 @@
 [![Blog: LLM Parameters](https://img.shields.io/badge/Medium-Why%20Agents%20Need%20Different%20LLM%20Parameters-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/why-your-agents-need-different-llm-parameters-f1feaffc2910)
 [![Blog: LLM Caching](https://img.shields.io/badge/Medium-4--Tier%20Caching%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-i-cut-llm-api-costs-with-a-4-tier-caching-architecture-06193a2824c0)
 [![Blog: RAG Types](https://img.shields.io/badge/Medium-16%20RAG%20Types-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/18b48385016d)
+[![Blog: Vector Database Strategy](https://img.shields.io/badge/Medium-Vector%20Database%20Strategy%20for%20LLM%20Agents-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/vector-database-strategy-for-llm-agents-start-simple-evolve-with-evidence-ee0c2a7a4de4)
 
 <p align="center">
   <img src="img/hero.png" alt="Weather AI Agent Service" width="100%">
