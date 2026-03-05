@@ -22,6 +22,12 @@
 [![Blog: LLM Caching](https://img.shields.io/badge/Medium-4--Tier%20Caching%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-i-cut-llm-api-costs-with-a-4-tier-caching-architecture-06193a2824c0)
 [![Blog: RAG Types](https://img.shields.io/badge/Medium-16%20RAG%20Types-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/18b48385016d)
 [![Blog: Vector Database Strategy](https://img.shields.io/badge/Medium-Vector%20Database%20Strategy%20for%20LLM%20Agents-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/vector-database-strategy-for-llm-agents-start-simple-evolve-with-evidence-ee0c2a7a4de4)
+[![Blog: RAG Embeddings](https://img.shields.io/badge/Medium-Stop%20Using%20BERT%20and%20GPT%20Embeddings%20for%20RAG-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/stop-using-bert-and-gpt-embeddings-for-rag-heres-what-actually-works-c1dc398920b1)
+[![Blog: Hybrid Retrieval](https://img.shields.io/badge/Medium-Production%20RAG%20with%20Hybrid%20Retrieval-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/building-a-production-rag-pipeline-start-with-hybrid-retrieval-dense-bm25-rrf-e901aba17cae)
+[![Blog: Agentic RAG Mechanisms](https://img.shields.io/badge/Medium-From%20Standard%20RAG%20to%20Agentic%20RAG-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/from-standard-rag-to-agentic-rag-4-mechanisms-that-actually-matter-727394a174a5)
+[![Blog: RAG Token Optimization](https://img.shields.io/badge/Medium-5--Phase%20RAG%20Pipeline%20Token%20Optimization-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-a-5-phase-rag-pipeline-slashed-my-llm-token-usage-by-half-fc980f3dff53)
+[![Blog: RAG Retriever](https://img.shields.io/badge/Medium-Your%20RAG%20Retriever%20Is%20Broken-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/your-rag-is-nt-hallucinating-your-retriever-is-broken-920a5906b2f7)
+[![Blog: Agentic RAG Layers](https://img.shields.io/badge/Medium-8%20Layers%20of%20Agentic%20RAG-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/building-agentic-rag-the-8-layers-that-separate-standard-rag-from-agentic-rag-e1df7f3ad4fa)
 
 <p align="center">
   <img src="img/hero.png" alt="Weather AI Agent Service" width="100%">
