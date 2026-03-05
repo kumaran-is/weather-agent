@@ -17,7 +17,7 @@
 [![Blog: Production Patterns](https://img.shields.io/badge/Medium-11%20Operational%20Patterns%20for%20Production-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/the-11-operational-patterns-that-keep-ai-agents-running-in-production-889b054f24a4)
 [![Blog: Middleware Layers](https://img.shields.io/badge/Medium-8%20Middleware%20Layers%20for%20Production-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/8-middleware-layers-between-your-agent-and-production-92c7880b4d08)
 [![Blog: LLM Model Routing](https://img.shields.io/badge/Medium-LLM%20Model%20Routing-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/d868a0b1af0e)
-[![Blog: Context Engineering](https://img.shields.io/badge/Medium-Context%20Engineering%20for%20LLM%20Agents-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/95de11ff2ba4)
+[![Blog: Context Engineering](https://img.shields.io/badge/Medium-Context_Engineering_for_LLM_Agents-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/95de11ff2ba4)
 [![Blog: LLM Parameters](https://img.shields.io/badge/Medium-Why%20Agents%20Need%20Different%20LLM%20Parameters-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/why-your-agents-need-different-llm-parameters-f1feaffc2910)
 [![Blog: LLM Caching](https://img.shields.io/badge/Medium-4--Tier%20Caching%20Architecture-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-i-cut-llm-api-costs-with-a-4-tier-caching-architecture-06193a2824c0)
 [![Blog: RAG Types](https://img.shields.io/badge/Medium-16%20RAG%20Types-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/18b48385016d)
