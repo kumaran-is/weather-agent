@@ -28,6 +28,8 @@
 [![Blog: RAG Token Optimization](https://img.shields.io/badge/Medium-5--Phase%20RAG%20Pipeline%20Token%20Optimization-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/how-a-5-phase-rag-pipeline-slashed-my-llm-token-usage-by-half-fc980f3dff53)
 [![Blog: RAG Retriever](https://img.shields.io/badge/Medium-Your%20RAG%20Retriever%20Is%20Broken-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/your-rag-is-nt-hallucinating-your-retriever-is-broken-920a5906b2f7)
 [![Blog: Agentic RAG Layers](https://img.shields.io/badge/Medium-8%20Layers%20of%20Agentic%20RAG-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/building-agentic-rag-the-8-layers-that-separate-standard-rag-from-agentic-rag-e1df7f3ad4fa)
+[![Blog: Prompting Techniques](https://img.shields.io/badge/Medium-24%20Prompting%20Techniques%20in%20Multi--Agent%20System-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/we-tried-24-prompting-techniques-in-a-multi-agent-system-only-8-survived-production-34f3ad408982)
+[![Blog: Self-Evolving Agent](https://img.shields.io/badge/Medium-Self--Evolving%20Agent-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@kumaran.isk/your-ai-agent-makes-the-same-mistake-twice-a-self-evolving-agent-doesnt-a77349e07f7d)
 
 <p align="center">
   <img src="img/hero.png" alt="Weather AI Agent Service" width="100%">
